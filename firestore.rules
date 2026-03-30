@@ -1,0 +1,246 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: {uid}
+    // Fields:
+    //   - uid: string (required)
+    //   - name: string (required, 1-100 chars)
+    //   - email: string (required, email format)
+    //   - height: number (optional)
+    //   - targetWeight: number (optional)
+    //   - dailyWaterGoal: number (optional)
+    //   - dailyCalorieGoal: number (optional)
+    //   - createdAt: timestamp (optional)
+    //
+    // Collection: workouts
+    // Document ID: auto-generated
+    // Fields:
+    //   - uid: string (required, matches auth.uid)
+    //   - date: string (required, YYYY-MM-DD)
+    //   - type: string (optional)
+    //   - exercises: list (optional, max 50 items)
+    //   - notes: string (optional, max 1000 chars)
+    //
+    // Collection: diets
+    // Document ID: auto-generated
+    // Fields:
+    //   - uid: string (required, matches auth.uid)
+    //   - date: string (required, YYYY-MM-DD)
+    //   - meals: list (optional, max 20 items)
+    //   - waterIntake: number (optional, >= 0)
+    //   - notes: string (optional, max 1000 chars)
+    //
+    // Collection: metrics
+    // Document ID: auto-generated
+    // Fields:
+    //   - uid: string (required, matches auth.uid)
+    //   - date: string (required, YYYY-MM-DD)
+    //   - weight: number (required, > 0)
+    //   - bodyFat: number (optional, 0-100)
+    //   - muscleMass: number (optional, 0-100)
+    //   - visceralFat: number (optional, 0-50)
+    //   - waterPercentage: number (optional, 0-100)
+    //   - notes: string (optional, max 1000 chars)
+    //
+    // Collection: exams
+    // Document ID: auto-generated
+    // Fields:
+    //   - uid: string (required, matches auth.uid)
+    //   - date: string (required, YYYY-MM-DD)
+    //   - type: string (required, 1-100 chars)
+    //   - result: string (optional, max 5000 chars)
+    //   - notes: string (optional, max 1000 chars)
+    //
+    // Collection: photos
+    // Document ID: auto-generated
+    // Fields:
+    //   - uid: string (required, matches auth.uid)
+    //   - date: string (required, YYYY-MM-DD)
+    //   - imageUrl: string (required, URL format)
+    //   - angle: string (optional, Front/Side/Back)
+    //   - notes: string (optional, max 1000 chars)
+    //
+    // Collection: checkins
+    // Document ID: auto-generated
+    // Fields:
+    //   - uid: string (required, matches auth.uid)
+    //   - date: string (required, YYYY-MM-DD)
+    //   - workoutDone: bool (optional)
+    //   - dietOnTrack: bool (optional)
+    //   - waterGoalMet: bool (optional)
+    //   - sleepQuality: number (optional, 1-5)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.uid;
+    }
+
+    function isRequestOwner() {
+      return isAuthenticated() && request.auth.uid == request.resource.data.uid;
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function isValidUrl(url) {
+      return url is string && (url.matches("^https://.*") || url.matches("^http://.*"));
+    }
+
+    function isValidDateString(dateStr) {
+      return dateStr is string && dateStr.matches("^\\d{4}-\\d{2}-\\d{2}$");
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+          (request.auth.token.email == "gerlianemagalhaes79@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidUser(data) {
+      return data.uid == request.auth.uid &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             isValidEmail(data.email) &&
+             (!('height' in data) || data.height is number) &&
+             (!('targetWeight' in data) || data.targetWeight is number) &&
+             (!('dailyWaterGoal' in data) || data.dailyWaterGoal is number) &&
+             (!('dailyCalorieGoal' in data) || data.dailyCalorieGoal is number);
+    }
+
+    function isValidWorkout(data) {
+      return data.uid == request.auth.uid &&
+             isValidDateString(data.date) &&
+             (!('type' in data) || data.type is string) &&
+             (!('exercises' in data) || (data.exercises is list && data.exercises.size() <= 50)) &&
+             (!('notes' in data) || (data.notes is string && data.notes.size() <= 1000));
+    }
+
+    function isValidDiet(data) {
+      return data.uid == request.auth.uid &&
+             isValidDateString(data.date) &&
+             (!('meals' in data) || (data.meals is list && data.meals.size() <= 20)) &&
+             (!('waterIntake' in data) || (data.waterIntake is number && data.waterIntake >= 0)) &&
+             (!('notes' in data) || (data.notes is string && data.notes.size() <= 1000));
+    }
+
+    function isValidMetric(data) {
+      return data.uid == request.auth.uid &&
+             isValidDateString(data.date) &&
+             data.weight is number && data.weight > 0 &&
+             (!('bodyFat' in data) || (data.bodyFat is number && data.bodyFat >= 0 && data.bodyFat <= 100)) &&
+             (!('muscleMass' in data) || (data.muscleMass is number && data.muscleMass >= 0 && data.muscleMass <= 100)) &&
+             (!('visceralFat' in data) || (data.visceralFat is number && data.visceralFat >= 0 && data.visceralFat <= 50)) &&
+             (!('waterPercentage' in data) || (data.waterPercentage is number && data.waterPercentage >= 0 && data.waterPercentage <= 100)) &&
+             (!('notes' in data) || (data.notes is string && data.notes.size() <= 1000));
+    }
+
+    function isValidExam(data) {
+      return data.uid == request.auth.uid &&
+             isValidDateString(data.date) &&
+             data.type is string && data.type.size() > 0 && data.type.size() <= 100 &&
+             (!('result' in data) || (data.result is string && data.result.size() <= 5000)) &&
+             (!('notes' in data) || (data.notes is string && data.notes.size() <= 1000));
+    }
+
+    function isValidPhoto(data) {
+      return data.uid == request.auth.uid &&
+             isValidDateString(data.date) &&
+             isValidUrl(data.imageUrl) &&
+             (!('angle' in data) || data.angle in ['Front', 'Side', 'Back']) &&
+             (!('notes' in data) || (data.notes is string && data.notes.size() <= 1000));
+    }
+
+    function isValidCheckin(data) {
+      return data.uid == request.auth.uid &&
+             isValidDateString(data.date) &&
+             (!('workoutDone' in data) || data.workoutDone is bool) &&
+             (!('dietOnTrack' in data) || data.dietOnTrack is bool) &&
+             (!('waterGoalMet' in data) || data.waterGoalMet is bool) &&
+             (!('sleepQuality' in data) || (data.sleepQuality is number && data.sleepQuality >= 1 && data.sleepQuality <= 5));
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{uid} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow create: if isOwner(uid) && isValidUser(request.resource.data);
+      allow update: if isOwner(uid) && isValidUser(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /workouts/{id} {
+      allow read: if isDocOwner() || isAdmin();
+      allow create: if isRequestOwner() && isValidWorkout(request.resource.data);
+      allow update: if isDocOwner() && isRequestOwner() && isValidWorkout(request.resource.data);
+      allow delete: if isDocOwner() || isAdmin();
+    }
+
+    match /diets/{id} {
+      allow read: if isDocOwner() || isAdmin();
+      allow create: if isRequestOwner() && isValidDiet(request.resource.data);
+      allow update: if isDocOwner() && isRequestOwner() && isValidDiet(request.resource.data);
+      allow delete: if isDocOwner() || isAdmin();
+    }
+
+    match /metrics/{id} {
+      allow read: if isDocOwner() || isAdmin();
+      allow create: if isRequestOwner() && isValidMetric(request.resource.data);
+      allow update: if isDocOwner() && isRequestOwner() && isValidMetric(request.resource.data);
+      allow delete: if isDocOwner() || isAdmin();
+    }
+
+    match /exams/{id} {
+      allow read: if isDocOwner() || isAdmin();
+      allow create: if isRequestOwner() && isValidExam(request.resource.data);
+      allow update: if isDocOwner() && isRequestOwner() && isValidExam(request.resource.data);
+      allow delete: if isDocOwner() || isAdmin();
+    }
+
+    match /photos/{id} {
+      allow read: if isDocOwner() || isAdmin();
+      allow create: if isRequestOwner() && isValidPhoto(request.resource.data);
+      allow update: if isDocOwner() && isRequestOwner() && isValidPhoto(request.resource.data);
+      allow delete: if isDocOwner() || isAdmin();
+    }
+
+    match /checkins/{id} {
+      allow read: if isDocOwner() || isAdmin();
+      allow create: if isRequestOwner() && isValidCheckin(request.resource.data);
+      allow update: if isDocOwner() && isRequestOwner() && isValidCheckin(request.resource.data);
+      allow delete: if isDocOwner() || isAdmin();
+    }
+
+    // Default deny
+    match /{path=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,0 +1,155 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Stores user basic info and fitness goals",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "height": { "type": "number", "description": "Height in cm" },
+        "targetWeight": { "type": "number", "description": "Target weight in kg" },
+        "dailyWaterGoal": { "type": "number", "description": "Daily water goal in ml" },
+        "dailyCalorieGoal": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "name", "email"]
+    },
+    "WorkoutLog": {
+      "title": "Workout Log",
+      "description": "Daily workout sessions",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "type": { "type": "string", "description": "e.g., Push, Pull, Legs, Cardio" },
+        "exercises": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "sets": { "type": "number" },
+              "reps": { "type": "number" },
+              "weight": { "type": "number" }
+            }
+          }
+        },
+        "notes": { "type": "string" }
+      },
+      "required": ["uid", "date"]
+    },
+    "DietLog": {
+      "title": "Diet Log",
+      "description": "Daily food and water intake",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "meals": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "calories": { "type": "number" },
+              "protein": { "type": "number" },
+              "carbs": { "type": "number" },
+              "fat": { "type": "number" }
+            }
+          }
+        },
+        "waterIntake": { "type": "number", "description": "Water intake in ml" },
+        "notes": { "type": "string" }
+      },
+      "required": ["uid", "date"]
+    },
+    "MetricLog": {
+      "title": "Metric Log",
+      "description": "Body metrics and bioimpedance results",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "weight": { "type": "number" },
+        "bodyFat": { "type": "number", "description": "Percentage" },
+        "muscleMass": { "type": "number", "description": "Percentage or kg" },
+        "visceralFat": { "type": "number" },
+        "waterPercentage": { "type": "number" },
+        "notes": { "type": "string" }
+      },
+      "required": ["uid", "date", "weight"]
+    },
+    "ExamLog": {
+      "title": "Exam Log",
+      "description": "Laboratory exam results",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "type": { "type": "string", "description": "e.g., Blood test, Vitamin D" },
+        "result": { "type": "string" },
+        "notes": { "type": "string" }
+      },
+      "required": ["uid", "date", "type"]
+    },
+    "ProgressPhoto": {
+      "title": "Progress Photo",
+      "description": "User progress photos",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "imageUrl": { "type": "string", "format": "uri" },
+        "angle": { "type": "string", "enum": ["Front", "Side", "Back"] },
+        "notes": { "type": "string" }
+      },
+      "required": ["uid", "date", "imageUrl"]
+    },
+    "DailyCheckIn": {
+      "title": "Daily Check-In",
+      "description": "Status of daily goals",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "workoutDone": { "type": "boolean" },
+        "dietOnTrack": { "type": "boolean" },
+        "waterGoalMet": { "type": "boolean" },
+        "sleepQuality": { "type": "number", "description": "1-5" }
+      },
+      "required": ["uid", "date"]
+    }
+  },
+  "firestore": {
+    "/users/{uid}": {
+      "schema": "UserProfile",
+      "description": "User profile data"
+    },
+    "/workouts/{workoutId}": {
+      "schema": "WorkoutLog",
+      "description": "Workout logs"
+    },
+    "/diets/{dietId}": {
+      "schema": "DietLog",
+      "description": "Diet logs"
+    },
+    "/metrics/{metricId}": {
+      "schema": "MetricLog",
+      "description": "Body metrics"
+    },
+    "/exams/{examId}": {
+      "schema": "ExamLog",
+      "description": "Exam results"
+    },
+    "/photos/{photoId}": {
+      "schema": "ProgressPhoto",
+      "description": "Progress photos"
+    },
+    "/checkins/{checkinId}": {
+      "schema": "DailyCheckIn",
+      "description": "Daily check-ins"
+    }
+  }
+}
