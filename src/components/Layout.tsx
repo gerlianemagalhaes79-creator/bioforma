@@ -21,20 +21,20 @@ export default function Layout({ children, activeTab, setActiveTab, user, logout
   ];
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white font-sans">
+    <div className="min-h-screen bg-[#fff9f9] text-zinc-800 font-sans">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-[#0a0a0a]/80 backdrop-blur-md border-b border-zinc-800 px-6 py-4 flex items-center justify-between">
-        <h1 className="text-2xl font-black tracking-tighter uppercase italic">
+      <header className="sticky top-0 z-50 bg-white/85 backdrop-blur-md border-b border-pink-100/60 px-6 py-4 flex items-center justify-between shadow-sm shadow-pink-100/20">
+        <h1 className="text-2xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-[#d4af37] to-rose-400 uppercase italic">
           BioForma
         </h1>
         <div className="flex items-center gap-4">
           <img 
             src={user.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}`} 
             alt="Profile" 
-            className="w-8 h-8 rounded-full border border-zinc-700"
+            className="w-8 h-8 rounded-full border-2 border-pink-200"
             referrerPolicy="no-referrer"
           />
-          <button onClick={logout} className="text-zinc-400 hover:text-white transition-colors">
+          <button onClick={logout} className="text-rose-400 hover:text-rose-600 transition-colors cursor-pointer">
             <LogOut size={20} />
           </button>
         </div>
@@ -46,18 +46,18 @@ export default function Layout({ children, activeTab, setActiveTab, user, logout
       </main>
 
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-[#141414]/90 backdrop-blur-lg border-t border-zinc-800 px-2 py-3">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-lg border-t border-pink-100/60 px-2 py-3 shadow-[0_-4px_20px_rgba(236,72,153,0.06)]">
         <div className="max-w-lg mx-auto flex justify-around items-center">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex flex-col items-center gap-1 transition-all ${
-                activeTab === tab.id ? 'text-orange-500 scale-110' : 'text-zinc-500'
+              className={`flex flex-col items-center gap-1 transition-all cursor-pointer ${
+                activeTab === tab.id ? 'text-pink-500 scale-110 font-bold' : 'text-zinc-400'
               }`}
             >
-              <tab.icon size={24} strokeWidth={activeTab === tab.id ? 2.5 : 2} />
-              <span className="text-[10px] font-bold uppercase tracking-wider">{tab.label}</span>
+              <tab.icon size={24} strokeWidth={activeTab === tab.id ? 2.5 : 2} className={activeTab === tab.id ? 'text-pink-500 drop-shadow-[0_2px_4px_rgba(236,72,153,0.15)]' : 'text-zinc-400'} />
+              <span className={`text-[10px] uppercase tracking-wider ${activeTab === tab.id ? 'text-pink-500 font-extrabold' : 'text-zinc-400 font-semibold'}`}>{tab.label}</span>
             </button>
           ))}
         </div>

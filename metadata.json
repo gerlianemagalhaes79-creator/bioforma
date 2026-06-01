@@ -3,5 +3,8 @@
   "description": "Sua plataforma completa para gestão de saúde, treinos e nutrição. Transforme seu corpo com BioForma.",
   "requestFramePermissions": [
     "camera"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
   ]
 }
