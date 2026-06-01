@@ -185,6 +185,15 @@ service cloud.firestore {
              (!('sleepQuality' in data) || (data.sleepQuality is number && data.sleepQuality >= 1 && data.sleepQuality <= 5));
     }
 
+    function isValidAerobics(data) {
+      return data.uid == request.auth.uid &&
+             isValidDateString(data.date) &&
+             data.type is string && data.type.size() > 0 &&
+             data.duration is number && data.duration > 0 &&
+             data.intensity is string &&
+             data.caloriesBurned is number;
+    }
+
     // ===============================================================
     // Rules
     // ===============================================================
@@ -235,6 +244,13 @@ service cloud.firestore {
       allow read: if isDocOwner() || isAdmin();
       allow create: if isRequestOwner() && isValidCheckin(request.resource.data);
       allow update: if isDocOwner() && isRequestOwner() && isValidCheckin(request.resource.data);
+      allow delete: if isDocOwner() || isAdmin();
+    }
+
+    match /aerobics/{id} {
+      allow read: if isDocOwner() || isAdmin();
+      allow create: if isRequestOwner() && isValidAerobics(request.resource.data);
+      allow update: if isDocOwner() && isRequestOwner() && isValidAerobics(request.resource.data);
       allow delete: if isDocOwner() || isAdmin();
     }
 

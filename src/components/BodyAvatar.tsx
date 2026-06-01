@@ -87,10 +87,6 @@ export default function BodyAvatar({
 
   return (
     <div className="bg-white p-6 rounded-[2.5rem] border border-pink-100 flex flex-col items-center gap-6 relative overflow-hidden shadow-sm shadow-pink-100/20">
-      {/* Dynamic Background Accents */}
-      <div className="absolute top-0 left-0 w-32 h-32 bg-pink-400/5 blur-[80px] rounded-full pointer-events-none" />
-      <div className="absolute bottom-0 right-0 w-32 h-32 bg-amber-400/5 blur-[80px] rounded-full pointer-events-none" />
-
       {/* Control Buttons */}
       <div className="flex justify-between items-center w-full z-10 flex-wrap gap-2">
         <div className="flex bg-pink-50/50 p-1 rounded-xl border border-pink-100 gap-1 text-[10px]">

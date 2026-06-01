@@ -21,9 +21,9 @@ export default function Layout({ children, activeTab, setActiveTab, user, logout
   ];
 
   return (
-    <div className="min-h-screen bg-[#fff9f9] text-zinc-800 font-sans">
+    <div className="min-h-screen w-full overflow-x-hidden bg-[#fff9f9] text-zinc-800 font-sans">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/85 backdrop-blur-md border-b border-pink-100/60 px-6 py-4 flex items-center justify-between shadow-sm shadow-pink-100/20">
+      <header className="sticky top-0 z-50 bg-white/85 backdrop-blur-md border-b border-pink-100/60 px-6 py-4 flex items-center justify-between">
         <h1 className="text-2xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-[#d4af37] to-rose-400 uppercase italic">
           BioForma
         </h1>
@@ -46,7 +46,7 @@ export default function Layout({ children, activeTab, setActiveTab, user, logout
       </main>
 
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-lg border-t border-pink-100/60 px-2 py-3 shadow-[0_-4px_20px_rgba(236,72,153,0.06)]">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-lg border-t border-pink-100/60 px-2 py-3">
         <div className="max-w-lg mx-auto flex justify-around items-center">
           {tabs.map((tab) => (
             <button

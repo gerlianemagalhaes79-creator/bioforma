@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { db, collection, query, where, onSnapshot, User, orderBy, addDoc, deleteDoc, doc, updateDoc } from '../firebase';
+import { db, collection, query, where, onSnapshot, User, orderBy, addDoc, deleteDoc, doc, updateDoc, getDocs } from '../firebase';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { 
@@ -19,7 +19,10 @@ import {
   TrendingUp, 
   Info, 
   ChevronDown, 
-  ChevronUp 
+  ChevronUp,
+  ChevronLeft,
+  ChevronRight,
+  Calendar
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -33,6 +36,17 @@ export default function DietSection({ user, profile }: DietSectionProps) {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [searchingIndex, setSearchingIndex] = useState<number | null>(null);
+
+  const [selectedDate, setSelectedDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
+  const [calendarMonth, setCalendarMonth] = useState<Date>(new Date());
+  const [showCalendar, setShowCalendar] = useState(false);
+
+  const formatDateString = (date: Date) => {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  };
 
   // States for goals settings
   const [baseExpenditure, setBaseExpenditure] = useState(profile?.baseExpenditure || 1800);
@@ -219,7 +233,13 @@ export default function DietSection({ user, profile }: DietSectionProps) {
     
     setSearchingIndex(index);
     try {
-      const resp = await fetch("/api/nutrition", {
+      let apiOrigin = window.location.origin;
+      if (!apiOrigin || apiOrigin.startsWith('file') || !apiOrigin.startsWith('http')) {
+        apiOrigin = window.location.protocol + "//" + window.location.host;
+      }
+      const apiEndpoint = `${apiOrigin.replace(/\/+$/, '')}/api/nutrition`;
+
+      const resp = await fetch(apiEndpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ foodName: meal.name, weight: gWeight })
@@ -303,6 +323,55 @@ export default function DietSection({ user, profile }: DietSectionProps) {
     }
   };
 
+  const handleQuickAddWater = async () => {
+    try {
+      const existingDiet = diets.find(d => d.date === selectedDate);
+      const targetWater = profile?.dailyWaterGoal || 2500;
+      let newWaterTotal = 150;
+
+      if (existingDiet) {
+        newWaterTotal = (existingDiet.waterIntake || 0) + 150;
+        const dietRef = doc(db, 'diets', existingDiet.id);
+        await updateDoc(dietRef, {
+          waterIntake: newWaterTotal
+        });
+      } else {
+        const minimalDiet = {
+          date: selectedDate,
+          meals: [],
+          waterIntake: 150,
+          notes: '',
+          uid: user.uid
+        };
+        await addDoc(collection(db, 'diets'), minimalDiet);
+      }
+
+      // Sync with checkins Collection
+      const checkinQuery = query(
+        collection(db, 'checkins'),
+        where('uid', '==', user.uid),
+        where('date', '==', selectedDate)
+      );
+      const checkinSnap = await getDocs(checkinQuery);
+      if (!checkinSnap.empty) {
+        const firstCheckinId = checkinSnap.docs[0].id;
+        const checkinRef = doc(db, 'checkins', firstCheckinId);
+        await updateDoc(checkinRef, {
+          waterGoalMet: newWaterTotal >= targetWater
+        });
+      } else {
+        await addDoc(collection(db, 'checkins'), {
+          uid: user.uid,
+          date: selectedDate,
+          dietOnTrack: true,
+          waterGoalMet: newWaterTotal >= targetWater
+        });
+      }
+    } catch (err) {
+      console.error("Erro ao registrar água de forma rápida:", err);
+    }
+  };
+
   const toggleExpandDiet = (id: string) => {
     setExpandedDietId(expandedDietId === id ? null : id);
   };
@@ -315,6 +384,97 @@ export default function DietSection({ user, profile }: DietSectionProps) {
       default: return 'Manutenção';
     }
   };
+
+  // Find all diet entries for the selected date
+  const selectedDateDiets = diets.filter(d => d.date === selectedDate);
+
+  // Sum up actuals for the selected date
+  const selectedTotalCals = selectedDateDiets.reduce((acc, d) => 
+    acc + d.meals.reduce((mAcc: number, m: any) => mAcc + (m.calories || 0), 0), 0
+  );
+  const selectedTotalProt = selectedDateDiets.reduce((acc, d) => 
+    acc + d.meals.reduce((mAcc: number, m: any) => mAcc + (m.protein || 0), 0), 0
+  );
+  const selectedTotalCarbs = selectedDateDiets.reduce((acc, d) => 
+    acc + d.meals.reduce((mAcc: number, m: any) => mAcc + (m.carbs || 0), 0), 0
+  );
+  const selectedTotalFat = selectedDateDiets.reduce((acc, d) => 
+    acc + d.meals.reduce((mAcc: number, m: any) => mAcc + (m.fat || 0), 0), 0
+  );
+  const selectedTotalWater = selectedDateDiets.reduce((acc, d) => acc + (d.waterIntake || 0), 0);
+
+  // Micronutrients for the selected date
+  const selectedTotalSodium = selectedDateDiets.reduce((acc, d) => 
+    acc + d.meals.reduce((mAcc: number, m: any) => mAcc + (m.sodium || 0), 0), 0
+  );
+  const selectedTotalFiber = selectedDateDiets.reduce((acc, d) => 
+    acc + d.meals.reduce((mAcc: number, m: any) => mAcc + (m.fiber || 0), 0), 0
+  );
+  const selectedTotalPotassium = selectedDateDiets.reduce((acc, d) => 
+    acc + d.meals.reduce((mAcc: number, m: any) => mAcc + (m.potassium || 0), 0), 0
+  );
+  const selectedTotalCalcium = selectedDateDiets.reduce((acc, d) => 
+    acc + d.meals.reduce((mAcc: number, m: any) => mAcc + (m.calcium || 0), 0), 0
+  );
+  const selectedTotalIron = selectedDateDiets.reduce((acc, d) => 
+    acc + d.meals.reduce((mAcc: number, m: any) => mAcc + (m.iron || 0), 0), 0
+  );
+
+  const calorieTarget = profile?.dailyCalorieGoal || 2000;
+  const caloriePct = calorieTarget > 0 ? Math.min(100, Math.round((selectedTotalCals / calorieTarget) * 100)) : 0;
+
+  const waterTarget = profile?.dailyWaterGoal || 2500;
+  const waterPct = waterTarget > 0 ? Math.min(100, Math.round((selectedTotalWater / waterTarget) * 100)) : 0;
+
+  const proteinTarget = profile?.proteinGoal || 130;
+  const proteinPct = proteinTarget > 0 ? Math.min(100, Math.round((selectedTotalProt / proteinTarget) * 100)) : 0;
+
+  const carbTarget = profile?.carbGoal || 240;
+  const carbPct = carbTarget > 0 ? Math.min(100, Math.round((selectedTotalCarbs / carbTarget) * 100)) : 0;
+
+  const fatTarget = profile?.fatGoal || 60;
+  const fatPct = fatTarget > 0 ? Math.min(100, Math.round((selectedTotalFat / fatTarget) * 100)) : 0;
+
+  // Calendar logic helpers
+  const handlePrevMonth = () => {
+    setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1));
+  };
+
+  const handleNextMonth = () => {
+    setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1));
+  };
+  
+  const handleGoToToday = () => {
+    const todayStr = format(new Date(), 'yyyy-MM-dd');
+    setSelectedDate(todayStr);
+    setCalendarMonth(new Date());
+  };
+
+  const datesWithLogs = new Set<string>();
+  diets.forEach((d) => {
+    if (d.date) {
+      datesWithLogs.add(d.date);
+    }
+  });
+
+  const year = calendarMonth.getFullYear();
+  const month = calendarMonth.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDayIndex = new Date(year, month, 1).getDay(); // Sunday = 0
+  
+  const calendarCells: (Date | null)[] = [];
+  // Padded cells before the 1st
+  for (let i = 0; i < firstDayIndex; i++) {
+    calendarCells.push(null);
+  }
+  // Days of the month
+  for (let day = 1; day <= daysInMonth; day++) {
+    calendarCells.push(new Date(year, month, day));
+  }
+
+  const weekdayInitials = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
+  const monthYearLabel = format(calendarMonth, 'MMMM yyyy', { locale: ptBR });
+  const capitalizedLabel = monthYearLabel.charAt(0).toUpperCase() + monthYearLabel.slice(1);
 
   return (
     <div className="space-y-6 animate-fade-in text-zinc-800">
@@ -339,8 +499,11 @@ export default function DietSection({ user, profile }: DietSectionProps) {
           </button>
           
           <button 
-            onClick={() => setShowAddModal(true)}
-            className="w-12 h-12 rounded-2xl bg-gradient-to-r from-pink-500 to-rose-450 flex items-center justify-center text-white shadow-lg shadow-pink-400/25 hover:opacity-95 cursor-pointer"
+            onClick={() => {
+              setNewDiet(prev => ({ ...prev, date: selectedDate }));
+              setShowAddModal(true);
+            }}
+            className="w-12 h-12 rounded-2xl bg-gradient-to-r from-pink-500 to-rose-500 flex items-center justify-center text-white shadow-lg shadow-pink-400/25 hover:opacity-95 cursor-pointer"
             title="Logar Refeição"
           >
             <Plus size={24} strokeWidth={3} />
@@ -348,229 +511,414 @@ export default function DietSection({ user, profile }: DietSectionProps) {
         </div>
       </div>
 
-      {/* METAS CARD (ACTIVE DASHBOARD) */}
-      <section className="bg-gradient-to-br from-white to-[#fffafc] p-6 rounded-[2rem] border border-pink-100/80 shadow-sm shadow-pink-100/10 space-y-5">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-pink-500 animate-pulse"></span>
-            <h3 className="text-xs font-black uppercase tracking-wider text-zinc-600">Minhas Metas Diárias Ativas</h3>
+      {/* QUICK WATER LOG CARD - AT THE START */}
+      <div className="bg-gradient-to-r from-sky-500 to-indigo-500 p-6 rounded-[2rem] text-white flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg shadow-sky-500/20">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white text-base">
+            <Droplets size={26} className="text-white fill-white/10 animate-bounce" />
           </div>
-          <span className="text-[9px] font-extrabold uppercase bg-pink-50 px-2 py-0.5 rounded-md text-pink-500 border border-pink-100 font-mono">
-            {getObjectiveLabel(profile?.objective || 'manutencao')}
-          </span>
-        </div>
-
-        <div className="grid grid-cols-3 gap-3">
-          <div className="bg-[#fffefe] p-4 rounded-2xl border border-pink-50/50 flex flex-col justify-between">
-            <span className="text-[8px] font-bold uppercase tracking-widest text-zinc-400 flex items-center gap-1">
-              <Flame size={10} className="text-pink-500" /> Calorias
-            </span>
-            <div className="mt-1">
-              <div className="text-xl font-black italic tracking-tighter text-zinc-800">{profile?.dailyCalorieGoal || 2000}</div>
-              <span className="text-[8px] font-semibold text-zinc-400">kcal/dia</span>
-            </div>
-          </div>
-
-          <div className="bg-[#fffefe] p-4 rounded-2xl border border-pink-50/50 flex flex-col justify-between">
-            <span className="text-[8px] font-bold uppercase tracking-widest text-zinc-400 flex items-center gap-1">
-              <Droplets size={10} className="text-sky-500" /> Água (Manual)
-            </span>
-            <div className="mt-1">
-              <div className="text-xl font-black italic tracking-tighter text-zinc-800">{profile?.dailyWaterGoal || 2500}</div>
-              <span className="text-[8px] font-semibold text-zinc-400">ml/dia</span>
-            </div>
-          </div>
-
-          <div className="bg-[#fffefe] p-4 rounded-2xl border border-pink-50/50 flex flex-col justify-between">
-            <span className="text-[8px] font-bold uppercase tracking-widest text-[#d4af37] flex items-center gap-1">
-              <Apple size={10} className="text-[#d4af37]" /> Proteína
-            </span>
-            <div className="mt-1">
-              <div className="text-xl font-black italic tracking-tighter text-zinc-800">{profile?.proteinGoal || 130}g</div>
-              <span className="text-[8px] font-semibold text-zinc-400">meta proteica</span>
-            </div>
-          </div>
-        </div>
-
-        {/* PROGRESS METERS FOR OTHER MACROS */}
-        <div className="grid grid-cols-2 gap-4 pt-1">
           <div>
-            <div className="flex justify-between items-center text-[9px] font-bold tracking-wider text-zinc-500 mb-1 uppercase">
-              <span>Carboidratos</span>
-              <span className="text-zinc-640 font-black">{profile?.carbGoal || 240}g</span>
-            </div>
-            <div className="w-full h-1.5 bg-pink-100/30 rounded-full overflow-hidden">
-              <div className="h-full bg-pink-400 rounded-full w-2/3"></div>
-            </div>
-          </div>
-
-          <div>
-            <div className="flex justify-between items-center text-[9px] font-bold tracking-wider text-zinc-500 mb-1 uppercase">
-              <span>Gorduras</span>
-              <span className="text-zinc-640 font-black">{profile?.fatGoal || 60}g</span>
-            </div>
-            <div className="w-full h-1.5 bg-yellow-100/30 rounded-full overflow-hidden">
-              <div className="h-full bg-[#d4af37] rounded-full w-1/2"></div>
-            </div>
+            <h3 className="text-xs font-black uppercase tracking-wider text-sky-100">Registrar Consumo de Água</h3>
+            <p className="text-xl font-black italic tracking-tighter mt-0.5">
+              {selectedTotalWater} <span className="text-xs font-normal not-italic text-sky-100 uppercase font-extrabold pb-0.5">ml registrados {selectedDate === format(new Date(), 'yyyy-MM-dd') ? 'hoje' : 'neste dia'}</span>
+            </p>
           </div>
         </div>
-      </section>
+        
+        <button
+          onClick={handleQuickAddWater}
+          className="w-full sm:w-auto px-6 py-3 bg-white hover:bg-sky-50 active:scale-95 text-sky-600 font-extrabold uppercase text-xs rounded-xl shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
+        >
+          <Plus size={16} strokeWidth={3} />
+          <span>Adicionar +150ml</span>
+        </button>
+      </div>
 
-      {/* DIET LOG ENTRIES LIST */}
-      <div className="space-y-4">
-        {diets.length === 0 ? (
-          <div className="py-12 px-6 bg-white border border-dashed border-pink-100 rounded-[2rem] flex flex-col items-center justify-center text-center">
-            <div className="w-14 h-14 rounded-full bg-pink-50 flex items-center justify-center text-pink-400 mb-3 animate-pulse">
-              <Utensils size={24} />
+      <div className="space-y-6">
+        
+        {/* DAY SELECTION TITLE & COLLAPSIBLE CALENDAR TOGGLE */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between bg-white border border-pink-50/40 p-4 rounded-2xl shadow-sm">
+            <button 
+              type="button"
+              onClick={() => setShowCalendar(prev => !prev)}
+              className="text-xs font-black uppercase tracking-wider text-[#d4af37] flex items-center gap-1.5 hover:text-pink-500 transition-colors cursor-pointer border-0"
+            >
+              <Calendar size={14} className="text-pink-500" /> 
+              {showCalendar ? 'Ocultar Calendário ✕' : 'Escolher Outro Dia 📅'}
+            </button>
+            <div className="text-xs font-black text-pink-600 bg-pink-50/55 px-3 py-1.5 rounded-xl uppercase italic font-mono">
+              {format(new Date(selectedDate + 'T00:00:00'), "dd/MM/yyyy")}
             </div>
-            <h4 className="text-sm font-bold uppercase italic text-zinc-700">Adicione seu Primeiro Log</h4>
-            <p className="text-xs text-zinc-450 max-w-[280px] mt-1">Registre o que comeu hoje e use nossa busca inteligente na internet para estimar calorias, micros e macros!</p>
           </div>
-        ) : (
-          <div className="space-y-4">
-            {diets.map((diet) => {
-              const totalCals = diet.meals.reduce((acc: number, m: any) => acc + (m.calories || 0), 0);
-              const totalProt = diet.meals.reduce((acc: number, m: any) => acc + (m.protein || 0), 0);
-              const totalCarbs = diet.meals.reduce((acc: number, m: any) => acc + (m.carbs || 0), 0);
-              const totalFat = diet.meals.reduce((acc: number, m: any) => acc + (m.fat || 0), 0);
 
-              // Micros aggregation
-              const totalSodium = diet.meals.reduce((acc: number, m: any) => acc + (m.sodium || 0), 0);
-              const totalFiber = diet.meals.reduce((acc: number, m: any) => acc + (m.fiber || 0), 0);
-              const totalPotassium = diet.meals.reduce((acc: number, m: any) => acc + (m.potassium || 0), 0);
-              const totalCalcium = diet.meals.reduce((acc: number, m: any) => acc + (m.calcium || 0), 0);
-              const totalIron = diet.meals.reduce((acc: number, m: any) => acc + (m.iron || 0), 0);
+          {/* COLLAPSIBLE CALENDAR */}
+          <AnimatePresence>
+            {showCalendar && (
+              <motion.div 
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="overflow-hidden bg-gradient-to-br from-white to-[#fffbfd] p-6 rounded-[2rem] border border-pink-100/95 shadow-md shadow-pink-100/10 space-y-5"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-black uppercase text-zinc-800">Histórico de Dieta</h3>
+                    <p className="text-[9px] text-zinc-400 font-extrabold uppercase tracking-wider">Selecione uma data para ler as refeições</p>
+                  </div>
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      handleGoToToday();
+                      setShowCalendar(false);
+                    }}
+                    className="text-[9px] font-black uppercase bg-pink-50 hover:bg-pink-100 px-3 py-1.5 rounded-xl text-pink-500 border border-pink-100 transition-all cursor-pointer border-0"
+                    title="Voltar para a data de hoje"
+                  >
+                    Hoje
+                  </button>
+                </div>
 
-              const isExpanded = expandedDietId === diet.id;
+                {/* MONTH SWITCHER BAR */}
+                <div className="flex items-center justify-between bg-white border border-pink-50 p-2 rounded-2xl shadow-sm">
+                  <button 
+                    type="button"
+                    onClick={handlePrevMonth}
+                    className="w-8 h-8 rounded-xl bg-pink-50/50 hover:bg-pink-50 flex items-center justify-center text-pink-500 active:scale-95 transition-all cursor-pointer border-0"
+                  >
+                    <ChevronLeft size={16} strokeWidth={2.5} />
+                  </button>
 
-              return (
-                <motion.div 
-                  layout
-                  key={diet.id}
-                  onClick={() => toggleExpandDiet(diet.id)}
-                  className="bg-white p-6 rounded-[2rem] border border-pink-100 shadow-sm shadow-pink-100/10 cursor-pointer hover:border-pink-300 transition-all"
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-pink-50 flex items-center justify-center text-pink-500">
-                        <Utensils size={20} />
-                      </div>
-                      <div>
-                        <div className="text-lg font-black italic uppercase leading-tight text-zinc-800">
-                          {totalCals} <span className="text-xs font-normal not-italic text-zinc-400">kcal</span>
-                        </div>
-                        <div className="text-[10px] font-bold uppercase tracking-widest text-[#d4af37]">
-                          {format(new Date(diet.date + 'T00:00:00'), "dd 'de' MMMM", { locale: ptBR })}
-                        </div>
-                      </div>
+                  <div className="text-xs font-black uppercase tracking-tight text-zinc-700">
+                    {capitalizedLabel}
+                  </div>
+
+                  <button 
+                    type="button"
+                    onClick={handleNextMonth}
+                    className="w-8 h-8 rounded-xl bg-pink-50/50 hover:bg-pink-50 flex items-center justify-center text-pink-500 active:scale-95 transition-all cursor-pointer border-0"
+                  >
+                    <ChevronRight size={16} strokeWidth={2.5} />
+                  </button>
+                </div>
+
+                {/* THE MONTH CALENDAR GRID */}
+                <div className="grid grid-cols-7 gap-1 text-center font-bold text-xs select-none">
+                  {weekdayInitials.map((initial, i) => (
+                    <div key={i} className="text-zinc-400 py-1 text-[10px] uppercase font-black tracking-wider">
+                      {initial}
                     </div>
-
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-1.5 text-sky-500 bg-sky-50 px-2.5 py-1 rounded-full">
-                        <Droplets size={12} />
-                        <span className="text-[10px] font-extrabold">{diet.waterIntake}ml</span>
-                      </div>
-                      <button 
-                        onClick={(e) => handleDeleteDiet(diet.id, e)}
-                        className="text-rose-300 hover:text-rose-500 hover:bg-rose-50 p-1.5 rounded-lg transition-colors"
-                        title="Remover Log"
+                  ))}
+                  
+                  {calendarCells.map((dateObj, idx) => {
+                    if (!dateObj) {
+                      return <div key={`empty-${idx}`} className="aspect-square animate-fade-in" />;
+                    }
+                    
+                    const dateStr = formatDateString(dateObj);
+                    const isSelected = dateStr === selectedDate;
+                    const hasLog = datesWithLogs.has(dateStr);
+                    const isTodayCell = dateStr === format(new Date(), 'yyyy-MM-dd');
+                    
+                    return (
+                      <button
+                        key={dateStr}
+                        type="button"
+                        onClick={() => {
+                          setSelectedDate(dateStr);
+                          setShowCalendar(false);
+                        }}
+                        className={`aspect-square w-full rounded-full flex flex-col items-center justify-center relative text-xs font-black transition-all cursor-pointer animate-fade-in border-0 ${
+                          isSelected 
+                            ? 'bg-pink-500 text-white shadow-sm shadow-pink-500/30 font-black scale-102' 
+                            : isTodayCell 
+                              ? 'border border-pink-400 text-pink-500 bg-pink-50/20'
+                              : hasLog
+                                ? 'text-zinc-800 bg-pink-50/40 hover:bg-pink-50/70 border border-pink-100/50'
+                                : 'text-zinc-650 hover:bg-zinc-100/80'
+                        }`}
                       >
-                        <Trash2 size={16} />
+                        <span>{dateObj.getDate()}</span>
+                        {hasLog && !isSelected && (
+                          <span className={`w-1 h-1 rounded-full absolute bottom-1 ${
+                            isTodayCell ? 'bg-pink-400' : 'bg-pink-500'
+                          }`} />
+                        )}
                       </button>
-                    </div>
-                  </div>
+                    );
+                  })}
+                </div>
 
-                  {/* Summary row always visible */}
-                  <div className="flex flex-wrap gap-x-4 gap-y-1 mb-3 pt-1 border-t border-pink-50 text-[10px] uppercase font-black tracking-tight text-zinc-500">
-                    <span className="text-[#d4af37]">{totalProt.toFixed(1)}g Prot</span>
-                    <span>{totalCarbs.toFixed(1)}g Carb</span>
-                    <span className="text-pink-500">{totalFat.toFixed(1)}g Gord</span>
-                    {totalFiber > 0 && <span className="text-emerald-500 font-bold">{totalFiber.toFixed(1)}g Fibras</span>}
+                {/* MINI COMPLIANCE LEGEND */}
+                <div className="border-t border-pink-50/50 pt-3 flex items-center justify-between text-[8px] uppercase tracking-wider font-extrabold text-zinc-400">
+                  <div className="flex items-center gap-1 animate-fade-in">
+                    <span className="w-2 h-2 rounded-full border border-pink-100 bg-pink-50/40"></span>
+                    <span>Dia Registrado</span>
                   </div>
+                  <div className="flex items-center gap-1 animate-fade-in">
+                    <span className="w-2 h-2 rounded-full border border-pink-400 bg-pink-50/20"></span>
+                    <span>Hoje</span>
+                  </div>
+                  <div className="flex items-center gap-1 animate-fade-in">
+                    <span className="w-3 h-3 rounded-full bg-pink-500"></span>
+                    <span>Selecionado</span>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
 
-                  {/* Expanded Items & Micro Details */}
-                  <AnimatePresence>
-                    {isExpanded && (
-                      <motion.div 
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        className="overflow-hidden space-y-4 pt-3 border-t border-pink-50"
-                      >
-                        <div>
-                          <span className="text-[9px] font-bold uppercase tracking-widest text-zinc-400 block mb-2">Refeições Logadas</span>
-                          <div className="space-y-2">
-                            {diet.meals.map((meal: any, i: number) => (
-                              <div key={i} className="bg-pink-50/20 rounded-xl p-3 border border-pink-50/40 space-y-1">
-                                <div className="flex justify-between items-center">
-                                  <span className="text-xs font-bold text-zinc-700">
-                                    {meal.name} <span className="text-[10px] font-normal text-zinc-400 font-mono">({meal.weight || 100}g)</span>
-                                  </span>
-                                  <div className="flex gap-2 text-[10px] font-extrabold italic uppercase text-pink-500">
-                                    <span>{meal.calories} kcal</span>
-                                    <span className="text-[#d4af37]">{meal.protein}g P</span>
+          {/* METAS CARD (ACTIVE DASHBOARD) */}
+          <section className="bg-gradient-to-br from-white to-[#fffafc] p-6 rounded-[2rem] border border-pink-100/80 shadow-sm shadow-pink-100/10 space-y-5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-pink-500 animate-pulse"></span>
+                <h3 className="text-xs font-black uppercase tracking-wider text-zinc-600">Metas Diárias</h3>
+              </div>
+              <span className="text-[9px] font-extrabold uppercase bg-pink-50 px-2 py-0.5 rounded-md text-pink-500 border border-pink-100 font-mono">
+                {getObjectiveLabel(profile?.objective || 'manutencao')}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              <div className="bg-[#fffefe] p-4 rounded-2xl border border-pink-50/50 flex flex-col justify-between">
+                <span className="text-[8px] font-bold uppercase tracking-widest text-zinc-400 flex items-center gap-1">
+                  <Flame size={10} className="text-pink-500" /> Calorias
+                </span>
+                <div className="mt-1">
+                  <div className="text-lg font-black italic tracking-tighter text-zinc-800">
+                    {selectedTotalCals} <span className="text-[10px] font-bold text-zinc-400">/ {profile?.dailyCalorieGoal || 2000}</span>
+                  </div>
+                  <span className="text-[8px] font-semibold text-zinc-400">kcal/dia ({caloriePct}%)</span>
+                </div>
+                <div className="w-full h-1 bg-zinc-100 rounded-full overflow-hidden mt-1.5">
+                  <div className="h-full bg-pink-500" style={{ width: `${caloriePct}%` }}></div>
+                </div>
+              </div>
+
+              <div className="bg-[#fffefe] p-4 rounded-2xl border border-pink-50/50 flex flex-col justify-between">
+                <span className="text-[8px] font-bold uppercase tracking-widest text-zinc-400 flex items-center gap-1">
+                  <Droplets size={10} className="text-sky-500" /> Água
+                </span>
+                <div className="mt-1">
+                  <div className="text-lg font-black italic tracking-tighter text-zinc-800">
+                    {selectedTotalWater} <span className="text-[10px] font-bold text-zinc-400">/ {profile?.dailyWaterGoal || 2500}</span>
+                  </div>
+                  <span className="text-[8px] font-semibold text-zinc-400">ml/dia ({waterPct}%)</span>
+                </div>
+                <div className="w-full h-1 bg-zinc-100 rounded-full overflow-hidden mt-1.5">
+                  <div className="h-full bg-sky-400" style={{ width: `${waterPct}%` }}></div>
+                </div>
+              </div>
+
+              <div className="bg-[#fffefe] p-4 rounded-2xl border border-pink-50/50 flex flex-col justify-between">
+                <span className="text-[8px] font-bold uppercase tracking-widest text-[#d4af37] flex items-center gap-1">
+                  <Apple size={10} className="text-[#d4af37]" /> Proteína
+                </span>
+                <div className="mt-1">
+                  <div className="text-lg font-black italic tracking-tighter text-zinc-800">
+                    {selectedTotalProt.toFixed(1)}g <span className="text-[10px] font-bold text-zinc-400">/ {profile?.proteinGoal || 130}g</span>
+                  </div>
+                  <span className="text-[8px] font-semibold text-zinc-400">meta proteica ({proteinPct}%)</span>
+                </div>
+                <div className="w-full h-1 bg-zinc-100 rounded-full overflow-hidden mt-1.5">
+                  <div className="h-full bg-[#d4af37]" style={{ width: `${proteinPct}%` }}></div>
+                </div>
+              </div>
+            </div>
+
+            {/* PROGRESS METERS FOR OTHER MACROS */}
+            <div className="grid grid-cols-2 gap-4 pt-1">
+              <div>
+                <div className="flex justify-between items-center text-[9px] font-bold tracking-wider text-zinc-500 mb-1 uppercase">
+                  <span>Carboidratos ({selectedTotalCarbs.toFixed(1)}g)</span>
+                  <span className="text-zinc-640 font-black">{profile?.carbGoal || 240}g ({carbPct}%)</span>
+                </div>
+                <div className="w-full h-1.5 bg-pink-100/30 rounded-full overflow-hidden">
+                  <div className="h-full bg-pink-400 rounded-full" style={{ width: `${carbPct}%` }}></div>
+                </div>
+              </div>
+
+              <div>
+                <div className="flex justify-between items-center text-[9px] font-bold tracking-wider text-zinc-500 mb-1 uppercase">
+                  <span>Gorduras ({selectedTotalFat.toFixed(1)}g)</span>
+                  <span className="text-zinc-640 font-black">{profile?.fatGoal || 60}g ({fatPct}%)</span>
+                </div>
+                <div className="w-full h-1.5 bg-yellow-100/30 rounded-full overflow-hidden">
+                  <div className="h-full bg-[#d4af37] rounded-full" style={{ width: `${fatPct}%` }}></div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* SELECTED DATE DIET DIARY */}
+          <div className="space-y-4">
+            {selectedDateDiets.length === 0 ? (
+              <div className="py-12 px-6 bg-white border border-dashed border-pink-100 rounded-[2rem] flex flex-col items-center justify-center text-center">
+                <div className="w-14 h-14 rounded-full bg-pink-50 flex items-center justify-center text-pink-400 mb-3 animate-pulse">
+                  <Utensils size={24} />
+                </div>
+                <h4 className="text-sm font-bold uppercase italic text-zinc-700">Nenhum registro para este dia</h4>
+                <p className="text-xs text-zinc-400 max-w-[280px] mt-1 mb-4">
+                  Registre o que comeu {selectedDate === format(new Date(), 'yyyy-MM-dd') ? 'hoje' : 'nesta data'} para rastrear seus macros e calorias estimadas via IA!
+                </p>
+                <button
+                  onClick={() => {
+                    setNewDiet(prev => ({ ...prev, date: selectedDate }));
+                    setShowAddModal(true);
+                  }}
+                  className="px-6 py-2.5 bg-gradient-to-r from-pink-500 to-rose-500 hover:scale-102 active:scale-98 transition-all text-white font-extrabold uppercase text-xs rounded-xl shadow-md shadow-pink-300/20 cursor-pointer"
+                >
+                  Registrar Alimentação
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {selectedDateDiets.map((diet) => {
+                  const totalCals = diet.meals.reduce((acc: number, m: any) => acc + (m.calories || 0), 0);
+                  const totalProt = diet.meals.reduce((acc: number, m: any) => acc + (m.protein || 0), 0);
+                  const totalCarbs = diet.meals.reduce((acc: number, m: any) => acc + (m.carbs || 0), 0);
+                  const totalFat = diet.meals.reduce((acc: number, m: any) => acc + (m.fat || 0), 0);
+
+                  // Micros aggregation
+                  const totalSodium = diet.meals.reduce((acc: number, m: any) => acc + (m.sodium || 0), 0);
+                  const totalFiber = diet.meals.reduce((acc: number, m: any) => acc + (m.fiber || 0), 0);
+                  const totalPotassium = diet.meals.reduce((acc: number, m: any) => acc + (m.potassium || 0), 0);
+                  const totalCalcium = diet.meals.reduce((acc: number, m: any) => acc + (m.calcium || 0), 0);
+                  const totalIron = diet.meals.reduce((acc: number, m: any) => acc + (m.iron || 0), 0);
+
+                  const isExpanded = expandedDietId === diet.id;
+
+                  return (
+                    <motion.div 
+                      layout
+                      key={diet.id}
+                      onClick={() => toggleExpandDiet(diet.id)}
+                      className="bg-white p-6 rounded-[2rem] border border-pink-100 shadow-sm shadow-pink-100/10 cursor-pointer hover:border-pink-300 transition-all"
+                    >
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-pink-50 flex items-center justify-center text-pink-500">
+                            <Utensils size={20} />
+                          </div>
+                          <div>
+                            <div className="text-lg font-black italic uppercase leading-tight text-zinc-800">
+                              {totalCals} <span className="text-xs font-normal not-italic text-zinc-400">kcal</span>
+                            </div>
+                            <div className="text-[10px] font-bold uppercase tracking-widest text-[#d4af37]">
+                              {format(new Date(diet.date + 'T00:00:00'), "dd 'de' MMMM", { locale: ptBR })}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-1.5 text-sky-500 bg-sky-50 px-2.5 py-1 rounded-full">
+                            <Droplets size={12} />
+                            <span className="text-[10px] font-extrabold">{diet.waterIntake}ml</span>
+                          </div>
+                          <button 
+                            onClick={(e) => handleDeleteDiet(diet.id, e)}
+                            className="text-rose-300 hover:text-rose-500 hover:bg-rose-50 p-1.5 rounded-lg transition-colors"
+                            title="Remover Log"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Summary row always visible */}
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 mb-3 pt-1 border-t border-pink-50 text-[10px] uppercase font-black tracking-tight text-zinc-500">
+                        <span className="text-[#d4af37]">{totalProt.toFixed(1)}g Prot</span>
+                        <span>{totalCarbs.toFixed(1)}g Carb</span>
+                        <span className="text-pink-500">{totalFat.toFixed(1)}g Gord</span>
+                        {totalFiber > 0 && <span className="text-emerald-500 font-bold">{totalFiber.toFixed(1)}g Fibras</span>}
+                      </div>
+
+                      {/* Expanded Items & Micro Details */}
+                      <AnimatePresence>
+                        {isExpanded && (
+                          <motion.div 
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            className="overflow-hidden space-y-4 pt-3 border-t border-pink-50"
+                          >
+                            <div>
+                              <span className="text-[9px] font-bold uppercase tracking-widest text-zinc-400 block mb-2">Refeições Logadas</span>
+                              <div className="space-y-2">
+                                {diet.meals.map((meal: any, i: number) => (
+                                  <div key={i} className="bg-pink-50/20 rounded-xl p-3 border border-pink-50/40 space-y-1 animate-fade-in">
+                                    <div className="flex justify-between items-center">
+                                      <span className="text-xs font-bold text-zinc-700">
+                                        {meal.name} <span className="text-[10px] font-normal text-zinc-400 font-mono font-bold">({meal.weight || 100}g)</span>
+                                      </span>
+                                      <div className="flex gap-2 text-[10px] font-extrabold italic uppercase text-pink-500">
+                                        <span>{meal.calories} kcal</span>
+                                        <span className="text-[#d4af37]">{meal.protein}g P</span>
+                                      </div>
+                                    </div>
+                                    
+                                    <div className="flex flex-wrap gap-x-3 gap-y-1 text-[9px] text-zinc-400 font-bold">
+                                      <span>C: {meal.carbs || 0}g</span>
+                                      <span>G: {meal.fat || 0}g</span>
+                                      {(meal.fiber > 0) && <span>Fibra: {meal.fiber}g</span>}
+                                      {(meal.sodium > 0) && <span>Sódio: {meal.sodium}mg</span>}
+                                      {meal.source && (
+                                        <span className="text-[8px] bg-pink-100/50 text-pink-600 px-1.5 py-0.2 rounded font-mono font-bold">
+                                          {meal.source.substring(0, 30)}
+                                        </span>
+                                      )}
+                                    </div>
                                   </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* Accumulated nutrient analysis */}
+                            <div className="bg-[#fffdfd] p-4 rounded-2xl border border-pink-100 flex flex-col gap-2">
+                              <span className="text-[9px] font-black uppercase tracking-widest text-[#d4af37] flex items-center gap-1">
+                                <Sparkles size={11} /> Micronutrientes Consolidados do Dia
+                              </span>
+                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-2 gap-x-3 text-xs font-semibold text-zinc-600 mt-1">
+                                <div className="flex flex-col">
+                                  <span className="text-[8px] uppercase font-bold text-zinc-400">Fibra</span>
+                                  <span className="font-extrabold text-zinc-700">{totalFiber.toFixed(1)}g</span>
                                 </div>
-                                
-                                <div className="flex flex-wrap gap-x-3 gap-y-1 text-[9px] text-zinc-400 font-bold">
-                                  <span>C: {meal.carbs || 0}g</span>
-                                  <span>G: {meal.fat || 0}g</span>
-                                  {(meal.fiber > 0) && <span>Fibra: {meal.fiber}g</span>}
-                                  {(meal.sodium > 0) && <span>Sódio: {meal.sodium}mg</span>}
-                                  {meal.source && (
-                                    <span className="text-[8px] bg-pink-100/50 text-pink-600 px-1.5 py-0.2 rounded font-mono">
-                                      {meal.source.substring(0, 30)}
-                                    </span>
-                                  )}
+                                <div className="flex flex-col">
+                                  <span className="text-[8px] uppercase font-bold text-zinc-400">Sódio</span>
+                                  <span className="font-extrabold text-zinc-700">{totalSodium}mg</span>
+                                </div>
+                                <div className="flex flex-col">
+                                  <span className="text-[8px] uppercase font-bold text-zinc-400">Potássio</span>
+                                  <span className="font-extrabold text-zinc-700">{totalPotassium}mg</span>
+                                </div>
+                                <div className="flex flex-col">
+                                  <span className="text-[8px] uppercase font-bold text-zinc-400">Cálcio</span>
+                                  <span className="font-extrabold text-zinc-700">{totalCalcium}mg</span>
+                                </div>
+                                <div className="flex flex-col">
+                                  <span className="text-[8px] uppercase font-bold text-zinc-400">Ferro</span>
+                                  <span className="font-extrabold text-zinc-700">{totalIron.toFixed(1)}mg</span>
                                 </div>
                               </div>
-                            ))}
-                          </div>
-                        </div>
+                            </div>
 
-                        {/* Accumulated nutrient analysis */}
-                        <div className="bg-[#fffdfd] p-4 rounded-2xl border border-pink-100 flex flex-col gap-2">
-                          <span className="text-[9px] font-black uppercase tracking-widest text-[#d4af37] flex items-center gap-1">
-                            <Sparkles size={11} /> Micronutrientes Consolidados do Dia
-                          </span>
-                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-2 gap-x-3 text-xs font-semibold text-zinc-600 mt-1">
-                            <div className="flex flex-col">
-                              <span className="text-[8px] uppercase font-bold text-zinc-400">Fibra</span>
-                              <span className="font-extrabold text-zinc-700">{totalFiber.toFixed(1)}g</span>
-                            </div>
-                            <div className="flex flex-col">
-                              <span className="text-[8px] uppercase font-bold text-zinc-400">Sódio</span>
-                              <span className="font-extrabold text-zinc-700">{totalSodium}mg</span>
-                            </div>
-                            <div className="flex flex-col">
-                              <span className="text-[8px] uppercase font-bold text-zinc-400">Potássio</span>
-                              <span className="font-extrabold text-zinc-700">{totalPotassium}mg</span>
-                            </div>
-                            <div className="flex flex-col">
-                              <span className="text-[8px] uppercase font-bold text-zinc-400">Cálcio</span>
-                              <span className="font-extrabold text-zinc-700">{totalCalcium}mg</span>
-                            </div>
-                            <div className="flex flex-col">
-                              <span className="text-[8px] uppercase font-bold text-zinc-400">Ferro</span>
-                              <span className="font-extrabold text-zinc-700">{totalIron.toFixed(1)}mg</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {diet.notes && (
-                          <div className="text-[11px] bg-amber-50/50 p-2.5 rounded-xl border border-amber-100 text-zinc-600">
-                            <strong>Obs:</strong> {diet.notes}
-                          </div>
+                            {diet.notes && (
+                              <div className="text-[11px] bg-amber-50/50 p-2.5 rounded-xl border border-amber-100 text-zinc-600">
+                                <strong>Obs:</strong> {diet.notes}
+                              </div>
+                            )}
+                          </motion.div>
                         )}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </motion.div>
-              );
-            })}
+                      </AnimatePresence>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        </div>
 
       {/* METAS SETTINGS MODAL */}
       <AnimatePresence>
@@ -796,7 +1144,7 @@ export default function DietSection({ user, profile }: DietSectionProps) {
                             <button
                               type="button"
                               onClick={() => handleSearchNutrition(i)}
-                              className="w-full py-2 bg-gradient-to-r from-sky-500 to-sky-450 hover:opacity-90 active:scale-95 text-white rounded-xl text-xs font-bold flex items-center justify-center cursor-pointer transition-all"
+                              className="w-full py-2 bg-gradient-to-r from-sky-500 to-sky-500 hover:opacity-90 active:scale-95 text-white rounded-xl text-xs font-bold flex items-center justify-center cursor-pointer transition-all"
                               title="Pesquisar nutrição real e média na internet via IA"
                               disabled={searchingIndex === i}
                             >
@@ -910,7 +1258,7 @@ export default function DietSection({ user, profile }: DietSectionProps) {
 
                 <button 
                   onClick={handleSaveDiet}
-                  className="w-full bg-gradient-to-r from-pink-500 to-rose-450 text-white font-semibold uppercase py-4 rounded-2xl shadow-lg shadow-pink-200/50 cursor-pointer text-sm font-black"
+                  className="w-full bg-gradient-to-r from-pink-500 to-rose-500 text-white font-semibold uppercase py-4 rounded-2xl shadow-lg shadow-pink-200/50 cursor-pointer text-sm font-black"
                 >
                   Confirmar e Salvar Dieta
                 </button>

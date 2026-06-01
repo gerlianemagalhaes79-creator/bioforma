@@ -3,14 +3,26 @@ import path from "path";
 import { GoogleGenAI, Type } from "@google/genai";
 import { createServer as createViteServer } from "vite";
 
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
-  httpOptions: {
-    headers: {
-      'User-Agent': 'aistudio-build',
+let aiClient: any = null;
+
+function getAIClient() {
+  if (!aiClient) {
+    const key = process.env.GEMINI_API_KEY;
+    if (!key) {
+      console.warn("[Nutrition] GEMINI_API_KEY is not defined. Will fall back directly to offline diet dictionary.");
+      return null;
     }
+    aiClient = new GoogleGenAI({
+      apiKey: key,
+      httpOptions: {
+        headers: {
+          'User-Agent': 'aistudio-build',
+        }
+      }
+    });
   }
-});
+  return aiClient;
+}
 
 async function startServer() {
   const app = express();
@@ -115,79 +127,84 @@ Retorne um objeto JSON contendo exatamente estas chaves com valores numéricos (
 
 Atenção: retorne estritamente um JSON limpo formatado de acordo com o esquema mapeado. Não inclua Markdown extra além do próprio formato JSON.`;
 
-    // Strategy 1: Attempt with Gemini 3.5 Flash and Google Search Grounding
-    try {
-      console.log(`[Nutrition] Tentando Gemini com Google Search para: "${foodName}" (${g}g)`);
-      const response = await ai.models.generateContent({
-        model: "gemini-3.5-flash",
-        contents: prompt,
-        config: {
-          tools: [{ googleSearch: {} }],
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.OBJECT,
-            required: ["calories", "protein", "carbs", "fat", "sodium", "fiber", "potassium", "calcium", "iron", "source"],
-            properties: {
-              calories: { type: Type.NUMBER, description: "Calorias totais em kcal" },
-              protein: { type: Type.NUMBER, description: "Proteínas em gramas" },
-              carbs: { type: Type.NUMBER, description: "Carboidratos em gramas" },
-              fat: { type: Type.NUMBER, description: "Gorduras em gramas" },
-              sodium: { type: Type.NUMBER, description: "Sódio em mg" },
-              fiber: { type: Type.NUMBER, description: "Fibras alimentares em gramas" },
-              potassium: { type: Type.NUMBER, description: "Potássio em mg" },
-              calcium: { type: Type.NUMBER, description: "Cálculo de cálcio em mg" },
-              iron: { type: Type.NUMBER, description: "Hierro (ferro) em mg" },
-              source: { type: Type.STRING, description: "A fonte de consulta comprovada na internet" }
+    // Strategy 1: Attempt with Gemini 3.5 Flash and Google Search Grounding if AI Client is available
+    const aiInstance = getAIClient();
+    if (aiInstance) {
+      try {
+        console.log(`[Nutrition] Tentando Gemini com Google Search para: "${foodName}" (${g}g)`);
+        const response = await aiInstance.models.generateContent({
+          model: "gemini-3.5-flash",
+          contents: prompt,
+          config: {
+            tools: [{ googleSearch: {} }],
+            responseMimeType: "application/json",
+            responseSchema: {
+              type: Type.OBJECT,
+              required: ["calories", "protein", "carbs", "fat", "sodium", "fiber", "potassium", "calcium", "iron", "source"],
+              properties: {
+                calories: { type: Type.NUMBER, description: "Calorias totais em kcal" },
+                protein: { type: Type.NUMBER, description: "Proteínas em gramas" },
+                carbs: { type: Type.NUMBER, description: "Carboidratos em gramas" },
+                fat: { type: Type.NUMBER, description: "Gorduras em gramas" },
+                sodium: { type: Type.NUMBER, description: "Sódio em mg" },
+                fiber: { type: Type.NUMBER, description: "Fibras alimentares em gramas" },
+                potassium: { type: Type.NUMBER, description: "Potássio em mg" },
+                calcium: { type: Type.NUMBER, description: "Cálculo de cálcio em mg" },
+                iron: { type: Type.NUMBER, description: "Hierro (ferro) em mg" },
+                source: { type: Type.STRING, description: "A fonte de consulta comprovada na internet" }
+              }
             }
           }
+        });
+
+        const responseText = response.text;
+        if (responseText) {
+          const parsedData = JSON.parse(responseText.trim());
+          console.log(`[Nutrition] Gemini com Grounding funcionou!`, parsedData);
+          return res.json({ success: true, data: parsedData });
         }
-      });
-
-      const responseText = response.text;
-      if (responseText) {
-        const parsedData = JSON.parse(responseText.trim());
-        console.log(`[Nutrition] Gemini com Grounding funcionou!`, parsedData);
-        return res.json({ success: true, data: parsedData });
+      } catch (searchError: any) {
+        console.log(`[Nutrition] Gemini Search Grounding indisponivel (quota). Tentando Gemini padrao...`);
       }
-    } catch (searchError: any) {
-      console.log(`[Nutrition] Gemini Search Grounding indisponivel (quota). Tentando Gemini padrao...`);
-    }
 
-    // Strategy 2: Attempt standard prompt without the googleSearch tool
-    try {
-      console.log(`[Nutrition] Tentando Gemini normal (sem Search) para: "${foodName}" (${g}g)`);
-      const responseWithoutSearch = await ai.models.generateContent({
-        model: "gemini-3.5-flash",
-        contents: prompt,
-        config: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.OBJECT,
-            required: ["calories", "protein", "carbs", "fat", "sodium", "fiber", "potassium", "calcium", "iron", "source"],
-            properties: {
-              calories: { type: Type.NUMBER, description: "Calorias totais em kcal" },
-              protein: { type: Type.NUMBER, description: "Proteínas em gramas" },
-              carbs: { type: Type.NUMBER, description: "Carboidratos em gramas" },
-              fat: { type: Type.NUMBER, description: "Gorduras em gramas" },
-              sodium: { type: Type.NUMBER, description: "Sódio em mg" },
-              fiber: { type: Type.NUMBER, description: "Fibras alimentares em gramas" },
-              potassium: { type: Type.NUMBER, description: "Potássio em mg" },
-              calcium: { type: Type.NUMBER, description: "Cálculo de cálcio em mg" },
-              iron: { type: Type.NUMBER, description: "Hierro (ferro) em mg" },
-              source: { type: Type.STRING, description: "A fonte de consulta recomendada" }
+      // Strategy 2: Attempt standard prompt without the googleSearch tool if AI Client is available
+      try {
+        console.log(`[Nutrition] Tentando Gemini normal (sem Search) para: "${foodName}" (${g}g)`);
+        const responseWithoutSearch = await aiInstance.models.generateContent({
+          model: "gemini-3.5-flash",
+          contents: prompt,
+          config: {
+            responseMimeType: "application/json",
+            responseSchema: {
+              type: Type.OBJECT,
+              required: ["calories", "protein", "carbs", "fat", "sodium", "fiber", "potassium", "calcium", "iron", "source"],
+              properties: {
+                calories: { type: Type.NUMBER, description: "Calorias totais em kcal" },
+                protein: { type: Type.NUMBER, description: "Proteínas em gramas" },
+                carbs: { type: Type.NUMBER, description: "Carboidratos em gramas" },
+                fat: { type: Type.NUMBER, description: "Gorduras em gramas" },
+                sodium: { type: Type.NUMBER, description: "Sódio em mg" },
+                fiber: { type: Type.NUMBER, description: "Fibras alimentares em gramas" },
+                potassium: { type: Type.NUMBER, description: "Potássio em mg" },
+                calcium: { type: Type.NUMBER, description: "Cálculo de cálcio em mg" },
+                iron: { type: Type.NUMBER, description: "Hierro (ferro) em mg" },
+                source: { type: Type.STRING, description: "A fonte de consulta recomendada" }
+              }
             }
           }
-        }
-      });
+        });
 
-      const responseText = responseWithoutSearch.text;
-      if (responseText) {
-        const parsedData = JSON.parse(responseText.trim());
-        console.log(`[Nutrition] Gemini padrão funcionou!`, parsedData);
-        return res.json({ success: true, data: parsedData });
+        const responseText = responseWithoutSearch.text;
+        if (responseText) {
+          const parsedData = JSON.parse(responseText.trim());
+          console.log(`[Nutrition] Gemini padrão funcionou!`, parsedData);
+          return res.json({ success: true, data: parsedData });
+        }
+      } catch (normalError: any) {
+        console.log(`[Nutrition] Gemini padrao indisponivel (quota). Ativando estimativa offline...`);
       }
-    } catch (normalError: any) {
-      console.log(`[Nutrition] Gemini padrao indisponivel (quota). Ativando estimativa offline...`);
+    } else {
+      console.log(`[Nutrition] Pulando IA por falta de chave API. Usando estimativa inteligente local.`);
     }
 
     // Strategy 3: Local intelligent offline heuristic fallback database
@@ -256,6 +273,120 @@ Atenção: retorne estritamente um JSON limpo formatado de acordo com o esquema 
           calcium: 15,
           iron: 0.5,
           source: `Estimativa BioForma (${g}g)`
+        }
+      });
+    }
+  });
+
+  // Calculate calories burned for aerobic activities using Gemini AI
+  app.post("/api/aerobics-calories", async (req, res) => {
+    const { type, duration, intensity, userWeight } = req.body;
+
+    if (!type || !duration || isNaN(Number(duration))) {
+      return res.status(400).json({ error: "Tipo de atividade e duração são obrigatórios." });
+    }
+
+    const min = Number(duration);
+    const weight = Number(userWeight) || 68; // Fallback to 68kg if not provided
+    const normalIntensity = String(intensity || "moderado").toLowerCase().trim();
+    const normalizedType = String(type).toLowerCase().trim();
+
+    // Strategy 1: Attempt Gemini AI Calculation
+    const aiInstance = getAIClient();
+    if (aiInstance) {
+      const gptPrompt = `Você é um especialista em fisiologia do exercício e educação física. 
+      Calcule as calorias gastas por uma pessoa de ${weight}kg realizando a seguinte atividade física:
+      Atividade: "${type}"
+      Duração: ${min} minutos
+      Intensidade: "${intensity}"
+      
+      Leve em consideração a fisiologia real (gasto por minuto e valor MET). Se for Amamentação, ela tem um custo calórico considerável (~300 a 500 kcal por dia, cerca de 4 a 5 kcal/minuto dependendo da intensidade).
+      Retorne estritamente um objeto JSON com as chaves:
+      - caloriesBurned: número inteiro (calorias em kcal)
+      - metUsed: número (MET correspondente à atividade e intensidade)
+      - explanation: string curta em português explicando simplificadamente a estimativa (ex: "Consumo estimado de X kcal/min para amamentação moderada").
+      
+      Não inclua markdown extra ou texto de introdução/conclusão. Apenas o JSON em formato puro.`;
+
+      try {
+        console.log(`[Aerobics] Tentando calcular calorias com Gemini para: ${type}, ${min}min, intensidade: ${intensity}`);
+        const response = await aiInstance.models.generateContent({
+          model: "gemini-3.5-flash",
+          contents: gptPrompt,
+          config: {
+            responseMimeType: "application/json",
+            responseSchema: {
+              type: Type.OBJECT,
+              required: ["caloriesBurned", "metUsed", "explanation"],
+              properties: {
+                caloriesBurned: { type: Type.INTEGER, description: "Gasto calórico estimado em kcal" },
+                metUsed: { type: Type.NUMBER, description: "Valor de MET utilizado" },
+                explanation: { type: Type.STRING, description: "Breve explicação do gasto" }
+              }
+            }
+          }
+        });
+
+        const responseText = response.text;
+        if (responseText) {
+          const parsedData = JSON.parse(responseText.trim());
+          console.log(`[Aerobics] Gemini calculou as calorias aeróbicas:`, parsedData);
+          return res.json({ success: true, data: parsedData });
+        }
+      } catch (geminiError: any) {
+        console.warn(`[Aerobics] Gemini indisponível para cálculo de aeróbico. Usando o algoritmo offline. Error:`, geminiError.message);
+      }
+    }
+
+    // Strategy 2: Offline Calculation Helper using standard MET values
+    try {
+      let baseMet = 5.0; // Default MET
+      
+      // Determine base MET based on athletic category and intensity
+      if (normalizedType.includes("corrida") || normalizedType.includes("trote") || normalizedType.includes("run")) {
+        baseMet = normalIntensity === "baixo" ? 7.0 : normalIntensity === "alto" ? 12.0 : 9.8;
+      } else if (normalizedType.includes("volei") || normalizedType.includes("vôlei") || normalizedType.includes("volleyball")) {
+        baseMet = normalIntensity === "baixo" ? 3.0 : normalIntensity === "alto" ? 6.0 : 4.0;
+      } else if (normalizedType.includes("natacao") || normalizedType.includes("natação") || normalizedType.includes("swim")) {
+        baseMet = normalIntensity === "baixo" ? 4.5 : normalIntensity === "alto" ? 8.0 : 6.0;
+      } else if (normalizedType.includes("amamenta") || normalizedType.includes("amamento") || normalizedType.includes("breastfeed")) {
+        // Breastfeeding consumes high energy! ~4 kcal / min is ~3.5 MET
+        baseMet = normalIntensity === "baixo" ? 2.5 : normalIntensity === "alto" ? 4.5 : 3.5;
+      } else if (normalizedType.includes("treino") || normalizedType.includes("musculacao") || normalizedType.includes("musculação") || normalizedType.includes("academia")) {
+        baseMet = normalIntensity === "baixo" ? 3.5 : normalIntensity === "alto" ? 7.0 : 5.0;
+      } else if (normalizedType.includes("caminha") || normalizedType.includes("walk")) {
+        baseMet = normalIntensity === "baixo" ? 2.5 : normalIntensity === "alto" ? 4.5 : 3.3;
+      } else if (normalizedType.includes("bicicleta") || normalizedType.includes("pedal") || normalizedType.includes("bike")) {
+        baseMet = normalIntensity === "baixo" ? 4.0 : normalIntensity === "alto" ? 10.0 : 7.0;
+      } else if (normalizedType.includes("futebol") || normalizedType.includes("soccer")) {
+        baseMet = normalIntensity === "baixo" ? 5.0 : normalIntensity === "alto" ? 9.0 : 7.0;
+      } else if (normalizedType.includes("danca") || normalizedType.includes("dança") || normalizedType.includes("zumba")) {
+        baseMet = normalIntensity === "baixo" ? 3.5 : normalIntensity === "alto" ? 7.0 : 5.0;
+      }
+
+      // Formula: kcal = MET * weight * hours
+      const hours = min / 60;
+      const computedKcal = Math.round(baseMet * weight * hours);
+      const intensityText = normalIntensity.charAt(0).toUpperCase() + normalIntensity.slice(1);
+
+      console.log(`[Aerobics] Retornando cálculo offline de aeróbico para: ${type} ${min}min. Kcal: ${computedKcal}`);
+      return res.json({
+        success: true,
+        data: {
+          caloriesBurned: computedKcal,
+          metUsed: baseMet,
+          explanation: `Cálculo offline: ${type} com intensidade ${intensityText} (${baseMet} MET).`
+        }
+      });
+    } catch (err: any) {
+      // Emergency absolute fallback
+      const emergencyKcal = Math.round(6.0 * min);
+      return res.json({
+        success: true,
+        data: {
+          caloriesBurned: emergencyKcal,
+          metUsed: 5.0,
+          explanation: "Estimativa geral BioForma (6 kcal/minuto)."
         }
       });
     }

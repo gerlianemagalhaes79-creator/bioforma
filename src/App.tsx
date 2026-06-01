@@ -171,7 +171,7 @@ export default function App() {
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard': return <Dashboard user={user} profile={userProfile} />;
-      case 'workout': return <WorkoutSection user={user} />;
+      case 'workout': return <WorkoutSection user={user} profile={userProfile} />;
       case 'diet': return <DietSection user={user} profile={userProfile} />;
       case 'progress': return <ProgressTracker user={user} profile={userProfile} />;
       case 'metrics': return <MetricsSection user={user} />;
@@ -190,9 +190,9 @@ export default function App() {
       <AnimatePresence mode="wait">
         <motion.div
           key={activeTab}
-          initial={{ opacity: 0, x: 10 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -10 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
           className="pb-24"
         >

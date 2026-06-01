@@ -2,20 +2,37 @@ import { useState, useEffect } from 'react';
 import { db, collection, query, where, onSnapshot, User, orderBy, addDoc, deleteDoc, doc, updateDoc } from '../firebase';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Plus, Trash2, Dumbbell, X, Play, Check, TrendingUp, ChevronDown, ChevronUp, Calendar, Award, Edit2 } from 'lucide-react';
+import { Plus, Trash2, Dumbbell, X, Play, Check, TrendingUp, ChevronDown, ChevronUp, Calendar, Award, Edit2, Flame, Heart, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface WorkoutSectionProps {
   user: User;
+  profile?: any;
 }
 
-export default function WorkoutSection({ user }: WorkoutSectionProps) {
+export default function WorkoutSection({ user, profile }: WorkoutSectionProps) {
   const [workouts, setWorkouts] = useState<any[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingWorkout, setEditingWorkout] = useState<any | null>(null);
   const [expandedWorkoutId, setExpandedWorkoutId] = useState<string | null>(null);
+
+  // Aerobic states
+  const [aerobics, setAerobics] = useState<any[]>([]);
+  const [showAddAerobicModal, setShowAddAerobicModal] = useState(false);
+  const [calculatingAerobic, setCalculatingAerobic] = useState(false);
+  const [computedKcal, setComputedKcal] = useState<number | null>(null);
+  const [computedExplanation, setComputedExplanation] = useState<string | null>(null);
+  const [computedMet, setComputedMet] = useState<number | null>(null);
+
+  const [newAerobic, setNewAerobic] = useState({
+    type: '',
+    duration: 30,
+    intensity: 'moderado',
+    date: format(new Date(), 'yyyy-MM-dd'),
+    notes: ''
+  });
   
   // Real-time workout tracking state
   const [activeSession, setActiveSession] = useState<any | null>(null);
@@ -39,7 +56,20 @@ export default function WorkoutSection({ user }: WorkoutSectionProps) {
     const unsubscribe = onSnapshot(q, (snapshot) => {
       setWorkouts(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     });
-    return () => unsubscribe();
+
+    const qAerobics = query(
+      collection(db, 'aerobics'),
+      where('uid', '==', user.uid),
+      orderBy('date', 'desc')
+    );
+    const unsubscribeAerobics = onSnapshot(qAerobics, (snapshot) => {
+      setAerobics(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    });
+
+    return () => {
+      unsubscribe();
+      unsubscribeAerobics();
+    };
   }, [user.uid]);
 
   // Derive unique exercise names for load selection graph
@@ -99,6 +129,119 @@ export default function WorkoutSection({ user }: WorkoutSectionProps) {
       });
     } catch (e) {
       console.error(e);
+    }
+  };
+
+  // Aerobics calculation and save handlers using server endpoint
+  const handleCalculateAerobic = async () => {
+    if (!newAerobic.type || !newAerobic.duration) return null;
+    setCalculatingAerobic(true);
+    try {
+      const response = await fetch(`${window.location.origin}/api/aerobics-calories`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: newAerobic.type,
+          duration: Number(newAerobic.duration),
+          intensity: newAerobic.intensity,
+          userWeight: profile?.weight || profile?.bodyWeight || 68
+        })
+      });
+      const resData = await response.json();
+      if (resData.success && resData.data) {
+        setComputedKcal(resData.data.caloriesBurned);
+        setComputedExplanation(resData.data.explanation);
+        setComputedMet(resData.data.metUsed);
+        setCalculatingAerobic(false);
+        return resData.data;
+      }
+    } catch (e) {
+      console.error("Erro ao calcular calorias do aeróbico com IA:", e);
+    }
+    
+    // Offline client fallback
+    let fallbackMet = 5.0;
+    const t = newAerobic.type.toLowerCase();
+    const ints = newAerobic.intensity;
+    if (t.includes("corrida") || t.includes("run")) fallbackMet = ints === "baixo" ? 7.0 : ints === "alto" ? 12.0 : 9.8;
+    else if (t.includes("volei") || t.includes("vôlei")) fallbackMet = ints === "baixo" ? 3.0 : ints === "alto" ? 6.0 : 4.0;
+    else if (t.includes("natacao") || t.includes("natação")) fallbackMet = ints === "baixo" ? 4.5 : ints === "alto" ? 8.0 : 6.0;
+    else if (t.includes("amament") || t.includes("peito")) fallbackMet = ints === "baixo" ? 2.5 : ints === "alto" ? 4.5 : 3.5;
+    else if (t.includes("treino") || t.includes("muscul")) fallbackMet = ints === "baixo" ? 3.5 : ints === "alto" ? 7.0 : 5.0;
+
+    const mass = profile?.weight || profile?.bodyWeight || 68;
+    const computedBurn = Math.round(fallbackMet * mass * (newAerobic.duration / 60));
+    setComputedKcal(computedBurn);
+    setComputedMet(fallbackMet);
+    setComputedExplanation(`Cálculo offline: ${newAerobic.type} (${fallbackMet} MET)`);
+    setCalculatingAerobic(false);
+    return { caloriesBurned: computedBurn, metUsed: fallbackMet, explanation: `Cálculo offline: ${newAerobic.type}` };
+  };
+
+  const handleSaveAerobic = async () => {
+    if (!newAerobic.type || !newAerobic.duration) return;
+    
+    setCalculatingAerobic(true);
+    try {
+      let finalKcal = computedKcal;
+      let finalExplanation = computedExplanation;
+      let finalMet = computedMet;
+
+      if (finalKcal === null) {
+        const calculated = await handleCalculateAerobic();
+        if (calculated) {
+          finalKcal = calculated.caloriesBurned;
+          finalExplanation = calculated.explanation;
+          finalMet = calculated.metUsed;
+        }
+      }
+
+      await addDoc(collection(db, 'aerobics'), {
+        uid: user.uid,
+        type: newAerobic.type,
+        duration: Number(newAerobic.duration),
+        intensity: newAerobic.intensity,
+        date: newAerobic.date,
+        caloriesBurned: finalKcal || 150,
+        metUsed: finalMet || 5.0,
+        explanation: finalExplanation || 'Registrado com IA',
+        notes: newAerobic.notes || ''
+      });
+
+      // Synchronize with check-in (mark workoutDone as complete for this day)
+      // Query checkins of the target day first
+      await addDoc(collection(db, 'checkins'), {
+        uid: user.uid,
+        date: newAerobic.date,
+        workoutDone: true
+      });
+
+      setShowAddAerobicModal(false);
+      setNewAerobic({
+        type: '',
+        duration: 30,
+        intensity: 'moderado',
+        date: format(new Date(), 'yyyy-MM-dd'),
+        notes: ''
+      });
+      setComputedKcal(null);
+      setComputedExplanation(null);
+      setComputedMet(null);
+    } catch (e) {
+      console.error("Erro ao salvar atividade aeróbica:", e);
+    } finally {
+      setCalculatingAerobic(false);
+    }
+  };
+
+  const handleDeleteAerobic = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (confirm("Deseja excluir esta atividade aeróbica?")) {
+      try {
+        await deleteDoc(doc(db, 'aerobics', id));
+      } catch (e) {
+        console.error("Erro ao excluir aeróbico:", e);
+      }
     }
   };
 
@@ -335,7 +478,7 @@ export default function WorkoutSection({ user }: WorkoutSectionProps) {
                     <div className="py-4">
                       <button
                         onClick={() => handleStartWorkoutSession(workout)}
-                        className="w-full py-3.5 bg-gradient-to-r from-pink-500 to-rose-450 text-white font-bold uppercase text-xs tracking-wider rounded-xl shadow-md shadow-pink-200/50 hover:opacity-95 flex items-center justify-center gap-2 cursor-pointer transition-all"
+                        className="w-full py-3.5 bg-gradient-to-r from-pink-500 to-rose-500 text-white font-bold uppercase text-xs tracking-wider rounded-xl shadow-md shadow-pink-200/50 hover:opacity-95 flex items-center justify-center gap-2 cursor-pointer transition-all"
                       >
                         <Play size={14} className="fill-current" /> Iniciar Treino
                       </button>
@@ -367,6 +510,267 @@ export default function WorkoutSection({ user }: WorkoutSectionProps) {
           ))
         )}
       </div>
+
+      {/* SEÇÃO: ATIVIDADES AERÓBICAS (COM ESTIMATIVA DE CALORIAS POR IA) */}
+      <div className="bg-gradient-to-br from-[#fffafe] to-white p-6 rounded-[2rem] border border-pink-100 shadow-sm shadow-pink-100/10 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <span className="text-[10px] font-black uppercase tracking-widest text-pink-500 flex items-center gap-1">
+              <Sparkles size={12} className="text-[#d4af37]" /> Fitness Aeróbico
+            </span>
+            <h3 className="text-xl font-black italic uppercase tracking-tight text-zinc-850 mt-1">Atividades Aeróbicas <span className="text-[#d4af37]">com IA</span></h3>
+          </div>
+          <button
+            onClick={() => setShowAddAerobicModal(true)}
+            className="px-4 py-2 bg-[#d4af37] text-white font-extrabold text-[10px] uppercase tracking-wider rounded-xl hover:opacity-90 transition-all cursor-pointer shadow-md shadow-yellow-500/10 flex items-center gap-1 border-0"
+          >
+            <Plus size={14} strokeWidth={3} />
+            Registrar Aeróbico
+          </button>
+        </div>
+
+        {/* List of registered aerobics */}
+        <div className="space-y-3">
+          {aerobics.length === 0 ? (
+            <div className="py-8 text-center bg-white/50 rounded-2xl border border-dashed border-pink-100 space-y-2">
+              <Flame size={32} className="text-pink-300 mx-auto animate-bounce" />
+              <div>
+                <p className="text-xs font-bold text-zinc-500">Nenhum aeróbico registrado ainda</p>
+                <p className="text-[10px] text-zinc-450 mt-1 block">Insira corrida, vôlei, natação, amamentação para que a IA desconte as calorias gasta.</p>
+              </div>
+            </div>
+          ) : (
+            aerobics.map((aer) => (
+              <div 
+                key={aer.id}
+                className="bg-white p-4 rounded-2xl border border-pink-50 hover:border-pink-200/60 shadow-sm transition-all flex items-center justify-between gap-4"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center text-orange-500 shrink-0">
+                    <Flame size={20} className="fill-orange-100 text-orange-400" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h4 className="text-sm font-black italic uppercase tracking-tight text-zinc-800 truncate leading-none">{aer.type}</h4>
+                      <span className="text-[8px] font-black uppercase px-2 py-0.5 rounded-full bg-pink-50 text-pink-600 leading-none">
+                        {aer.intensity}
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-zinc-400 mt-1 font-bold">
+                      {aer.duration} min • {format(new Date(aer.date + 'T00:00:00'), "dd 'de' MMMM", { locale: ptBR })}
+                    </p>
+                    {aer.explanation && (
+                      <p className="text-[9px] text-zinc-500 italic mt-1 font-semibold select-none">
+                        💡 {aer.explanation}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 shrink-0">
+                  <div className="text-right">
+                    <div className="text-base font-black italic tracking-tight text-[#d4af37]">
+                      -{aer.caloriesBurned} <span className="text-[9px] font-bold not-italic text-zinc-400 uppercase">kcal</span>
+                    </div>
+                    {aer.metUsed && <span className="text-[8px] text-zinc-400 font-bold uppercase tracking-wider">{aer.metUsed} MET</span>}
+                  </div>
+                  <button
+                    onClick={(e) => handleDeleteAerobic(aer.id, e)}
+                    className="text-zinc-400 hover:text-rose-500 cursor-pointer p-1.5 hover:bg-rose-50 rounded-lg transition-all border-0 bg-transparent flex items-center justify-center"
+                    title="Excluir"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* MODAL: REGISTRAR ATIVIDADE AERÓBICA COM IA */}
+      <AnimatePresence>
+        {showAddAerobicModal && (
+          <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-4">
+            <motion.div
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 50, opacity: 0 }}
+              className="bg-white w-full max-w-md rounded-[2rem] border border-pink-100 p-6 shadow-2xl space-y-6 text-zinc-805"
+            >
+              <div className="flex items-center justify-between border-b border-pink-50 pb-3">
+                <div className="flex items-center gap-2">
+                  <Sparkles size={20} className="text-[#d4af37] animate-pulse animate-bounce" />
+                  <h3 className="text-xl font-extrabold italic uppercase tracking-tight text-zinc-800">
+                    Estimar Aeróbico <span className="text-pink-500">com IA</span>
+                  </h3>
+                </div>
+                <button
+                  onClick={() => setShowAddAerobicModal(false)}
+                  className="text-zinc-400 hover:text-zinc-650 p-1 bg-zinc-50 border-0 rounded-lg cursor-pointer flex items-center justify-center"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {/* Popular Pills */}
+                <div>
+                  <label className="text-[9px] font-black uppercase tracking-wider text-zinc-400 mb-2 block">
+                    Sugestões de Atividade
+                  </label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {["Corrida", "Vôlei", "Natação", "Amamentação", "Treino de musculação", "Caminhada"].map((suge) => (
+                      <button
+                        key={suge}
+                        type="button"
+                        onClick={() => {
+                          setNewAerobic({ ...newAerobic, type: suge });
+                          setComputedKcal(null);
+                          setComputedExplanation(null);
+                        }}
+                        className={`text-[9px] font-extrabold uppercase py-1 px-2.5 rounded-full border transition-all cursor-pointer ${
+                          newAerobic.type === suge
+                            ? 'bg-gradient-to-r from-pink-500 to-rose-450 text-white border-pink-400 shadow-sm shadow-pink-300/15'
+                            : 'bg-white border-pink-50 text-zinc-500 hover:border-pink-200'
+                        }`}
+                      >
+                        {suge === "Amamentação" ? "🍼 Amamentação" : suge}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Input Type */}
+                <div>
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-1.5 block">Nome da Atividade</label>
+                  <input
+                    type="text"
+                    placeholder="Ex: Corrida na esteira, CrossFit, Futevôlei"
+                    className="w-full bg-[#fffcfd] border border-pink-100 rounded-2xl px-4 py-3 text-zinc-800 font-bold italic focus:ring-1 focus:ring-pink-300 focus:outline-none"
+                    value={newAerobic.type}
+                    onChange={(e) => {
+                      setNewAerobic({ ...newAerobic, type: e.target.value });
+                      setComputedKcal(null);
+                      setComputedExplanation(null);
+                    }}
+                  />
+                </div>
+
+                {/* Duration and Intensity */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-[#d4af37] mb-1.5 block">Tempo (Minutos)</label>
+                    <input
+                      type="number"
+                      placeholder="Ex: 30"
+                      min={1}
+                      className="w-full bg-[#fffcfd] border border-pink-100 rounded-xl px-4 py-2.5 text-zinc-800 font-bold text-center focus:ring-1 focus:ring-pink-300 focus:outline-none"
+                      value={newAerobic.duration || ''}
+                      onChange={(e) => {
+                        setNewAerobic({ ...newAerobic, duration: Number(e.target.value) || 0 });
+                        setComputedKcal(null);
+                        setComputedExplanation(null);
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-pink-500 mb-1.5 block">Intensidade</label>
+                    <select
+                      className="w-full bg-[#fffcfd] border border-pink-100 rounded-xl px-2 py-2.5 text-xs font-bold text-zinc-700 cursor-pointer focus:ring-1 focus:ring-pink-300 focus:outline-none"
+                      value={newAerobic.intensity}
+                      onChange={(e) => {
+                        setNewAerobic({ ...newAerobic, intensity: e.target.value });
+                        setComputedKcal(null);
+                        setComputedExplanation(null);
+                      }}
+                    >
+                      <option value="baixo">Leve / Baixo</option>
+                      <option value="moderado">Moderado</option>
+                      <option value="alto">Intenso / Alto</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Date */}
+                <div>
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-1.5 block">Data do Exercício</label>
+                  <input
+                    type="date"
+                    className="w-full bg-[#fffcfd] border border-pink-100 rounded-xl px-4 py-2.5 text-center text-xs font-bold text-zinc-700 focus:outline-none"
+                    value={newAerobic.date}
+                    onChange={(e) => setNewAerobic({ ...newAerobic, date: e.target.value })}
+                  />
+                </div>
+
+                {/* Notes */}
+                <div>
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-1.5 block">Observações (Opcional)</label>
+                  <input
+                    type="text"
+                    placeholder="Ex: Amamentação ou trote na praia"
+                    className="w-full bg-[#fffcfd] border border-pink-100 rounded-xl px-4 py-2 text-xs text-zinc-500 focus:outline-none"
+                    value={newAerobic.notes || ''}
+                    onChange={(e) => setNewAerobic({ ...newAerobic, notes: e.target.value })}
+                  />
+                </div>
+
+                {/* Gemini preview estimation block */}
+                {(newAerobic.type && newAerobic.duration > 0) && (
+                  <div className="bg-gradient-to-tr from-yellow-50/30 to-pink-50/20 p-4 rounded-2xl border border-pink-100/50 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-black text-pink-500 uppercase tracking-widest leading-none">Previsão Google Gemini AI 🔮</span>
+                      <button
+                        type="button"
+                        onClick={handleCalculateAerobic}
+                        disabled={calculatingAerobic}
+                        className="text-[9px] bg-pink-500 text-white font-extrabold uppercase px-2.5 py-1 rounded-lg hover:opacity-90 disabled:opacity-50 transition-all border-0 cursor-pointer"
+                      >
+                        {calculatingAerobic ? "Estimando..." : "Calcular com IA"}
+                      </button>
+                    </div>
+
+                    {computedKcal !== null ? (
+                      <div className="space-y-1">
+                        <div className="text-2xl font-black italic text-zinc-900 leading-none mt-1">
+                          {computedKcal} <span className="text-[11px] font-bold not-italic text-zinc-500 uppercase">kcal gastas</span>
+                        </div>
+                        {computedMet && <div className="text-[8px] text-[#d4af37] font-black uppercase">Esporte classe {computedMet} MET</div>}
+                        {computedExplanation && (
+                          <p className="text-[10px] text-zinc-500 italic font-medium leading-relaxed bg-white/60 p-2 rounded-xl border border-pink-50/50 mt-1">
+                            {computedExplanation}
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-[9px] text-zinc-400 font-bold">Toque em "Calcular com IA" ou salve direto para estimar automaticamente!</p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAddAerobicModal(false)}
+                  className="flex-1 py-3 bg-zinc-100 hover:bg-zinc-200 text-zinc-500 uppercase text-xs font-black rounded-xl cursor-pointer border-0"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  disabled={!newAerobic.type || !newAerobic.duration || calculatingAerobic}
+                  onClick={handleSaveAerobic}
+                  className="flex-1 py-3 bg-gradient-to-r from-pink-500 to-rose-455 text-white font-black uppercase text-xs rounded-xl shadow-md cursor-pointer disabled:opacity-50 border-0"
+                >
+                  {calculatingAerobic ? "Salvando..." : "Salvar Atividade"}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* SEÇÃO: GRÁFICO DE EVOLUÇÃO DAS CARGAS (MOVED DOWN) */}
       {workouts.length > 0 && (
@@ -579,7 +983,7 @@ export default function WorkoutSection({ user }: WorkoutSectionProps) {
               {/* CTA Action Control */}
               <button
                 onClick={handleFinishWorkoutSession}
-                className="w-full py-4 bg-gradient-to-r from-pink-500 to-rose-450 text-white font-extrabold uppercase text-xs tracking-wider rounded-xl shadow-lg shadow-pink-200/50 hover:opacity-95 text-center flex items-center justify-center gap-2 cursor-pointer transition-all"
+                className="w-full py-4 bg-gradient-to-r from-pink-500 to-rose-500 text-white font-extrabold uppercase text-xs tracking-wider rounded-xl shadow-lg shadow-pink-200/50 hover:opacity-95 text-center flex items-center justify-center gap-2 cursor-pointer transition-all"
               >
                 <Award size={15} /> Concluir Treino de Hoje
               </button>

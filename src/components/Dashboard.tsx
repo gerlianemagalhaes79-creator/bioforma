@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { db, collection, query, where, onSnapshot, User, orderBy, limit } from '../firebase';
+import { db, collection, query, where, onSnapshot, User, orderBy, limit, addDoc, updateDoc, doc, getDocs } from '../firebase';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { motion } from 'motion/react';
-import { Activity, Apple, Droplets, Flame, TrendingUp } from 'lucide-react';
+import { Activity, Apple, Droplets, Flame, TrendingUp, Plus } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, BarChart, Bar, Cell } from 'recharts';
 
 interface DashboardProps {
@@ -16,6 +16,7 @@ export default function Dashboard({ user, profile }: DashboardProps) {
   const [metrics, setMetrics] = useState<any[]>([]);
   const [recentWorkout, setRecentWorkout] = useState<any>(null);
   const [diets, setDiets] = useState<any[]>([]);
+  const [aerobics, setAerobics] = useState<any[]>([]);
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
 
   useEffect(() => {
@@ -60,11 +61,20 @@ export default function Dashboard({ user, profile }: DashboardProps) {
       setDiets(loaded);
     });
 
+    const aerobicsQuery = query(
+      collection(db, 'aerobics'),
+      where('uid', '==', user.uid)
+    );
+    const unsubscribeAerobics = onSnapshot(aerobicsQuery, (snapshot) => {
+      setAerobics(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    });
+
     return () => {
       unsubscribeCheckins();
       unsubscribeMetrics();
       unsubscribeWorkout();
       unsubscribeDiets();
+      unsubscribeAerobics();
     };
   }, [user.uid]);
 
@@ -91,19 +101,72 @@ export default function Dashboard({ user, profile }: DashboardProps) {
   // Filter diets by selected date
   const activeDiet = diets.find(d => d.date === selectedDate);
 
+  const todayDiet = diets.find(d => d.date === todayStr);
+  const todayWater = todayDiet?.waterIntake || 0;
+
+  const handleQuickAddWaterStart = async () => {
+    try {
+      const targetWater = profile?.dailyWaterGoal || 2500;
+      let newWaterTotal = 150;
+
+      if (todayDiet) {
+        newWaterTotal = (todayDiet.waterIntake || 0) + 150;
+        await updateDoc(doc(db, 'diets', todayDiet.id), {
+          waterIntake: newWaterTotal
+        });
+      } else {
+        await addDoc(collection(db, 'diets'), {
+          uid: user.uid,
+          date: todayStr,
+          meals: [],
+          waterIntake: 150,
+          notes: 'Registrado pela via rápida do início'
+        });
+      }
+
+      // Sync with checkins Collection
+      const checkinQuery = query(
+        collection(db, 'checkins'),
+        where('uid', '==', user.uid),
+        where('date', '==', todayStr)
+      );
+      const checkinSnap = await getDocs(checkinQuery);
+      if (!checkinSnap.empty) {
+        await updateDoc(doc(db, 'checkins', checkinSnap.docs[0].id), {
+          waterGoalMet: newWaterTotal >= targetWater
+        });
+      } else {
+        await addDoc(collection(db, 'checkins'), {
+          uid: user.uid,
+          date: todayStr,
+          waterGoalMet: newWaterTotal >= targetWater,
+          workoutDone: false,
+          dietOnTrack: true
+        });
+      }
+    } catch (e) {
+      console.error("Erro ao registrar água no início:", e);
+    }
+  };
+
   // Compute actual ingested macros
   const consumedCalories = activeDiet?.meals?.reduce((acc: number, m: any) => acc + (m.calories || 0), 0) || 0;
   const consumedProtein = activeDiet?.meals?.reduce((acc: number, m: any) => acc + (m.protein || 0), 0) || 0;
   const consumedFat = activeDiet?.meals?.reduce((acc: number, m: any) => acc + (m.fat || 0), 0) || 0;
   const consumedFiber = activeDiet?.meals?.reduce((acc: number, m: any) => acc + (m.fiber || 0), 0) || 0;
 
+  // Subtract aerobic activity calories burned
+  const activeDateAerobics = aerobics.filter(a => a.date === selectedDate);
+  const caloriesBurned = activeDateAerobics.reduce((acc: number, a: any) => acc + (a.caloriesBurned || 0), 0);
+  const netCalories = Math.max(0, consumedCalories - caloriesBurned);
+
   const goalCalories = profile?.dailyCalorieGoal || 2000;
   const goalProtein = profile?.proteinGoal || 130;
   const goalFat = profile?.fatGoal || 60;
   const goalFiber = profile?.fiberGoal || 25; // Default safe fiber intake target
 
-  const caloriePercent = Math.min((consumedCalories / goalCalories) * 105, 100) || 0;
-  const calorieExceeded = consumedCalories > goalCalories;
+  const caloriePercent = Math.min((netCalories / goalCalories) * 105, 100) || 0;
+  const calorieExceeded = netCalories > goalCalories;
 
   const macroData = [
     { name: 'Proteína', Consumido: Number(consumedProtein.toFixed(1)), Meta: goalProtein, color: '#d4af37' },
@@ -136,6 +199,29 @@ export default function Dashboard({ user, profile }: DashboardProps) {
         </p>
       </section>
 
+      {/* QUICK WATER LOG CARD - HOME SCREEN */}
+      <div className="bg-gradient-to-r from-sky-500 to-indigo-500 p-5 rounded-[2rem] text-white flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg shadow-sky-500/20">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white text-base">
+            <Droplets size={26} className="text-white fill-white/10 animate-bounce" />
+          </div>
+          <div>
+            <h3 className="text-xs font-black uppercase tracking-wider text-sky-100">Água de Hoje</h3>
+            <p className="text-xl font-black italic tracking-tighter mt-0.5">
+              {todayWater} <span className="text-xs font-normal text-sky-100 uppercase font-extrabold">ml / {profile?.dailyWaterGoal || 2500}ml</span>
+            </p>
+          </div>
+        </div>
+        
+        <button
+          onClick={handleQuickAddWaterStart}
+          className="w-full sm:w-auto px-6 py-3 bg-white hover:bg-sky-50 active:scale-95 text-sky-600 font-extrabold uppercase text-xs rounded-xl shadow-md transition-all cursor-pointer flex items-center justify-center gap-2 border-0"
+        >
+          <Plus size={16} strokeWidth={3} />
+          <span>Registrar +150ml</span>
+        </button>
+      </div>
+
       {/* Painel de Nutrição Diária com Gráficos */}
       <section className="bg-gradient-to-br from-white to-[#fffafc] p-6 rounded-[2rem] border border-pink-100 shadow-sm shadow-pink-100/15 space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -158,7 +244,7 @@ export default function Dashboard({ user, profile }: DashboardProps) {
                   onClick={() => setSelectedDate(dateStr)}
                   className={`text-[10px] font-extrabold uppercase py-1.5 px-3 rounded-full border transition-all cursor-pointer whitespace-nowrap ${
                     isActive
-                      ? 'bg-gradient-to-r from-pink-500 to-rose-450 border-pink-400 text-white shadow-md shadow-pink-400/20'
+                      ? 'bg-gradient-to-r from-pink-500 to-rose-500 border-pink-400 text-white shadow-md shadow-pink-400/20'
                       : 'bg-white border-pink-50 hover:border-pink-200 text-zinc-500'
                   }`}
                 >
@@ -203,29 +289,39 @@ export default function Dashboard({ user, profile }: DashboardProps) {
               </svg>
 
               <div className="absolute text-center">
-                <div className="text-3xl font-black italic tracking-tighter text-zinc-850 leading-none">
-                  {consumedCalories}
+                <div className="text-3xl font-black italic tracking-tighter text-zinc-900 leading-none">
+                  {netCalories}
                 </div>
-                <div className="text-[8px] text-[#d4af37] font-extrabold uppercase tracking-wide mt-1">
+                <div className="text-[8px] text-[#d4af37] font-black uppercase tracking-wider mt-1">
                   de {goalCalories} kcal
                 </div>
-                <div className="text-[10px] text-pink-500 font-extrabold mt-1">
-                  {Math.round((consumedCalories / goalCalories) * 100)}% consumido
+                <div className="text-[9px] text-pink-500 font-extrabold mt-1">
+                  {Math.round((netCalories / goalCalories) * 100)}% líquido
                 </div>
               </div>
             </div>
 
             {/* Indicator of limits */}
-            <div className="mt-4 text-center">
-              {calorieExceeded ? (
-                <span className="text-[9px] font-black uppercase text-rose-600 bg-rose-50 border border-rose-100 px-3 py-1.5 rounded-full inline-block">
-                  Cota Excedida em {consumedCalories - goalCalories} kcal ⚠️
-                </span>
-              ) : (
-                <span className="text-[9px] font-black uppercase text-emerald-600 bg-emerald-50 border border-emerald-100 px-3 py-1.5 rounded-full inline-block">
-                  Mais {goalCalories - consumedCalories} kcal para a meta 🎯
-                </span>
-              )}
+            <div className="mt-4 text-center space-y-2">
+              <div>
+                {calorieExceeded ? (
+                  <span className="text-[9px] font-black uppercase text-rose-600 bg-rose-50 border border-rose-100 px-3 py-1.5 rounded-full inline-block">
+                    Cota Excedida em {netCalories - goalCalories} kcal ⚠️
+                  </span>
+                ) : (
+                  <span className="text-[9px] font-black uppercase text-emerald-600 bg-emerald-50 border border-emerald-100 px-3 py-1.5 rounded-full inline-block">
+                    Mais {goalCalories - netCalories} kcal para a meta 🎯
+                  </span>
+                )}
+              </div>
+              <div className="text-[9px] font-bold text-zinc-400 bg-zinc-50 py-1.5 px-3 rounded-2xl border border-zinc-100/50 inline-block">
+                Comida: <span className="text-zinc-650">{consumedCalories} kcal</span>
+                {caloriesBurned > 0 && (
+                  <>
+                    {' '}• Gasto Aeróbico: <span className="text-pink-500">-{caloriesBurned} kcal</span>
+                  </>
+                )}
+              </div>
             </div>
           </div>
 
@@ -329,14 +425,17 @@ export default function Dashboard({ user, profile }: DashboardProps) {
 
       {/* Check-in Grid */}
       <section className="bg-white p-6 rounded-[2rem] border border-pink-100 shadow-sm shadow-pink-100/15">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
           <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-500">Check-in Mensal</h3>
-          <div className="flex gap-2">
-            <div className="flex items-center gap-1 text-[8px] uppercase font-bold text-[#d4af37]">
-              <div className="w-2.5 h-2.5 rounded-full bg-[#d4af37]"></div> Treino
+          <div className="flex flex-wrap gap-2">
+            <div className="flex items-center gap-1 text-[8px] uppercase font-black tracking-wider text-[#d4af37] bg-yellow-50 px-2 py-1 rounded-full">
+              <div className="w-2 h-2 rounded-full bg-[#d4af37]"></div> Treino
             </div>
-            <div className="flex items-center gap-1 text-[8px] uppercase font-bold text-pink-500">
-              <div className="w-2.5 h-2.5 rounded-full bg-pink-500"></div> Dieta
+            <div className="flex items-center gap-1 text-[8px] uppercase font-black tracking-wider text-sky-500 bg-sky-50 px-2 py-1 rounded-full">
+              <div className="w-2 h-2 rounded-full bg-sky-400"></div> Água
+            </div>
+            <div className="flex items-center gap-1 text-[8px] uppercase font-black tracking-wider text-pink-500 bg-pink-50 px-2 py-1 rounded-full">
+              <div className="w-2 h-2 rounded-full bg-pink-500"></div> Calorias
             </div>
           </div>
         </div>
@@ -345,17 +444,38 @@ export default function Dashboard({ user, profile }: DashboardProps) {
           {daysInMonth.map((day, i) => {
             const checkin = getCheckinForDay(day);
             const isToday = isSameDay(day, new Date());
+            const dayStr = format(day, 'yyyy-MM-dd');
+
+            // 1. Workout met
+            const isWorkoutMet = checkin?.workoutDone || false;
+
+            // 2. Water met
+            const dayDiet = diets.find(d => d.date === dayStr);
+            const dayWater = dayDiet?.waterIntake || 0;
+            const targetWater = profile?.dailyWaterGoal || 2500;
+            const isWaterMet = dayWater >= targetWater;
+
+            // 3. Calories met: Ingested minus Aerobics Burned is <= Daily Goal (min 1 calorie logged)
+            const dayCalories = dayDiet?.meals?.reduce((acc: number, m: any) => acc + (m.calories || 0), 0) || 0;
+            const dayAerobics = aerobics.filter((a: any) => a.date === dayStr);
+            const dayBurned = dayAerobics.reduce((acc: number, a: any) => acc + (a.caloriesBurned || 0), 0);
+            const dayNetCalories = Math.max(0, dayCalories - dayBurned);
+            const isCalorieMet = dayCalories > 0 && dayNetCalories <= goalCalories;
             
             return (
               <div key={i} className="flex flex-col items-center gap-1">
                 <span className={`text-[8px] font-bold uppercase ${isToday ? 'text-pink-500' : 'text-zinc-400'}`}>
                   {format(day, 'EEE', { locale: ptBR })}
                 </span>
-                <div className={`w-full aspect-square rounded-lg border flex flex-col overflow-hidden ${
-                  isToday ? 'border-pink-400' : 'border-pink-50/80'
-                } bg-[#fffafe]`}>
-                  <div className={`flex-1 ${checkin?.workoutDone ? 'bg-[#d4af37]' : 'bg-transparent'}`}></div>
-                  <div className={`flex-1 ${checkin?.dietOnTrack ? 'bg-pink-500' : 'bg-transparent'}`}></div>
+                <div 
+                  className={`w-full aspect-square rounded-xl border flex flex-col p-1 gap-0.5 overflow-hidden transition-all ${
+                    isToday ? 'border-pink-400 ring-2 ring-pink-100 bg-[#fffbfc]' : 'border-pink-100/80 bg-[#fffdfd]'
+                  }`}
+                  title={`Treino: ${isWorkoutMet ? 'Ok' : 'Não'}; Água: ${dayWater}/${targetWater}ml; Calorias: ${dayCalories} (gasto ${dayBurned})`}
+                >
+                  <div className={`flex-1 rounded-sm transition-all ${isWorkoutMet ? 'bg-[#d4af37]' : 'bg-zinc-100/40'}`}></div>
+                  <div className={`flex-1 rounded-sm transition-all ${isWaterMet ? 'bg-sky-400' : 'bg-zinc-100/40'}`}></div>
+                  <div className={`flex-1 rounded-sm transition-all ${isCalorieMet ? 'bg-pink-500' : 'bg-zinc-100/40'}`}></div>
                 </div>
                 <span className="text-[8px] font-bold text-zinc-400">{format(day, 'd')}</span>
               </div>

@@ -743,7 +743,7 @@ export default function ProgressTracker({ user, profile }: ProgressTrackerProps)
               <div className="w-full bg-zinc-100 h-3 rounded-full overflow-hidden border">
                 <div 
                   className={`h-full rounded-full transition-all duration-700 ${
-                    totalCalories > targetCalories ? 'bg-rose-500' : 'bg-gradient-to-r from-pink-500 to-rose-450'
+                    totalCalories > targetCalories ? 'bg-rose-500' : 'bg-gradient-to-r from-pink-500 to-rose-500'
                   }`}
                   style={{ width: `${Math.min((totalCalories / targetCalories) * 100, 100)}%` }}
                 />

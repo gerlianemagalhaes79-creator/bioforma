@@ -120,6 +120,21 @@
         "sleepQuality": { "type": "number", "description": "1-5" }
       },
       "required": ["uid", "date"]
+    },
+    "AerobicLog": {
+      "title": "Aerobic Log",
+      "description": "Daily aerobic activity logs",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "type": { "type": "string", "description": "e.g., Corrida, Vôlei, Natação, Amamentação, Treino" },
+        "duration": { "type": "number", "description": "Duration in minutes" },
+        "intensity": { "type": "string", "enum": ["baixo", "moderado", "alto"] },
+        "caloriesBurned": { "type": "number", "description": "Calories burned in kcal" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "date", "type", "duration", "intensity", "caloriesBurned"]
     }
   },
   "firestore": {
@@ -150,6 +165,10 @@
     "/checkins/{checkinId}": {
       "schema": "DailyCheckIn",
       "description": "Daily check-ins"
+    },
+    "/aerobics/{aerobicsId}": {
+      "schema": "AerobicLog",
+      "description": "Aerobic activity logs"
     }
   }
 }
