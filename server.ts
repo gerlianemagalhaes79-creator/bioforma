@@ -28,6 +28,17 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
+  // Custom CORS middleware to allow static hostings like Vercel to fetch results from the backend
+  app.use((req, res, next) => {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+    res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE");
+    if (req.method === "OPTIONS") {
+      return res.sendStatus(200);
+    }
+    next();
+  });
+
   app.use(express.json());
 
   // API endpoint for food nutrition lookup using Gemini + Google Search Grounding with robust fallbacks

@@ -362,13 +362,33 @@ export default function DietSection({ user, profile }: DietSectionProps) {
       }
       const apiEndpoint = `${apiOrigin.replace(/\/+$/, '')}/api/nutrition`;
 
-      const resp = await fetch(apiEndpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ foodName: meal.name, weight: gWeight })
-      });
+      // Strategy A: Try the relative origin server endpoint first
+      let resp: Response | null = null;
+      try {
+        resp = await fetch(apiEndpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ foodName: meal.name, weight: gWeight })
+        });
+      } catch (localErr) {
+        console.warn("Plano A (Servidor Local) indisponível. Tentando do gateway central do Cloud Run...", localErr);
+      }
+
+      // Strategy B: If the local origin is not found (404), fails, or is blocked, query our central Cloud Run wrapper container
+      if (!resp || !resp.ok) {
+        const fallbackGateway = "https://ais-pre-rz7vogl2ggltgsdykljdyj-273227904733.us-east1.run.app/api/nutrition";
+        try {
+          resp = await fetch(fallbackGateway, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ foodName: meal.name, weight: gWeight })
+          });
+        } catch (gatewayErr) {
+          console.warn("Plano B (Gateway Cloud Run) também falhou. Entrando em modo Offline inteligente...", gatewayErr);
+        }
+      }
       
-      if (resp.ok) {
+      if (resp && resp.ok) {
         const resData = await resp.json();
         if (resData.success && resData.data) {
           const nutData = resData.data;
@@ -394,7 +414,7 @@ export default function DietSection({ user, profile }: DietSectionProps) {
         }
       }
     } catch (e) {
-      console.warn("API de nutrição falhou ou retornou erro. Ativando estimador local inteligente...", e);
+      console.warn("API de nutrição total falhou. Ativando estimador local inteligente...", e);
     }
 
     if (!success) {
