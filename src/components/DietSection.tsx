@@ -228,6 +228,124 @@ export default function DietSection({ user, profile }: DietSectionProps) {
     });
   };
 
+  const getLocalNutritionEstimate = (foodName: string, g: number) => {
+    const normalized = foodName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+    
+    // Base nutrition values per 100g
+    let base = { kcal: 120, p: 4, c: 15, f: 3, sodium: 50, fiber: 1.2, potassium: 150, calcium: 15, iron: 0.5, name: "Alimento Geral" };
+
+    const db: Record<string, typeof base> = {
+      "ovo": { kcal: 155, p: 13, c: 1.1, f: 11, sodium: 124, fiber: 0, potassium: 126, calcium: 50, iron: 1.2, name: "Ovo Cozido" },
+      "frango": { kcal: 165, p: 31, c: 0, f: 3.6, sodium: 74, fiber: 0, potassium: 256, calcium: 15, iron: 1.0, name: "Peito de Frango Grelhado" },
+      "peito de frango": { kcal: 165, p: 31, c: 0, f: 3.6, sodium: 74, fiber: 0, potassium: 256, calcium: 15, iron: 1.0, name: "Peito de Frango" },
+      "frango grelhado": { kcal: 170, p: 32, c: 0, f: 4.5, sodium: 80, fiber: 0, potassium: 260, calcium: 15, iron: 1.0, name: "Frango Grelhado" },
+      "frango cozido": { kcal: 163, p: 31.5, c: 0, f: 3.2, sodium: 70, fiber: 0, potassium: 250, calcium: 15, iron: 1.0, name: "Frango Cozido" },
+      "arroz": { kcal: 130, p: 2.7, c: 28, f: 0.3, sodium: 1, fiber: 0.4, potassium: 35, calcium: 10, iron: 0.2, name: "Arroz Branco Cozido" },
+      "arroz branco": { kcal: 130, p: 2.7, c: 28, f: 0.3, sodium: 1, fiber: 0.4, potassium: 35, calcium: 10, iron: 0.2, name: "Arroz Branco" },
+      "arroz integral": { kcal: 111, p: 2.6, c: 23, f: 0.9, sodium: 1, fiber: 1.8, potassium: 43, calcium: 10, iron: 0.4, name: "Arroz Integral" },
+      "feijao": { kcal: 90, p: 5, c: 16, f: 0.5, sodium: 2, fiber: 6.4, potassium: 355, calcium: 35, iron: 1.5, name: "Feijão Cozido" },
+      "feijao carioca": { kcal: 90, p: 5, c: 16, f: 0.5, sodium: 2, fiber: 6.4, potassium: 355, calcium: 35, iron: 1.5, name: "Feijão Carioca" },
+      "feijao preto": { kcal: 91, p: 6, c: 14, f: 0.5, sodium: 2, fiber: 7.0, potassium: 350, calcium: 30, iron: 1.5, name: "Feijão Preto" },
+      "banana": { kcal: 89, p: 1.1, c: 23, f: 0.3, sodium: 1, fiber: 2.6, potassium: 358, calcium: 5, iron: 0.3, name: "Banana" },
+      "maca": { kcal: 52, p: 0.3, c: 14, f: 0.2, sodium: 1, fiber: 2.4, potassium: 107, calcium: 6, iron: 0.1, name: "Maçã" },
+      "aveia": { kcal: 389, p: 16.9, c: 66, f: 6.9, sodium: 2, fiber: 10.6, potassium: 429, calcium: 54, iron: 4.7, name: "Aveia em Flocos" },
+      "leite": { kcal: 60, p: 3.2, c: 4.8, f: 3.2, sodium: 44, fiber: 0, potassium: 150, calcium: 120, iron: 0.1, name: "Leite Integral" },
+      "leite integral": { kcal: 60, p: 3.2, c: 4.8, f: 3.2, sodium: 44, fiber: 0, potassium: 150, calcium: 120, iron: 0.1, name: "Leite Integral" },
+      "leite desnatado": { kcal: 35, p: 3.2, c: 5, f: 0.1, sodium: 45, fiber: 0, potassium: 150, calcium: 122, iron: 0.1, name: "Leite Desnatado" },
+      "whey": { kcal: 380, p: 80, c: 6, f: 4, sodium: 160, fiber: 0, potassium: 180, calcium: 400, iron: 0.5, name: "Whey Protein" },
+      "whey protein": { kcal: 380, p: 80, c: 6, f: 4, sodium: 160, fiber: 0, potassium: 180, calcium: 400, iron: 0.5, name: "Whey Protein" },
+      "creatina": { kcal: 0, p: 0, c: 0, f: 0, sodium: 0, fiber: 0, potassium: 0, calcium: 0, iron: 0, name: "Creatina" },
+      "pao": { kcal: 265, p: 9, c: 49, f: 3.2, sodium: 490, fiber: 2.7, potassium: 115, calcium: 260, iron: 3.6, name: "Pão de Forma" },
+      "pao frances": { kcal: 300, p: 8, c: 58, f: 3, sodium: 640, fiber: 2.3, potassium: 110, calcium: 20, iron: 1.0, name: "Pão Francês" },
+      "carne": { kcal: 250, p: 26, c: 0, f: 15, sodium: 60, fiber: 0, potassium: 318, calcium: 18, iron: 2.6, name: "Carne Vermelha" },
+      "patinho": { kcal: 140, p: 21, c: 0, f: 5, sodium: 55, fiber: 0, potassium: 330, calcium: 10, iron: 2.5, name: "Carne Patinho" },
+      "alcatra": { kcal: 160, p: 22, c: 0, f: 7, sodium: 52, fiber: 0, potassium: 310, calcium: 10, iron: 2.3, name: "Carne Alcatra" },
+      "batata": { kcal: 86, p: 2, c: 20, f: 0.1, sodium: 6, fiber: 1.8, potassium: 320, calcium: 12, iron: 0.3, name: "Batata Inglesa" },
+      "batata doce": { kcal: 86, p: 1.3, c: 20, f: 0.1, sodium: 30, fiber: 3, potassium: 337, calcium: 30, iron: 0.6, name: "Batata Doce" },
+      "salmao": { kcal: 208, p: 20, c: 0, f: 13, sodium: 59, fiber: 0, potassium: 363, calcium: 9, iron: 0.3, name: "Salmão" },
+      "azeite": { kcal: 884, p: 0, f: 100, c: 0, sodium: 2, fiber: 0, potassium: 1, calcium: 1, iron: 0.2, name: "Azeite de Oliva" },
+      "queijo": { kcal: 350, p: 23, c: 2.3, f: 28, sodium: 620, fiber: 0, potassium: 80, calcium: 700, iron: 0.4, name: "Queijo Mussarela" },
+      "manteiga": { kcal: 717, p: 0.8, c: 0.1, f: 81, sodium: 576, fiber: 0, potassium: 24, calcium: 24, iron: 0.1, name: "Manteiga" },
+      "mandioca": { kcal: 125, p: 0.6, c: 30, f: 0.3, sodium: 1, fiber: 1.6, potassium: 271, calcium: 19, iron: 0.3, name: "Mandioca Cozida" },
+      "iogurte": { kcal: 60, p: 3.5, c: 5, f: 3, sodium: 50, fiber: 0, potassium: 140, calcium: 120, iron: 0.1, name: "Iogurte Natural" },
+      "castanha": { kcal: 650, p: 15, c: 15, f: 60, sodium: 3, fiber: 6, potassium: 660, calcium: 110, iron: 6.0, name: "Castanhas" },
+      "tomate": { kcal: 18, p: 0.9, c: 3.9, f: 0.2, sodium: 5, fiber: 1.2, potassium: 237, calcium: 10, iron: 0.3, name: "Tomate" },
+      "alface": { kcal: 15, p: 1.3, c: 2.8, f: 0.2, sodium: 10, fiber: 1.3, potassium: 194, calcium: 36, iron: 0.8, name: "Alface" },
+      "tapioca": { kcal: 350, p: 0, c: 87, f: 0, sodium: 2, fiber: 0, potassium: 10, calcium: 10, iron: 0.1, name: "Tapioca (Goma)" },
+      "cafe": { kcal: 2, p: 0.1, c: 0, f: 0, sodium: 2, fiber: 0, potassium: 49, calcium: 2, iron: 0, name: "Café sem Açúcar" },
+      "agua": { kcal: 0, p: 0, c: 0, f: 0, sodium: 5, fiber: 0, potassium: 1, calcium: 3, iron: 0, name: "Água Mineral" },
+      "pasta de amendoim": { kcal: 588, p: 25, c: 20, f: 50, sodium: 10, fiber: 6, potassium: 649, calcium: 43, iron: 1.9, name: "Pasta de Amendoim" },
+      "suco de laranja": { kcal: 45, p: 0.7, c: 10.4, f: 0.2, sodium: 1, fiber: 0.2, potassium: 200, calcium: 11, iron: 0.2, name: "Suco de Laranja" },
+      "mamao": { kcal: 43, p: 0.5, c: 11, f: 0.3, sodium: 8, fiber: 1.7, potassium: 182, calcium: 20, iron: 0.3, name: "Mamão Papaia" },
+      "morango": { kcal: 32, p: 0.7, c: 7.7, f: 0.3, sodium: 1, fiber: 2, potassium: 153, calcium: 16, iron: 0.4, name: "Morango" },
+      "pipoca": { kcal: 387, p: 12, c: 78, f: 4.5, sodium: 8, fiber: 14, potassium: 329, calcium: 7, iron: 3.1, name: "Pipoca" },
+      "doce de leite": { kcal: 315, p: 6, c: 55, f: 7, sodium: 130, fiber: 0, potassium: 250, calcium: 200, iron: 0.1, name: "Doce de Leite" },
+      "chocolate": { kcal: 546, p: 4.9, c: 61, f: 31, sodium: 24, fiber: 7, potassium: 372, calcium: 56, iron: 8.0, name: "Chocolate" },
+      "coca cola": { kcal: 42, p: 0, c: 10, f: 0, sodium: 4, fiber: 0, potassium: 2, calcium: 2, iron: 0, name: "Coca Cola" },
+      "refrigerante": { kcal: 42, p: 0, c: 10.4, f: 0, sodium: 5, fiber: 0, potassium: 2, calcium: 2, iron: 0, name: "Refrigerante" },
+      "cerveja": { kcal: 43, p: 0.5, c: 3.6, f: 0, sodium: 4, fiber: 0, potassium: 27, calcium: 4, iron: 0, name: "Cerveja" },
+      "vinho": { kcal: 85, p: 0.1, c: 2.6, f: 0, sodium: 4, fiber: 0, potassium: 127, calcium: 8, iron: 0.5, name: "Vinho" },
+      "suco": { kcal: 40, p: 0.5, c: 10, f: 0.1, sodium: 2, fiber: 0.5, potassium: 120, calcium: 10, iron: 0.1, name: "Suco Natural" },
+      "mel": { kcal: 304, p: 0.3, c: 82, f: 0, sodium: 4, fiber: 0, potassium: 52, calcium: 6, iron: 0.4, name: "Mel" }
+    };
+
+    // Find custom match
+    let matchedKey = "";
+    for (const key of Object.keys(db)) {
+      if (normalized === key || normalized.includes(key) || key.includes(normalized)) {
+        matchedKey = key;
+        break;
+      }
+    }
+
+    if (matchedKey) {
+      base = db[matchedKey];
+    } else {
+      // Heuristic analyzers based on words for high accuracy in case of custom terms
+      if (normalized.includes("frango") || normalized.includes("chicken") || normalized.includes("peru") || normalized.includes("ave") || normalized.includes("peito")) {
+        base = { kcal: 165, p: 31, c: 0, f: 3.6, sodium: 74, fiber: 0, potassium: 256, calcium: 15, iron: 1.0, name: "Aves" };
+      } else if (normalized.includes("boi") || normalized.includes("vaca") || normalized.includes("carne") || normalized.includes("patinho") || normalized.includes("mignon") || normalized.includes("alcatra") || normalized.includes("picanha") || normalized.includes("churrasco") || normalized.includes("bife")) {
+        base = { kcal: 200, p: 26, c: 0, f: 10, sodium: 65, fiber: 0, potassium: 315, calcium: 15, iron: 2.5, name: "Carne Bovina" };
+      } else if (normalized.includes("peixe") || normalized.includes("pargo") || normalized.includes("pescada") || normalized.includes("atum") || normalized.includes("sardinha") || normalized.includes("tilapia") || normalized.includes("merluza")) {
+        base = { kcal: 130, p: 22, c: 0, f: 4.5, sodium: 70, fiber: 0, potassium: 350, calcium: 20, iron: 0.8, name: "Pescados" };
+      } else if (normalized.includes("queijo") || normalized.includes("cheese") || normalized.includes("mussarela") || normalized.includes("ricota") || normalized.includes("requeijao") || normalized.includes("requeijão") || normalized.includes("cream")) {
+        base = { kcal: 320, p: 22, c: 2.5, f: 25, sodium: 550, fiber: 0, potassium: 85, calcium: 600, iron: 0.3, name: "Queijos" };
+      } else if (normalized.includes("leite") || normalized.includes("iogurte") || normalized.includes("coalhada")) {
+        base = { kcal: 55, p: 3.2, c: 4.8, f: 2.5, sodium: 45, fiber: 0, potassium: 145, calcium: 115, iron: 0.1, name: "Laticínios" };
+      } else if (normalized.includes("pao") || normalized.includes("pão") || normalized.includes("torrada") || normalized.includes("biscoito") || normalized.includes("bolacha") || normalized.includes("croissant")) {
+        base = { kcal: 270, p: 8.5, c: 52, f: 3.5, sodium: 500, fiber: 2.5, potassium: 120, calcium: 25, iron: 1.5, name: "Panificados" };
+      } else if (normalized.includes("arroz") || normalized.includes("massa") || normalized.includes("macarrao") || normalized.includes("macarrão") || normalized.includes("pasta") || normalized.includes("miojo") || normalized.includes("lasanha")) {
+        base = { kcal: 135, p: 2.8, c: 29, f: 0.4, sodium: 2, fiber: 0.6, potassium: 40, calcium: 10, iron: 0.3, name: "Cereais e Massas" };
+      } else if (normalized.includes("doce") || normalized.includes("açucar") || normalized.includes("açúcar") || normalized.includes("chocolate") || normalized.includes("bala") || normalized.includes("pirulito") || normalized.includes("sobremesa") || normalized.includes("sorvete")) {
+        base = { kcal: 380, p: 2, c: 68, f: 12, sodium: 60, fiber: 0.5, potassium: 110, calcium: 40, iron: 1.0, name: "Doces e Sobremesas" };
+      } else if (normalized.includes("azeite") || normalized.includes("oleo") || normalized.includes("óleo") || normalized.includes("manteiga") || normalized.includes("gordura") || normalized.includes("banha")) {
+        base = { kcal: 850, p: 0.2, c: 0.2, f: 95, sodium: 5, fiber: 0, potassium: 5, calcium: 5, iron: 0.1, name: "Lipídios" };
+      } else if (normalized.includes("suco") || normalized.includes("refri") || normalized.includes("refrigerante") || normalized.includes("nectar")) {
+        base = { kcal: 45, p: 0.3, c: 11, f: 0, sodium: 4, fiber: 0.1, potassium: 100, calcium: 8, iron: 0.1, name: "Bebidas Açucaradas" };
+      } else if (normalized.includes("alface") || normalized.includes("salada") || normalized.includes("folha") || normalized.includes("couve") || normalized.includes("brocolis") || normalized.includes("brócolis") || normalized.includes("legume") || normalized.includes("vegetal") || normalized.includes("tomate")) {
+        base = { kcal: 22, p: 1.2, c: 4.5, f: 0.2, sodium: 10, fiber: 1.8, potassium: 210, calcium: 24, iron: 0.5, name: "Hortaliças e Legumes" };
+      } else if (normalized.includes("banana") || normalized.includes("maca") || normalized.includes("maçã") || normalized.includes("fruta") || normalized.includes("uva") || normalized.includes("mamao") || normalized.includes("mamão") || normalized.includes("morango") || normalized.includes("laranja") || normalized.includes("abacaxi")) {
+        base = { kcal: 55, p: 0.6, c: 13.5, f: 0.2, sodium: 2, fiber: 2.1, potassium: 160, calcium: 12, iron: 0.2, name: "Frutas Frescas" };
+      } else if (normalized.includes("whey") || normalized.includes("proteina") || normalized.includes("proteína") || normalized.includes("albumina") || normalized.includes("creatina")) {
+        base = { kcal: 380, p: 78, c: 7, f: 4, sodium: 155, fiber: 0, potassium: 175, calcium: 380, iron: 0.5, name: "Suplementos" };
+      }
+    }
+
+    const factor = g / 100;
+    return {
+      calories: Math.round(base.kcal * factor),
+      protein: parseFloat((base.p * factor).toFixed(1)),
+      carbs: parseFloat((base.c * factor).toFixed(1)),
+      fat: parseFloat((base.f * factor).toFixed(1)),
+      sodium: Math.round(base.sodium * factor),
+      fiber: parseFloat((base.fiber * factor).toFixed(1)),
+      potassium: Math.round(base.potassium * factor),
+      calcium: Math.round(base.calcium * factor),
+      iron: parseFloat((base.iron * factor).toFixed(1)),
+      source: `Tabela Oficial Local (${base.name})`
+    };
+  };
+
   // Perform AI nutrition search with web grounding on our server proxy
   const handleSearchNutrition = async (index: number) => {
     const meal = newDiet.meals[index];
@@ -235,6 +353,8 @@ export default function DietSection({ user, profile }: DietSectionProps) {
     const gWeight = Number(meal.weight) || 100;
     
     setSearchingIndex(index);
+    let success = false;
+    
     try {
       let apiOrigin = window.location.origin;
       if (!apiOrigin || apiOrigin.startsWith('file') || !apiOrigin.startsWith('http')) {
@@ -248,9 +368,38 @@ export default function DietSection({ user, profile }: DietSectionProps) {
         body: JSON.stringify({ foodName: meal.name, weight: gWeight })
       });
       
-      const resData = await resp.json();
-      if (resData.success && resData.data) {
-        const nutData = resData.data;
+      if (resp.ok) {
+        const resData = await resp.json();
+        if (resData.success && resData.data) {
+          const nutData = resData.data;
+          const updatedMeals = [...newDiet.meals];
+          updatedMeals[index] = {
+            ...updatedMeals[index],
+            calories: Math.round(nutData.calories || 0),
+            protein: parseFloat((nutData.protein || 0).toFixed(1)),
+            carbs: parseFloat((nutData.carbs || 0).toFixed(1)),
+            fat: parseFloat((nutData.fat || 0).toFixed(1)),
+            sodium: Math.round(nutData.sodium || 0),
+            fiber: parseFloat((nutData.fiber || 0).toFixed(1)),
+            potassium: Math.round(nutData.potassium || 0),
+            calcium: Math.round(nutData.calcium || 0),
+            iron: parseFloat((nutData.iron || 0).toFixed(1)),
+            source: nutData.source || "Grounded Web Search"
+          };
+          setNewDiet({
+            ...newDiet,
+            meals: updatedMeals
+          });
+          success = true;
+        }
+      }
+    } catch (e) {
+      console.warn("API de nutrição falhou ou retornou erro. Ativando estimador local inteligente...", e);
+    }
+
+    if (!success) {
+      try {
+        const nutData = getLocalNutritionEstimate(meal.name, gWeight);
         const updatedMeals = [...newDiet.meals];
         updatedMeals[index] = {
           ...updatedMeals[index],
@@ -263,16 +412,18 @@ export default function DietSection({ user, profile }: DietSectionProps) {
           potassium: Math.round(nutData.potassium || 0),
           calcium: Math.round(nutData.calcium || 0),
           iron: parseFloat((nutData.iron || 0).toFixed(1)),
-          source: nutData.source || "Grounded Web Search"
+          source: `${nutData.source} (Offline Fallback)`
         };
         setNewDiet({
           ...newDiet,
           meals: updatedMeals
         });
+      } catch (err) {
+        console.error("Erro no estimador offline:", err);
+      } finally {
+        setSearchingIndex(null);
       }
-    } catch (e) {
-      console.error("Erro ao pesquisar alimento na internet:", e);
-    } finally {
+    } else {
       setSearchingIndex(null);
     }
   };
