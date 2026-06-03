@@ -98,21 +98,22 @@ export default function Dashboard({ user, profile }: DashboardProps) {
     uniqueDates.unshift(todayStr);
   }
 
-  // Filter diets by selected date
-  const activeDiet = diets.find(d => d.date === selectedDate);
-
-  const todayDiet = diets.find(d => d.date === todayStr);
-  const todayWater = todayDiet?.waterIntake || 0;
+  // Filter diets by selected date and sum macros
+  const selectedDateDiets = diets.filter(d => d.date === selectedDate);
+  const todayDiets = diets.filter(d => d.date === todayStr);
+  const todayWater = todayDiets.reduce((acc, d) => acc + (d.waterIntake || 0), 0);
 
   const handleQuickAddWaterStart = async () => {
     try {
       const targetWater = profile?.dailyWaterGoal || 2500;
-      let newWaterTotal = 150;
+      const currentTotalWater = todayDiets.reduce((acc, d) => acc + (d.waterIntake || 0), 0);
+      const newWaterTotal = currentTotalWater + 150;
 
-      if (todayDiet) {
-        newWaterTotal = (todayDiet.waterIntake || 0) + 150;
-        await updateDoc(doc(db, 'diets', todayDiet.id), {
-          waterIntake: newWaterTotal
+      const firstTodayDiet = todayDiets[0];
+
+      if (firstTodayDiet) {
+        await updateDoc(doc(db, 'diets', firstTodayDiet.id), {
+          waterIntake: (firstTodayDiet.waterIntake || 0) + 150
         });
       } else {
         await addDoc(collection(db, 'diets'), {
@@ -149,11 +150,19 @@ export default function Dashboard({ user, profile }: DashboardProps) {
     }
   };
 
-  // Compute actual ingested macros
-  const consumedCalories = activeDiet?.meals?.reduce((acc: number, m: any) => acc + (m.calories || 0), 0) || 0;
-  const consumedProtein = activeDiet?.meals?.reduce((acc: number, m: any) => acc + (m.protein || 0), 0) || 0;
-  const consumedFat = activeDiet?.meals?.reduce((acc: number, m: any) => acc + (m.fat || 0), 0) || 0;
-  const consumedFiber = activeDiet?.meals?.reduce((acc: number, m: any) => acc + (m.fiber || 0), 0) || 0;
+  // Compute actual ingested macros by summing all meals from all diet entries of the selected date
+  const consumedCalories = selectedDateDiets.reduce((acc, d) => 
+    acc + (d.meals?.reduce((mAcc: number, m: any) => mAcc + (m.calories || 0), 0) || 0), 0
+  );
+  const consumedProtein = selectedDateDiets.reduce((acc, d) => 
+    acc + (d.meals?.reduce((mAcc: number, m: any) => mAcc + (m.protein || 0), 0) || 0), 0
+  );
+  const consumedFat = selectedDateDiets.reduce((acc, d) => 
+    acc + (d.meals?.reduce((mAcc: number, m: any) => mAcc + (m.fat || 0), 0) || 0), 0
+  );
+  const consumedFiber = selectedDateDiets.reduce((acc, d) => 
+    acc + (d.meals?.reduce((mAcc: number, m: any) => mAcc + (m.fiber || 0), 0) || 0), 0
+  );
 
   // Subtract aerobic activity calories burned
   const activeDateAerobics = aerobics.filter(a => a.date === selectedDate);
@@ -174,53 +183,32 @@ export default function Dashboard({ user, profile }: DashboardProps) {
     { name: 'Fibras', Consumido: Number(consumedFiber.toFixed(1)), Meta: goalFiber, color: '#10b981' },
   ];
 
-  const getDayLabel = (dateStr: string) => {
-    const tempYest = new Date();
-    tempYest.setDate(tempYest.getDate() - 1);
-    const yesterdayStr = format(tempYest, 'yyyy-MM-dd');
-
-    if (dateStr === todayStr) return 'Hoje';
-    if (dateStr === yesterdayStr) return 'Ontem';
-
-    try {
-      return format(new Date(dateStr + 'T00:00:00'), 'dd MMM', { locale: ptBR });
-    } catch (e) {
-      return dateStr;
-    }
-  };
-
   return (
     <div className="space-y-8 animate-fade-in">
       {/* Welcome Section */}
-      <section>
-        <h2 className="text-xs font-bold uppercase tracking-widest text-[#d4af37] mb-1">Bem-vinda de volta</h2>
-        <p className="text-4xl font-extrabold tracking-tight uppercase italic leading-none text-zinc-800">
-          {profile?.name?.split(' ')[0]} <span className="text-pink-500">Pronta?</span>
-        </p>
-      </section>
-
-      {/* QUICK WATER LOG CARD - HOME SCREEN */}
-      <div className="bg-gradient-to-r from-sky-500 to-indigo-500 p-5 rounded-[2rem] text-white flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg shadow-sky-500/20">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white text-base">
-            <Droplets size={26} className="text-white fill-white/10 animate-bounce" />
-          </div>
-          <div>
-            <h3 className="text-xs font-black uppercase tracking-wider text-sky-100">Água de Hoje</h3>
-            <p className="text-xl font-black italic tracking-tighter mt-0.5">
-              {todayWater} <span className="text-xs font-normal text-sky-100 uppercase font-extrabold">ml / {profile?.dailyWaterGoal || 2500}ml</span>
-            </p>
-          </div>
+      <section className="flex justify-between items-start">
+        <div>
+          <h2 className="text-xs font-bold uppercase tracking-widest text-[#d4af37] mb-1">Bem-vinda de volta</h2>
+          <p className="text-4xl font-extrabold tracking-tight uppercase italic leading-none text-zinc-800">
+            {profile?.name?.split(' ')[0]} <span className="text-pink-500">Pronta?</span>
+          </p>
         </div>
-        
+
+        {/* Discreet Water Droplet Button */}
         <button
           onClick={handleQuickAddWaterStart}
-          className="w-full sm:w-auto px-6 py-3 bg-white hover:bg-sky-50 active:scale-95 text-sky-600 font-extrabold uppercase text-xs rounded-xl shadow-md transition-all cursor-pointer flex items-center justify-center gap-2 border-0"
+          className="p-2.5 bg-sky-50/80 hover:bg-sky-100 border border-sky-200/50 rounded-2xl transition-all cursor-pointer flex flex-col items-center justify-center shadow-sm hover:shadow active:scale-95 relative group"
+          title={`Adicionar +150ml (Hoje: ${todayWater}ml)`}
         >
-          <Plus size={16} strokeWidth={3} />
-          <span>Registrar +150ml</span>
+          <span className="text-xl leading-none">💧</span>
+          <span className="text-[8px] font-black uppercase text-sky-600 mt-0.5 tracking-tighter">
+            {todayWater} ml
+          </span>
+          <span className="absolute right-0 top-full mt-2.5 bg-zinc-800 text-white text-[9px] font-extrabold uppercase px-2.5 py-1.5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-md">
+            +150ml (Toque para registrar)
+          </span>
         </button>
-      </div>
+      </section>
 
       {/* Painel de Nutrição Diária com Gráficos */}
       <section className="bg-gradient-to-br from-white to-[#fffafc] p-6 rounded-[2rem] border border-pink-100 shadow-sm shadow-pink-100/15 space-y-6">
@@ -232,26 +220,6 @@ export default function Dashboard({ user, profile }: DashboardProps) {
             <p className="text-2xl font-black text-zinc-800 tracking-tight uppercase italic mt-1 leading-none">
               Resumo de <span className="text-pink-500">Consumo</span>
             </p>
-          </div>
-
-          {/* Date Selector Pills */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full scrollbar-none">
-            {uniqueDates.slice(0, 5).map((dateStr) => {
-              const isActive = selectedDate === dateStr;
-              return (
-                <button
-                  key={dateStr}
-                  onClick={() => setSelectedDate(dateStr)}
-                  className={`text-[10px] font-extrabold uppercase py-1.5 px-3 rounded-full border transition-all cursor-pointer whitespace-nowrap ${
-                    isActive
-                      ? 'bg-gradient-to-r from-pink-500 to-rose-500 border-pink-400 text-white shadow-md shadow-pink-400/20'
-                      : 'bg-white border-pink-50 hover:border-pink-200 text-zinc-500'
-                  }`}
-                >
-                  {getDayLabel(dateStr)}
-                </button>
-              );
-            })}
           </div>
         </div>
 
@@ -396,7 +364,7 @@ export default function Dashboard({ user, profile }: DashboardProps) {
               </div>
             </div>
             
-            {activeDiet === undefined && (
+            {selectedDateDiets.length === 0 && (
               <div className="text-[10px] bg-pink-50/30 p-2 text-pink-650 rounded-xl border border-pink-100/60 text-center font-bold">
                 Nenhum log para este dia. Adicione refeições na aba "Dieta"!
               </div>
@@ -450,13 +418,15 @@ export default function Dashboard({ user, profile }: DashboardProps) {
             const isWorkoutMet = checkin?.workoutDone || false;
 
             // 2. Water met
-            const dayDiet = diets.find(d => d.date === dayStr);
-            const dayWater = dayDiet?.waterIntake || 0;
+            const dayDietsList = diets.filter(d => d.date === dayStr);
+            const dayWater = dayDietsList.reduce((acc, d) => acc + (d.waterIntake || 0), 0);
             const targetWater = profile?.dailyWaterGoal || 2500;
             const isWaterMet = dayWater >= targetWater;
 
             // 3. Calories met: Ingested minus Aerobics Burned is <= Daily Goal (min 1 calorie logged)
-            const dayCalories = dayDiet?.meals?.reduce((acc: number, m: any) => acc + (m.calories || 0), 0) || 0;
+            const dayCalories = dayDietsList.reduce((acc, d) => 
+              acc + (d.meals?.reduce((mAcc: number, m: any) => mAcc + (m.calories || 0), 0) || 0), 0
+            );
             const dayAerobics = aerobics.filter((a: any) => a.date === dayStr);
             const dayBurned = dayAerobics.reduce((acc: number, a: any) => acc + (a.caloriesBurned || 0), 0);
             const dayNetCalories = Math.max(0, dayCalories - dayBurned);

@@ -185,20 +185,38 @@ export default function ProgressTracker({ user, profile }: ProgressTrackerProps)
     return checkins.find(c => c.date === selectedDate);
   }, [checkins, selectedDate]);
 
-  const currentDiet = useMemo(() => {
-    return diets.find(d => d.date === selectedDate);
+  const selectedDateDiets = useMemo(() => {
+    return diets.filter(d => d.date === selectedDate);
   }, [diets, selectedDate]);
 
   const dayPhotos = useMemo(() => {
     return photos.filter(p => p.date === selectedDate);
   }, [photos, selectedDate]);
 
-  // Computed nutritional consumption
-  const totalCalories = currentDiet?.meals?.reduce((acc: number, m: any) => acc + (m.calories || 0), 0) || 0;
-  const totalProtein = currentDiet?.meals?.reduce((acc: number, m: any) => acc + (m.protein || 0), 0) || 0;
-  const totalCarbs = currentDiet?.meals?.reduce((acc: number, m: any) => acc + (m.carbs || 0), 0) || 0;
-  const totalFat = currentDiet?.meals?.reduce((acc: number, m: any) => acc + (m.fat || 0), 0) || 0;
-  const totalFiber = currentDiet?.meals?.reduce((acc: number, m: any) => acc + (m.fiber || 0), 0) || 0;
+  // Computed nutritional consumption across all diet entries for the day
+  const totalCalories = useMemo(() => {
+    return selectedDateDiets.reduce((acc, d) => acc + (d.meals?.reduce((mAcc: number, m: any) => mAcc + (m.calories || 0), 0) || 0), 0);
+  }, [selectedDateDiets]);
+
+  const totalProtein = useMemo(() => {
+    return selectedDateDiets.reduce((acc, d) => acc + (d.meals?.reduce((mAcc: number, m: any) => mAcc + (m.protein || 0), 0) || 0), 0);
+  }, [selectedDateDiets]);
+
+  const totalCarbs = useMemo(() => {
+    return selectedDateDiets.reduce((acc, d) => acc + (d.meals?.reduce((mAcc: number, m: any) => mAcc + (m.carbs || 0), 0) || 0), 0);
+  }, [selectedDateDiets]);
+
+  const totalFat = useMemo(() => {
+    return selectedDateDiets.reduce((acc, d) => acc + (d.meals?.reduce((mAcc: number, m: any) => mAcc + (m.fat || 0), 0) || 0), 0);
+  }, [selectedDateDiets]);
+
+  const totalFiber = useMemo(() => {
+    return selectedDateDiets.reduce((acc, d) => acc + (d.meals?.reduce((mAcc: number, m: any) => mAcc + (m.fiber || 0), 0) || 0), 0);
+  }, [selectedDateDiets]);
+
+  const totalWaterIntake = useMemo(() => {
+    return selectedDateDiets.reduce((acc, d) => acc + (d.waterIntake || 0), 0);
+  }, [selectedDateDiets]);
 
   const targetCalories = profile?.dailyCalorieGoal || 2000;
   const targetProtein = profile?.proteinGoal || 130;
@@ -231,6 +249,9 @@ export default function ProgressTracker({ user, profile }: ProgressTrackerProps)
   const handleLogWater = async (amount: number) => {
     try {
       const existingDiet = diets.find(d => d.date === selectedDate);
+      const totalWater = diets.filter(d => d.date === selectedDate).reduce((acc, d) => acc + (d.waterIntake || 0), 0);
+      const newWaterTotalSum = Math.max(0, totalWater + amount);
+
       if (existingDiet) {
         const updatedWater = Math.max(0, (existingDiet.waterIntake || 0) + amount);
         await updateDoc(doc(db, 'diets', existingDiet.id), {
@@ -242,13 +263,15 @@ export default function ProgressTracker({ user, profile }: ProgressTrackerProps)
         const existingCheckin = checkins.find(c => c.date === selectedDate);
         if (existingCheckin) {
           await updateDoc(doc(db, 'checkins', existingCheckin.id), {
-            waterGoalMet: updatedWater >= targetWater
+            waterGoalMet: newWaterTotalSum >= targetWater
           });
         } else {
           await addDoc(collection(db, 'checkins'), {
             uid: user.uid,
             date: selectedDate,
-            waterGoalMet: updatedWater >= targetWater
+            waterGoalMet: newWaterTotalSum >= targetWater,
+            workoutDone: false,
+            dietOnTrack: true
           });
         }
       } else {
@@ -264,7 +287,9 @@ export default function ProgressTracker({ user, profile }: ProgressTrackerProps)
         await addDoc(collection(db, 'checkins'), {
           uid: user.uid,
           date: selectedDate,
-          waterGoalMet: initialWater >= targetWater
+          waterGoalMet: initialWater >= targetWater,
+          workoutDone: false,
+          dietOnTrack: true
         });
       }
     } catch (e) {
@@ -669,7 +694,7 @@ export default function ProgressTracker({ user, profile }: ProgressTrackerProps)
                 </div>
                 <div className="text-right">
                   <span className="text-xs font-black italic text-[#2563eb]">
-                    {currentDiet?.waterIntake || 0}
+                    {totalWaterIntake}
                   </span>
                   <span className="text-[10px] text-zinc-450 font-bold block">
                     de {targetWater} ml
@@ -683,12 +708,12 @@ export default function ProgressTracker({ user, profile }: ProgressTrackerProps)
                 <motion.div 
                   className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-blue-400 to-blue-300"
                   animate={{ 
-                    height: `${Math.min(((currentDiet?.waterIntake || 0) / targetWater) * 100, 100)}%` 
+                    height: `${Math.min((totalWaterIntake / targetWater) * 100, 100)}%` 
                   }}
                   transition={{ duration: 0.8, ease: 'easeOut' }}
                 />
                 <span className="z-10 text-[10px] uppercase font-extrabold text-blue-900 mix-blend-multiply drop-shadow-sm flex items-center gap-1">
-                  <Droplets size={12} /> {Math.min(Math.round(((currentDiet?.waterIntake || 0) / targetWater) * 100), 100)}% Hydrated
+                  <Droplets size={12} /> {Math.min(Math.round((totalWaterIntake / targetWater) * 100), 100)}% Hydrated
                 </span>
               </div>
 

@@ -65,6 +65,7 @@ export default function DietSection({ user, profile }: DietSectionProps) {
     meals: [{ 
       name: '', 
       weight: 100, 
+      unit: 'g',
       calories: 0, 
       protein: 0, 
       carbs: 0, 
@@ -189,6 +190,7 @@ export default function DietSection({ user, profile }: DietSectionProps) {
       meals: [...newDiet.meals, { 
         name: '', 
         weight: 100, 
+        unit: 'g',
         calories: 0, 
         protein: 0, 
         carbs: 0, 
@@ -211,6 +213,7 @@ export default function DietSection({ user, profile }: DietSectionProps) {
       meals: filtered.length > 0 ? filtered : [{ 
         name: '', 
         weight: 100, 
+        unit: 'g',
         calories: 0, 
         protein: 0, 
         carbs: 0, 
@@ -295,6 +298,7 @@ export default function DietSection({ user, profile }: DietSectionProps) {
         meals: [{ 
           name: '', 
           weight: 100, 
+          unit: 'g',
           calories: 0, 
           protein: 0, 
           carbs: 0, 
@@ -497,41 +501,59 @@ export default function DietSection({ user, profile }: DietSectionProps) {
           >
             <Settings size={20} />
           </button>
+        </div>
+      </div>
+
+      {/* QUICK ACTIONS GRID */}
+      <div className="flex flex-col gap-4">
+        {/* QUICK DIET LOG CARD */}
+        <div className="bg-gradient-to-r from-pink-500 to-rose-500 p-6 rounded-[2rem] text-white flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg shadow-pink-500/20">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white text-base">
+              <Utensils size={26} className="text-white fill-white/10" />
+            </div>
+            <div>
+              <h3 className="text-xs font-black uppercase tracking-wider text-pink-100">Registrar Refeição</h3>
+              <p className="text-xl font-black italic tracking-tighter mt-0.5">
+                {selectedTotalCals} <span className="text-xs font-normal not-italic text-pink-150 uppercase font-extrabold pb-0.5">kcal registradas {selectedDate === format(new Date(), 'yyyy-MM-dd') ? 'hoje' : 'neste dia'}</span>
+              </p>
+            </div>
+          </div>
           
-          <button 
+          <button
             onClick={() => {
               setNewDiet(prev => ({ ...prev, date: selectedDate }));
               setShowAddModal(true);
             }}
-            className="w-12 h-12 rounded-2xl bg-gradient-to-r from-pink-500 to-rose-500 flex items-center justify-center text-white shadow-lg shadow-pink-400/25 hover:opacity-95 cursor-pointer"
-            title="Logar Refeição"
+            className="w-full sm:w-auto px-6 py-3 bg-white hover:bg-pink-50 active:scale-95 text-pink-600 font-extrabold uppercase text-xs rounded-xl shadow-md transition-all cursor-pointer flex items-center justify-center gap-2 border-0"
           >
-            <Plus size={24} strokeWidth={3} />
+            <Plus size={16} strokeWidth={3} />
+            <span>Adicionar Dieta</span>
           </button>
         </div>
-      </div>
 
-      {/* QUICK WATER LOG CARD - AT THE START */}
-      <div className="bg-gradient-to-r from-sky-500 to-indigo-500 p-6 rounded-[2rem] text-white flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg shadow-sky-500/20">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white text-base">
-            <Droplets size={26} className="text-white fill-white/10 animate-bounce" />
+        {/* QUICK WATER LOG CARD */}
+        <div className="bg-gradient-to-r from-sky-500 to-indigo-500 p-6 rounded-[2rem] text-white flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg shadow-sky-500/20">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white text-base">
+              <Droplets size={26} className="text-white fill-white/10 animate-bounce" />
+            </div>
+            <div>
+              <h3 className="text-xs font-black uppercase tracking-wider text-sky-100">Registrar Consumo de Água</h3>
+              <p className="text-xl font-black italic tracking-tighter mt-0.5">
+                {selectedTotalWater} <span className="text-xs font-normal not-italic text-sky-100 uppercase font-extrabold pb-0.5">ml registrados {selectedDate === format(new Date(), 'yyyy-MM-dd') ? 'hoje' : 'neste dia'}</span>
+              </p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-xs font-black uppercase tracking-wider text-sky-100">Registrar Consumo de Água</h3>
-            <p className="text-xl font-black italic tracking-tighter mt-0.5">
-              {selectedTotalWater} <span className="text-xs font-normal not-italic text-sky-100 uppercase font-extrabold pb-0.5">ml registrados {selectedDate === format(new Date(), 'yyyy-MM-dd') ? 'hoje' : 'neste dia'}</span>
-            </p>
-          </div>
+          
+          <button
+            onClick={handleQuickAddWater}
+            className="w-full sm:w-auto px-6 py-3 bg-white hover:bg-sky-50 active:scale-95 text-sky-600 font-extrabold uppercase text-xs rounded-xl shadow-md transition-all cursor-pointer flex items-center justify-center gap-2 border-0"
+          >
+            <Plus size={16} strokeWidth={3} />
+            <span>Adicionar +150ml</span>
+          </button>
         </div>
-        
-        <button
-          onClick={handleQuickAddWater}
-          className="w-full sm:w-auto px-6 py-3 bg-white hover:bg-sky-50 active:scale-95 text-sky-600 font-extrabold uppercase text-xs rounded-xl shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
-        >
-          <Plus size={16} strokeWidth={3} />
-          <span>Adicionar +150ml</span>
-        </button>
       </div>
 
       <div className="space-y-6">
@@ -668,90 +690,6 @@ export default function DietSection({ user, profile }: DietSectionProps) {
             )}
           </AnimatePresence>
         </div>
-
-          {/* METAS CARD (ACTIVE DASHBOARD) */}
-          <section className="bg-gradient-to-br from-white to-[#fffafc] p-6 rounded-[2rem] border border-pink-100/80 shadow-sm shadow-pink-100/10 space-y-5">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-pink-500 animate-pulse"></span>
-                <h3 className="text-xs font-black uppercase tracking-wider text-zinc-600">Metas Diárias</h3>
-              </div>
-              <span className="text-[9px] font-extrabold uppercase bg-pink-50 px-2 py-0.5 rounded-md text-pink-500 border border-pink-100 font-mono">
-                {getObjectiveLabel(profile?.objective || 'manutencao')}
-              </span>
-            </div>
-
-            <div className="grid grid-cols-3 gap-3">
-              <div className="bg-[#fffefe] p-4 rounded-2xl border border-pink-50/50 flex flex-col justify-between">
-                <span className="text-[8px] font-bold uppercase tracking-widest text-zinc-400 flex items-center gap-1">
-                  <Flame size={10} className="text-pink-500" /> Calorias
-                </span>
-                <div className="mt-1">
-                  <div className="text-lg font-black italic tracking-tighter text-zinc-800">
-                    {selectedTotalCals} <span className="text-[10px] font-bold text-zinc-400">/ {profile?.dailyCalorieGoal || 2000}</span>
-                  </div>
-                  <span className="text-[8px] font-semibold text-zinc-400">kcal/dia ({caloriePct}%)</span>
-                </div>
-                <div className="w-full h-1 bg-zinc-100 rounded-full overflow-hidden mt-1.5">
-                  <div className="h-full bg-pink-500" style={{ width: `${caloriePct}%` }}></div>
-                </div>
-              </div>
-
-              <div className="bg-[#fffefe] p-4 rounded-2xl border border-pink-50/50 flex flex-col justify-between">
-                <span className="text-[8px] font-bold uppercase tracking-widest text-zinc-400 flex items-center gap-1">
-                  <Droplets size={10} className="text-sky-500" /> Água
-                </span>
-                <div className="mt-1">
-                  <div className="text-lg font-black italic tracking-tighter text-zinc-800">
-                    {selectedTotalWater} <span className="text-[10px] font-bold text-zinc-400">/ {profile?.dailyWaterGoal || 2500}</span>
-                  </div>
-                  <span className="text-[8px] font-semibold text-zinc-400">ml/dia ({waterPct}%)</span>
-                </div>
-                <div className="w-full h-1 bg-zinc-100 rounded-full overflow-hidden mt-1.5">
-                  <div className="h-full bg-sky-400" style={{ width: `${waterPct}%` }}></div>
-                </div>
-              </div>
-
-              <div className="bg-[#fffefe] p-4 rounded-2xl border border-pink-50/50 flex flex-col justify-between">
-                <span className="text-[8px] font-bold uppercase tracking-widest text-[#d4af37] flex items-center gap-1">
-                  <Apple size={10} className="text-[#d4af37]" /> Proteína
-                </span>
-                <div className="mt-1">
-                  <div className="text-lg font-black italic tracking-tighter text-zinc-800">
-                    {selectedTotalProt.toFixed(1)}g <span className="text-[10px] font-bold text-zinc-400">/ {profile?.proteinGoal || 130}g</span>
-                  </div>
-                  <span className="text-[8px] font-semibold text-zinc-400">meta proteica ({proteinPct}%)</span>
-                </div>
-                <div className="w-full h-1 bg-zinc-100 rounded-full overflow-hidden mt-1.5">
-                  <div className="h-full bg-[#d4af37]" style={{ width: `${proteinPct}%` }}></div>
-                </div>
-              </div>
-            </div>
-
-            {/* PROGRESS METERS FOR OTHER MACROS */}
-            <div className="grid grid-cols-2 gap-4 pt-1">
-              <div>
-                <div className="flex justify-between items-center text-[9px] font-bold tracking-wider text-zinc-500 mb-1 uppercase">
-                  <span>Carboidratos ({selectedTotalCarbs.toFixed(1)}g)</span>
-                  <span className="text-zinc-640 font-black">{profile?.carbGoal || 240}g ({carbPct}%)</span>
-                </div>
-                <div className="w-full h-1.5 bg-pink-100/30 rounded-full overflow-hidden">
-                  <div className="h-full bg-pink-400 rounded-full" style={{ width: `${carbPct}%` }}></div>
-                </div>
-              </div>
-
-              <div>
-                <div className="flex justify-between items-center text-[9px] font-bold tracking-wider text-zinc-500 mb-1 uppercase">
-                  <span>Gorduras ({selectedTotalFat.toFixed(1)}g)</span>
-                  <span className="text-zinc-640 font-black">{profile?.fatGoal || 60}g ({fatPct}%)</span>
-                </div>
-                <div className="w-full h-1.5 bg-yellow-100/30 rounded-full overflow-hidden">
-                  <div className="h-full bg-[#d4af37] rounded-full" style={{ width: `${fatPct}%` }}></div>
-                </div>
-              </div>
-            </div>
-          </section>
-
           {/* SELECTED DATE DIET DIARY */}
           <div className="space-y-4">
             {selectedDateDiets.length === 0 ? (
@@ -851,7 +789,7 @@ export default function DietSection({ user, profile }: DietSectionProps) {
                                   <div key={i} className="bg-pink-50/20 rounded-xl p-3 border border-pink-50/40 space-y-1 animate-fade-in">
                                     <div className="flex justify-between items-center">
                                       <span className="text-xs font-bold text-zinc-700">
-                                        {meal.name} <span className="text-[10px] font-normal text-zinc-400 font-mono font-bold">({meal.weight || 100}g)</span>
+                                        {meal.name} <span className="text-[10px] font-normal text-zinc-400 font-mono font-bold">({meal.weight || 100}{meal.unit || 'g'})</span>
                                       </span>
                                       <div className="flex gap-2 text-[10px] font-extrabold italic uppercase text-pink-500">
                                         <span>{meal.calories} kcal</span>
@@ -1104,18 +1042,18 @@ export default function DietSection({ user, profile }: DietSectionProps) {
 
                 <div>
                   <div className="flex justify-between items-center mb-2">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 block">Alimentos Ingeridos</label>
-                    <span className="text-[10px] font-semibold text-pink-500 italic block">Digite o peso em gramas (g)</span>
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 block">Alimentos ou Bebidas Ingeridos</label>
+                    <span className="text-[10px] font-semibold text-pink-500 italic block">Escolha a unidade (g ou ml)</span>
                   </div>
                   
                   <div className="space-y-4">
                     {newDiet.meals.map((meal, i) => (
                       <div key={i} className="bg-pink-50/10 p-4 rounded-2xl border border-pink-50 space-y-3">
                         <div className="grid grid-cols-12 gap-2 items-center">
-                          <div className="col-span-6">
+                          <div className="col-span-5">
                             <input 
                               type="text" 
-                              placeholder="Nome do Alimento. Ex: Maçã"
+                              placeholder="Nome do Alimento ou Bebida"
                               className="w-full bg-[#fffafa] border border-pink-150 rounded-xl px-3 py-2 text-xs font-semibold text-zinc-805"
                               value={meal.name}
                               onChange={(e) => {
@@ -1126,11 +1064,11 @@ export default function DietSection({ user, profile }: DietSectionProps) {
                             />
                           </div>
                           
-                          <div className="col-span-3">
+                          <div className="col-span-2">
                             <input 
                               type="number" 
-                              placeholder="Peso (g)"
-                              className="w-full bg-[#fffafa] border border-pink-150 rounded-xl px-2 py-2 text-xs font-bold text-center text-zinc-805"
+                              placeholder="Qtd"
+                              className="w-full bg-[#fffafa] border border-pink-150 rounded-xl px-1 py-2 text-xs font-bold text-center text-zinc-805"
                               value={meal.weight || ''}
                               onChange={(e) => {
                                 const newMeals = [...newDiet.meals];
@@ -1138,6 +1076,21 @@ export default function DietSection({ user, profile }: DietSectionProps) {
                                 setNewDiet({...newDiet, meals: newMeals});
                               }}
                             />
+                          </div>
+
+                          <div className="col-span-2">
+                            <select
+                              className="w-full bg-[#fffafa] border border-pink-150 rounded-xl px-2 py-2 text-xs font-bold text-center text-zinc-805 cursor-pointer focus:outline-none"
+                              value={meal.unit || 'g'}
+                              onChange={(e) => {
+                                const newMeals = [...newDiet.meals];
+                                newMeals[i].unit = e.target.value;
+                                setNewDiet({...newDiet, meals: newMeals});
+                              }}
+                            >
+                              <option value="g">g</option>
+                              <option value="ml">ml</option>
+                            </select>
                           </div>
 
                           <div className="col-span-2">
