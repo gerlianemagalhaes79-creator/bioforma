@@ -15,6 +15,7 @@ export default function Dashboard({ user, profile }: DashboardProps) {
   const [checkins, setCheckins] = useState<any[]>([]);
   const [metrics, setMetrics] = useState<any[]>([]);
   const [recentWorkout, setRecentWorkout] = useState<any>(null);
+  const [workouts, setWorkouts] = useState<any[]>([]);
   const [diets, setDiets] = useState<any[]>([]);
   const [aerobics, setAerobics] = useState<any[]>([]);
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
@@ -50,6 +51,14 @@ export default function Dashboard({ user, profile }: DashboardProps) {
       if (!snapshot.empty) setRecentWorkout(snapshot.docs[0].data());
     });
 
+    const workoutsAllQuery = query(
+      collection(db, 'workouts'),
+      where('uid', '==', user.uid)
+    );
+    const unsubscribeWorkoutsAll = onSnapshot(workoutsAllQuery, (snapshot) => {
+      setWorkouts(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    });
+
     // Real-time subscription to user diets to compute home charts
     const dietsQuery = query(
       collection(db, 'diets'),
@@ -73,6 +82,7 @@ export default function Dashboard({ user, profile }: DashboardProps) {
       unsubscribeCheckins();
       unsubscribeMetrics();
       unsubscribeWorkout();
+      unsubscribeWorkoutsAll();
       unsubscribeDiets();
       unsubscribeAerobics();
     };
@@ -414,8 +424,10 @@ export default function Dashboard({ user, profile }: DashboardProps) {
             const isToday = isSameDay(day, new Date());
             const dayStr = format(day, 'yyyy-MM-dd');
 
-            // 1. Workout met
-            const isWorkoutMet = checkin?.workoutDone || false;
+            // 1. Workout met (checked via explicit check-in flag OR presence of logged strength/aerobic activities on this day)
+            const dayWorkoutLogs = workouts.filter((w: any) => w.date === dayStr);
+            const dayAerobicsLogs = aerobics.filter((a: any) => a.date === dayStr);
+            const isWorkoutMet = checkin?.workoutDone || dayWorkoutLogs.length > 0 || dayAerobicsLogs.length > 0;
 
             // 2. Water met
             const dayDietsList = diets.filter(d => d.date === dayStr);

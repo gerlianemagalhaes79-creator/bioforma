@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { db, collection, query, where, onSnapshot, User, orderBy, addDoc, deleteDoc, doc, updateDoc } from '../firebase';
+import { db, collection, query, where, onSnapshot, User, orderBy, addDoc, deleteDoc, doc, updateDoc, getDocs } from '../firebase';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Plus, Trash2, Dumbbell, X, Play, Check, TrendingUp, ChevronDown, ChevronUp, Calendar, Award, Edit2, Flame, Heart, Sparkles } from 'lucide-react';
@@ -114,12 +114,24 @@ export default function WorkoutSection({ user, profile }: WorkoutSectionProps) {
         ...newWorkout,
         uid: user.uid
       });
-      // Add standard checkin
-      await addDoc(collection(db, 'checkins'), {
-        uid: user.uid,
-        date: newWorkout.date,
-        workoutDone: true
-      });
+      // Add standard checkin (matching existing of the same day to avoid duplicate documents)
+      const checkinQuery = query(
+        collection(db, 'checkins'),
+        where('uid', '==', user.uid),
+        where('date', '==', newWorkout.date)
+      );
+      const checkinSnap = await getDocs(checkinQuery);
+      if (!checkinSnap.empty) {
+        await updateDoc(doc(db, 'checkins', checkinSnap.docs[0].id), {
+          workoutDone: true
+        });
+      } else {
+        await addDoc(collection(db, 'checkins'), {
+          uid: user.uid,
+          date: newWorkout.date,
+          workoutDone: true
+        });
+      }
       setShowAddModal(false);
       setNewWorkout({
         type: '',
@@ -208,13 +220,24 @@ export default function WorkoutSection({ user, profile }: WorkoutSectionProps) {
         notes: newAerobic.notes || ''
       });
 
-      // Synchronize with check-in (mark workoutDone as complete for this day)
-      // Query checkins of the target day first
-      await addDoc(collection(db, 'checkins'), {
-        uid: user.uid,
-        date: newAerobic.date,
-        workoutDone: true
-      });
+      // Synchronize with check-in (mark workoutDone as complete for this day, matching existing to avoid duplicates)
+      const checkinQuery = query(
+        collection(db, 'checkins'),
+        where('uid', '==', user.uid),
+        where('date', '==', newAerobic.date)
+      );
+      const checkinSnap = await getDocs(checkinQuery);
+      if (!checkinSnap.empty) {
+        await updateDoc(doc(db, 'checkins', checkinSnap.docs[0].id), {
+          workoutDone: true
+        });
+      } else {
+        await addDoc(collection(db, 'checkins'), {
+          uid: user.uid,
+          date: newAerobic.date,
+          workoutDone: true
+        });
+      }
 
       setShowAddAerobicModal(false);
       setNewAerobic({
@@ -372,12 +395,24 @@ export default function WorkoutSection({ user, profile }: WorkoutSectionProps) {
         notes: "Sessão concluída com sucesso! 🔥"
       });
 
-      // 3. Mark daily task check-in
-      await addDoc(collection(db, 'checkins'), {
-        uid: user.uid,
-        date: todayString,
-        workoutDone: true
-      });
+      // 3. Mark daily task check-in (matching existing of the same day to avoid duplicates)
+      const checkinQuery = query(
+        collection(db, 'checkins'),
+        where('uid', '==', user.uid),
+        where('date', '==', todayString)
+      );
+      const checkinSnap = await getDocs(checkinQuery);
+      if (!checkinSnap.empty) {
+        await updateDoc(doc(db, 'checkins', checkinSnap.docs[0].id), {
+          workoutDone: true
+        });
+      } else {
+        await addDoc(collection(db, 'checkins'), {
+          uid: user.uid,
+          date: todayString,
+          workoutDone: true
+        });
+      }
 
       // Show celebration feedback & close
       setActiveSession(null);
