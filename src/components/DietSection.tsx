@@ -455,13 +455,32 @@ export default function DietSection({ user, profile }: DietSectionProps) {
         uid: user.uid
       });
       
+      const existingDietsOfTheDay = diets.filter(d => d.date === newDiet.date);
+      const previousWaterTotal = existingDietsOfTheDay.reduce((acc, d) => acc + (d.waterIntake || 0), 0);
+      const totalWaterToday = previousWaterTotal + (newDiet.waterIntake || 0);
+
       const targetWater = profile?.dailyWaterGoal || 2500;
-      await addDoc(collection(db, 'checkins'), {
-        uid: user.uid,
-        date: newDiet.date,
-        dietOnTrack: true,
-        waterGoalMet: newDiet.waterIntake >= targetWater
-      });
+      
+      const checkinQuery = query(
+        collection(db, 'checkins'),
+        where('uid', '==', user.uid),
+        where('date', '==', newDiet.date)
+      );
+      const checkinSnap = await getDocs(checkinQuery);
+      if (!checkinSnap.empty) {
+        await updateDoc(doc(db, 'checkins', checkinSnap.docs[0].id), {
+          dietOnTrack: true,
+          waterGoalMet: totalWaterToday >= targetWater
+        });
+      } else {
+        await addDoc(collection(db, 'checkins'), {
+          uid: user.uid,
+          date: newDiet.date,
+          dietOnTrack: true,
+          waterGoalMet: totalWaterToday >= targetWater,
+          workoutDone: false
+        });
+      }
 
       setShowAddModal(false);
       setNewDiet({

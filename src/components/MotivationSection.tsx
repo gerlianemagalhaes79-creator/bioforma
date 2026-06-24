@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { GoogleGenAI } from "@google/genai";
 import { User, db, collection, query, where, getDocs, orderBy, limit } from '../firebase';
 import { motion } from 'motion/react';
 import { Sparkles, Brain, Target, Zap, Activity } from 'lucide-react';
@@ -25,22 +24,20 @@ export default function MotivationSection({ user, profile }: MotivationSectionPr
       const metrics = metricsSnap.docs.map(d => d.data());
       const workouts = workoutsSnap.docs.map(d => d.data());
 
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
-      const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: `Você é um personal trainer e nutricionista motivacional de elite. 
-        O usuário se chama ${profile?.name}. 
-        Dados recentes:
-        - Peso atual: ${metrics[0]?.weight || 'N/A'} kg
-        - Meta: ${profile?.targetWeight || 'N/A'} kg
-        - Últimos treinos: ${workouts.map(w => w.type).join(', ') || 'Nenhum registrado'}
-        
-        Gere uma mensagem curta, impactante e motivadora em português para o usuário hoje. 
-        Foque em disciplina, consistência e no objetivo de ter músculos mais fortes e menos gordura. 
-        Use um tom de "coach" de alto nível, mas encorajador.`,
+      const response = await fetch('/api/motivation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: profile?.name,
+          targetWeight: profile?.targetWeight,
+          weight: metrics[0]?.weight,
+          workouts: workouts.map(w => w.type).join(', ')
+        })
       });
-
-      setMessage(response.text || '');
+      const data = await response.json();
+      setMessage(data.text || 'Mantenha o foco! A disciplina é o que separa o sonho da realidade. Vamos pra cima!');
     } catch (e) {
       console.error(e);
       setMessage('Mantenha o foco! A disciplina é o que separa o sonho da realidade. Vamos pra cima!');

@@ -3,7 +3,7 @@ import { db, collection, query, where, onSnapshot, User, orderBy, limit, addDoc,
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { motion } from 'motion/react';
-import { Activity, Apple, Droplets, Flame, TrendingUp, Plus } from 'lucide-react';
+import { Activity, Apple, Droplets, Flame, TrendingUp, Plus, ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, BarChart, Bar, Cell } from 'recharts';
 
 interface DashboardProps {
@@ -108,27 +108,59 @@ export default function Dashboard({ user, profile }: DashboardProps) {
     uniqueDates.unshift(todayStr);
   }
 
+  const getSelectedDateLabel = () => {
+    const today = new Date();
+    const todayFormatted = format(today, 'yyyy-MM-dd');
+    
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayFormatted = format(yesterday, 'yyyy-MM-dd');
+
+    const selDate = new Date(selectedDate + 'T00:00:00');
+
+    if (selectedDate === todayFormatted) {
+      return `Hoje, ${format(selDate, "dd 'de' MMMM", { locale: ptBR })}`;
+    } else if (selectedDate === yesterdayFormatted) {
+      return `Ontem, ${format(selDate, "dd 'de' MMMM", { locale: ptBR })}`;
+    } else {
+      return format(selDate, "EEEE, dd 'de' MMMM", { locale: ptBR });
+    }
+  };
+
+  const handlePrevDay = () => {
+    const current = new Date(selectedDate + 'T00:00:00');
+    current.setDate(current.getDate() - 1);
+    setSelectedDate(format(current, 'yyyy-MM-dd'));
+  };
+
+  const handleNextDay = () => {
+    const current = new Date(selectedDate + 'T00:00:00');
+    current.setDate(current.getDate() + 1);
+    setSelectedDate(format(current, 'yyyy-MM-dd'));
+  };
+
   // Filter diets by selected date and sum macros
   const selectedDateDiets = diets.filter(d => d.date === selectedDate);
+  const selectedTotalWater = selectedDateDiets.reduce((acc, d) => acc + (d.waterIntake || 0), 0);
   const todayDiets = diets.filter(d => d.date === todayStr);
   const todayWater = todayDiets.reduce((acc, d) => acc + (d.waterIntake || 0), 0);
 
   const handleQuickAddWaterStart = async () => {
     try {
       const targetWater = profile?.dailyWaterGoal || 2500;
-      const currentTotalWater = todayDiets.reduce((acc, d) => acc + (d.waterIntake || 0), 0);
+      const currentTotalWater = selectedDateDiets.reduce((acc, d) => acc + (d.waterIntake || 0), 0);
       const newWaterTotal = currentTotalWater + 150;
 
-      const firstTodayDiet = todayDiets[0];
+      const firstSelectedDiet = selectedDateDiets[0];
 
-      if (firstTodayDiet) {
-        await updateDoc(doc(db, 'diets', firstTodayDiet.id), {
-          waterIntake: (firstTodayDiet.waterIntake || 0) + 150
+      if (firstSelectedDiet) {
+        await updateDoc(doc(db, 'diets', firstSelectedDiet.id), {
+          waterIntake: (firstSelectedDiet.waterIntake || 0) + 150
         });
       } else {
         await addDoc(collection(db, 'diets'), {
           uid: user.uid,
-          date: todayStr,
+          date: selectedDate,
           meals: [],
           waterIntake: 150,
           notes: 'Registrado pela via rápida do início'
@@ -139,7 +171,7 @@ export default function Dashboard({ user, profile }: DashboardProps) {
       const checkinQuery = query(
         collection(db, 'checkins'),
         where('uid', '==', user.uid),
-        where('date', '==', todayStr)
+        where('date', '==', selectedDate)
       );
       const checkinSnap = await getDocs(checkinQuery);
       if (!checkinSnap.empty) {
@@ -149,7 +181,7 @@ export default function Dashboard({ user, profile }: DashboardProps) {
       } else {
         await addDoc(collection(db, 'checkins'), {
           uid: user.uid,
-          date: todayStr,
+          date: selectedDate,
           waterGoalMet: newWaterTotal >= targetWater,
           workoutDone: false,
           dietOnTrack: true
@@ -208,16 +240,72 @@ export default function Dashboard({ user, profile }: DashboardProps) {
         <button
           onClick={handleQuickAddWaterStart}
           className="p-2.5 bg-sky-50/80 hover:bg-sky-100 border border-sky-200/50 rounded-2xl transition-all cursor-pointer flex flex-col items-center justify-center shadow-sm hover:shadow active:scale-95 relative group"
-          title={`Adicionar +150ml (Hoje: ${todayWater}ml)`}
+          title={`Adicionar +150ml (Nesta data: ${selectedTotalWater}ml)`}
         >
           <span className="text-xl leading-none">💧</span>
           <span className="text-[8px] font-black uppercase text-sky-600 mt-0.5 tracking-tighter">
-            {todayWater} ml
+            {selectedTotalWater} ml
           </span>
           <span className="absolute right-0 top-full mt-2.5 bg-zinc-800 text-white text-[9px] font-extrabold uppercase px-2.5 py-1.5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-md">
-            +150ml (Toque para registrar)
+            +150ml ({selectedDate === todayStr ? 'Hoje' : format(new Date(selectedDate + 'T00:00:00'), 'dd/MM')})
           </span>
         </button>
+      </section>
+
+      {/* Date Navigation and Selection Bar */}
+      <section className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-3xl border border-pink-100/50 shadow-sm shadow-pink-100/5">
+        <div className="flex items-center gap-1.5">
+          <Calendar size={15} className="text-pink-500" />
+          <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Visualizar ou Registrar Retroativo</span>
+        </div>
+
+        <div className="flex items-center gap-3 w-full sm:w-auto justify-center">
+          <div className="relative flex items-center bg-pink-50/10 hover:bg-pink-50/30 border border-pink-100 rounded-2xl px-3 py-2 shadow-sm gap-3 max-w-sm transition-all">
+            <button 
+              type="button"
+              onClick={handlePrevDay}
+              className="p-1 hover:bg-white rounded-lg text-pink-500 cursor-pointer transition-colors border-0 flex items-center justify-center"
+              title="Dia Anterior"
+            >
+              <ChevronLeft size={16} strokeWidth={3} />
+            </button>
+            
+            <div className="text-center relative cursor-pointer px-1 flex-1">
+              <span className="text-xs font-black uppercase text-zinc-700 block whitespace-nowrap tracking-tight">
+                {getSelectedDateLabel()}
+              </span>
+              <input 
+                type="date"
+                className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                value={selectedDate}
+                onChange={(e) => {
+                  if (e.target.value) {
+                    setSelectedDate(e.target.value);
+                  }
+                }}
+              />
+            </div>
+
+            <button 
+              type="button"
+              onClick={handleNextDay}
+              className="p-1 hover:bg-white rounded-lg text-pink-500 cursor-pointer transition-colors border-0 flex items-center justify-center"
+              title="Próximo Dia"
+            >
+              <ChevronRight size={16} strokeWidth={3} />
+            </button>
+          </div>
+
+          {selectedDate !== todayStr && (
+            <button
+              type="button"
+              onClick={() => setSelectedDate(todayStr)}
+              className="px-3 py-2 bg-pink-50 hover:bg-pink-100 active:scale-95 text-pink-600 font-extrabold uppercase text-[9px] rounded-2xl tracking-wider transition-all cursor-pointer border border-pink-100/60"
+            >
+              Hoje ↩
+            </button>
+          )}
+        </div>
       </section>
 
       {/* Painel de Nutrição Diária com Gráficos */}
@@ -444,23 +532,32 @@ export default function Dashboard({ user, profile }: DashboardProps) {
             const dayNetCalories = Math.max(0, dayCalories - dayBurned);
             const isCalorieMet = dayCalories > 0 && dayNetCalories <= goalCalories;
             
+            const isSelected = dayStr === selectedDate;
+            
             return (
-              <div key={i} className="flex flex-col items-center gap-1">
+              <button 
+                key={i} 
+                type="button"
+                onClick={() => setSelectedDate(dayStr)}
+                className={`flex flex-col items-center gap-1 p-1 rounded-2xl transition-all cursor-pointer border-0 w-full hover:bg-pink-50/40 relative active:scale-95 ${
+                  isSelected ? 'bg-pink-50 ring-1 ring-pink-200' : ''
+                }`}
+              >
                 <span className={`text-[8px] font-bold uppercase ${isToday ? 'text-pink-500' : 'text-zinc-400'}`}>
                   {format(day, 'EEE', { locale: ptBR })}
                 </span>
                 <div 
                   className={`w-full aspect-square rounded-xl border flex flex-col p-1 gap-0.5 overflow-hidden transition-all ${
-                    isToday ? 'border-pink-400 ring-2 ring-pink-100 bg-[#fffbfc]' : 'border-pink-100/80 bg-[#fffdfd]'
-                  }`}
+                    isToday ? 'border-[#ec4899] ring-2 ring-pink-100 bg-[#fffbfc]' : 'border-pink-100/80 bg-[#fffdfd]'
+                  } ${isSelected ? 'border-[#ec4899] ring-1 ring-[#ec4899] shadow-sm' : ''}`}
                   title={`Treino: ${isWorkoutMet ? 'Ok' : 'Não'}; Água: ${dayWater}/${targetWater}ml; Calorias: ${dayCalories} (gasto ${dayBurned})`}
                 >
                   <div className={`flex-1 rounded-sm transition-all ${isWorkoutMet ? 'bg-[#d4af37]' : 'bg-zinc-100/40'}`}></div>
-                  <div className={`flex-1 rounded-sm transition-all ${isWaterMet ? 'bg-sky-400' : 'bg-zinc-100/40'}`}></div>
+                  <div className={`flex-1 rounded-sm transition-all ${isWaterMet ? 'bg-[#38bdf8]' : 'bg-zinc-100/40'}`}></div>
                   <div className={`flex-1 rounded-sm transition-all ${isCalorieMet ? 'bg-pink-500' : 'bg-zinc-100/40'}`}></div>
                 </div>
                 <span className="text-[8px] font-bold text-zinc-400">{format(day, 'd')}</span>
-              </div>
+              </button>
             );
           })}
         </div>

@@ -1406,7 +1406,7 @@ export default function ProgressTracker({ user, profile }: ProgressTrackerProps)
                   <label className="text-[8px] uppercase font-bold text-zinc-400">Exame Comum</label>
                   <select 
                     className="w-full bg-[#fffafa] border border-pink-100 rounded-xl p-2.5 font-bold"
-                    value={['Glicose (Jejum)', 'Colesterol Total', 'Colesterol HDL', 'Colesterol LDL', 'Triglicerídeos', 'Testosterona Total', 'Vitamina D', 'Creatinina', 'Ureia', 'Cortisol'].includes(newExam.type) ? newExam.type : (newExam.type === '' ? '' : 'Outro')}
+                    value={['Glicose (Jejum)', 'Colesterol Total', 'Colesterol HDL', 'Colesterol LDL', 'Triglicerídeos', 'Testosterona Total', 'Vitamina D', 'Vitamina C', 'Creatinina', 'Ureia', 'Cortisol'].includes(newExam.type) ? newExam.type : (newExam.type === '' ? '' : 'Outro')}
                     onChange={e => {
                       if (e.target.value === 'Outro') {
                         setNewExam({...newExam, type: ''});
@@ -1414,6 +1414,7 @@ export default function ProgressTracker({ user, profile }: ProgressTrackerProps)
                         let unit = 'mg/dL';
                         if (e.target.value === 'Testosterona Total') unit = 'ng/dL';
                         if (e.target.value === 'Vitamina D') unit = 'ng/mL';
+                        if (e.target.value === 'Vitamina C') unit = 'mg/dL';
                         setNewExam({...newExam, type: e.target.value, unit});
                       }
                     }}
@@ -1426,6 +1427,7 @@ export default function ProgressTracker({ user, profile }: ProgressTrackerProps)
                     <option value="Triglicerídeos">Triglicerídeos</option>
                     <option value="Testosterona Total">Testosterona Total</option>
                     <option value="Vitamina D">Vitamina D</option>
+                    <option value="Vitamina C">Vitamina C</option>
                     <option value="Creatinina">Creatinina</option>
                     <option value="Ureia">Ureia</option>
                     <option value="Cortisol">Cortisol</option>
@@ -1435,7 +1437,7 @@ export default function ProgressTracker({ user, profile }: ProgressTrackerProps)
               </div>
 
               {/* Manual name entry if other */}
-              {(!['Glicose (Jejum)', 'Colesterol Total', 'Colesterol HDL', 'Colesterol LDL', 'Triglicerídeos', 'Testosterona Total', 'Vitamina D', 'Creatinina', 'Ureia', 'Cortisol'].includes(newExam.type) || newExam.type === '') && (
+              {(!['Glicose (Jejum)', 'Colesterol Total', 'Colesterol HDL', 'Colesterol LDL', 'Triglicerídeos', 'Testosterona Total', 'Vitamina D', 'Vitamina C', 'Creatinina', 'Ureia', 'Cortisol'].includes(newExam.type) || newExam.type === '') && (
                 <div className="animate-fade-in text-xs text-zinc-700">
                   <label className="text-[8px] uppercase font-bold text-zinc-400">Nome do Exame</label>
                   <input 

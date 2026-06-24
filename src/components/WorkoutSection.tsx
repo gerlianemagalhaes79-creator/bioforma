@@ -317,6 +317,7 @@ export default function WorkoutSection({ user, profile }: WorkoutSectionProps) {
       const workoutRef = doc(db, 'workouts', editingWorkout.id);
       await updateDoc(workoutRef, {
         type: editingWorkout.type,
+        date: editingWorkout.date || format(new Date(), 'yyyy-MM-dd'),
         exercises: editingWorkout.exercises,
         notes: editingWorkout.notes || ''
       });
@@ -1062,15 +1063,26 @@ export default function WorkoutSection({ user, profile }: WorkoutSectionProps) {
               </div>
 
               <div className="space-y-6">
-                <div>
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-2 block">Tipo de Treino</label>
-                  <input 
-                    type="text" 
-                    placeholder="Ex: Perna Completo, Glúteos"
-                    className="w-full bg-[#fffafa] border border-pink-100 rounded-2xl px-4 py-3 text-zinc-800 font-bold italic"
-                    value={newWorkout.type}
-                    onChange={(e) => setNewWorkout({...newWorkout, type: e.target.value})}
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-2 block">Tipo de Treino</label>
+                    <input 
+                      type="text" 
+                      placeholder="Ex: Perna Completo, Glúteos"
+                      className="w-full bg-[#fffafa] border border-pink-100 rounded-2xl px-4 py-3 text-zinc-800 font-bold italic"
+                      value={newWorkout.type}
+                      onChange={(e) => setNewWorkout({...newWorkout, type: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-[#d4af37] mb-2 block">Data do Treino</label>
+                    <input 
+                      type="date" 
+                      className="w-full bg-[#fffafa] border border-pink-100 rounded-2xl px-4 py-3 text-zinc-800 font-bold"
+                      value={newWorkout.date}
+                      onChange={(e) => setNewWorkout({...newWorkout, date: e.target.value})}
+                    />
+                  </div>
                 </div>
 
                 <div>
@@ -1190,15 +1202,26 @@ export default function WorkoutSection({ user, profile }: WorkoutSectionProps) {
               </div>
 
               <div className="space-y-6">
-                <div>
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-2 block">Tipo de Treino</label>
-                  <input 
-                    type="text" 
-                    placeholder="Ex: Perna Completo, Glúteos"
-                    className="w-full bg-[#fffafa] border border-pink-100 rounded-2xl px-4 py-3 text-zinc-800 font-bold italic"
-                    value={editingWorkout.type}
-                    onChange={(e) => setEditingWorkout({...editingWorkout, type: e.target.value})}
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-2 block">Tipo de Treino</label>
+                    <input 
+                      type="text" 
+                      placeholder="Ex: Perna Completo, Glúteos"
+                      className="w-full bg-[#fffafa] border border-pink-100 rounded-2xl px-4 py-3 text-zinc-800 font-bold italic"
+                      value={editingWorkout.type}
+                      onChange={(e) => setEditingWorkout({...editingWorkout, type: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-[#d4af37] mb-2 block">Data do Treino</label>
+                    <input 
+                      type="date" 
+                      className="w-full bg-[#fffafa] border border-pink-100 rounded-2xl px-4 py-3 text-zinc-800 font-bold"
+                      value={editingWorkout.date}
+                      onChange={(e) => setEditingWorkout({...editingWorkout, date: e.target.value})}
+                    />
+                  </div>
                 </div>
 
                 <div>

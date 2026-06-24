@@ -107,6 +107,42 @@ export default function MetricsSection({ user }: MetricsSectionProps) {
     }
   }, [exams, selectedExamChart]);
 
+  // AI Exam Analyzer states
+  const [analyzingExamId, setAnalyzingExamId] = useState<string | null>(null);
+  const [examAnalysisResults, setExamAnalysisResults] = useState<Record<string, any>>({});
+
+  const handleAnalyzeExam = async (exam: any) => {
+    if (analyzingExamId) return;
+    setAnalyzingExamId(exam.id);
+    try {
+      const response = await fetch('/api/analyze-exam', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: exam.type,
+          value: exam.value,
+          unit: exam.unit,
+          result: exam.result,
+          notes: exam.notes
+        })
+      });
+      const resData = await response.json();
+      if (resData.success && resData.data) {
+        setExamAnalysisResults(prev => ({
+          ...prev,
+          [exam.id]: resData.data
+        }));
+      } else {
+        alert("Não foi possível gerar soluções para o exame neste momento.");
+      }
+    } catch (err) {
+      console.error("Erro na análise:", err);
+      alert("Erro ao conectar ao analisador de exames. Tente novamente.");
+    } finally {
+      setAnalyzingExamId(null);
+    }
+  };
+
   // Read latest logged metrics for the Avatar defaults
   const latestMetric = metrics[0] || {
     weight: 70,
@@ -468,82 +504,7 @@ export default function MetricsSection({ user }: MetricsSectionProps) {
               </div>
             ) : (
               <div className="space-y-4">
-                {/* Exam Evolution Chart */}
-                {uniqueExamTypesWithValues.length > 0 && (
-                  <div className="bg-gradient-to-br from-white to-[#fffbfd] p-5 rounded-[2rem] border border-pink-100 shadow-sm shadow-pink-100/10 space-y-4">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                      <div>
-                        <h4 className="text-[10px] font-black uppercase text-[#d4af37] tracking-widest">Histórico de Bioquímica</h4>
-                        <span className="text-sm font-black italic uppercase text-zinc-700">Evolução do Exame</span>
-                      </div>
-                      
-                      {/* Dropdown to select exam to view */}
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] uppercase font-bold text-zinc-400">Exame:</span>
-                        <select
-                          className="bg-white border border-pink-150 rounded-xl px-3 py-1.5 text-xs text-zinc-700 font-bold"
-                          value={selectedExamChart}
-                          onChange={e => setSelectedExamChart(e.target.value)}
-                        >
-                          {uniqueExamTypesWithValues.map(type => (
-                            <option key={type} value={type}>{type}</option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
 
-                    {/* Recharts chart */}
-                    <div className="h-48 w-full">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={
-                          exams
-                            .filter(e => e.type === selectedExamChart && e.value !== undefined && e.value > 0)
-                            .sort((a,b) => a.date.localeCompare(b.date))
-                        }>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#fdf4f8" vertical={false} />
-                          <XAxis 
-                            dataKey="date" 
-                            tickFormatter={(dStr) => {
-                              try {
-                                return format(new Date(dStr + 'T00:00:00'), 'dd/MM/yy');
-                              } catch (_) {
-                                return dStr;
-                              }
-                            }}
-                            tickLine={false} 
-                            axisLine={false}
-                            tick={{ fill: '#4b5563', fontSize: 10, fontWeight: '700' }}
-                          />
-                          <YAxis 
-                            tickLine={false} 
-                            axisLine={false}
-                            tick={{ fill: '#9ca3af', fontSize: 9 }}
-                            domain={['dataMin - 10', 'dataMax + 10']}
-                          />
-                          <Tooltip 
-                            contentStyle={{ backgroundColor: '#fff', border: '1px solid #fbcfe8', borderRadius: '16px', fontSize: '11px', color: '#1f2937' }}
-                            formatter={(val: any, name: any, props: any) => [`${val} ${props.payload.unit || ''}`, 'Resultado']}
-                            labelFormatter={(label) => {
-                              try {
-                                return format(new Date(label + 'T00:00:00'), "dd 'de' MMMM, yyyy", { locale: ptBR });
-                              } catch (_) {
-                                return label;
-                              }
-                            }}
-                          />
-                          <Line 
-                            type="monotone" 
-                            dataKey="value" 
-                            stroke="#ec4899" 
-                            strokeWidth={4} 
-                            dot={{ r: 4, fill: '#ec4899', strokeWidth: 0 }}
-                            activeDot={{ r: 6, strokeWidth: 0 }}
-                          />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </div>
-                )}
 
                 <div className="space-y-3">
                   {exams.map((e) => (
@@ -582,6 +543,90 @@ export default function MetricsSection({ user }: MetricsSectionProps) {
                       {e.notes && (
                         <p className="text-[10px] text-zinc-400 italic">Notas médicas: {e.notes}</p>
                       )}
+
+                      {/* AI Solutions Button and Section */}
+                      <div className="pt-2 border-t border-pink-50">
+                        {examAnalysisResults[e.id] ? (
+                          <div className="space-y-3 bg-[#fffcf5] border border-amber-100 p-4 rounded-xl mt-2 animate-fade-in text-xs">
+                            <div className="flex items-center gap-1.5 text-[#d4af37] font-black uppercase text-[10px] tracking-wider">
+                              <Sparkles size={14} /> Soluções Inteligentes Geradas por IA
+                            </div>
+                            
+                            <div className="space-y-1">
+                              <span className="font-bold text-zinc-700">Análise do Indicador:</span>
+                              <p className="text-zinc-600 leading-relaxed text-[11px]">{examAnalysisResults[e.id].analysis}</p>
+                            </div>
+
+                            {examAnalysisResults[e.id].causes && examAnalysisResults[e.id].causes.length > 0 && (
+                              <div className="space-y-1">
+                                <span className="font-bold text-zinc-700">🔍 Possíveis Causas Fisiológicas:</span>
+                                <ul className="list-disc pl-4 space-y-0.5 text-zinc-600 text-[11px]">
+                                  {examAnalysisResults[e.id].causes.map((cause: string, i: number) => (
+                                    <li key={i}>{cause}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+
+                            {examAnalysisResults[e.id].solutions && examAnalysisResults[e.id].solutions.length > 0 && (
+                              <div className="space-y-1">
+                                <span className="font-bold text-zinc-700">🏋️ Recomendações & Hábitos:</span>
+                                <ul className="list-disc pl-4 space-y-0.5 text-zinc-600 text-[11px]">
+                                  {examAnalysisResults[e.id].solutions.map((sol: string, i: number) => (
+                                    <li key={i}>{sol}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+
+                            {examAnalysisResults[e.id].dietaryTips && examAnalysisResults[e.id].dietaryTips.length > 0 && (
+                              <div className="space-y-1">
+                                <span className="font-bold text-zinc-700">🥗 Alimentos & Dieta Recomendada:</span>
+                                <ul className="list-disc pl-4 space-y-0.5 text-zinc-600 text-[11px]">
+                                  {examAnalysisResults[e.id].dietaryTips.map((tip: string, i: number) => (
+                                    <li key={i}>{tip}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+
+                            <div className="bg-amber-50 border border-amber-100 p-2.5 rounded-lg text-[10px] text-amber-700 font-medium leading-relaxed">
+                              ⚠️ {examAnalysisResults[e.id].warning}
+                            </div>
+
+                            <button
+                              onClick={() => {
+                                setExamAnalysisResults(prev => {
+                                  const updated = { ...prev };
+                                  delete updated[e.id];
+                                  return updated;
+                                });
+                              }}
+                              className="text-[10px] font-bold text-zinc-400 hover:text-zinc-600 block mt-1 underline cursor-pointer"
+                            >
+                              Fechar Análise
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => handleAnalyzeExam(e)}
+                            disabled={analyzingExamId === e.id}
+                            className="w-full bg-[#fdf2f8] hover:bg-[#fbcfe8] text-pink-600 disabled:text-zinc-400 disabled:bg-zinc-100 font-bold py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 text-xs transition-all cursor-pointer border border-pink-100/50"
+                          >
+                            {analyzingExamId === e.id ? (
+                              <>
+                                <span className="animate-spin inline-block w-3.5 h-3.5 border-2 border-pink-500 border-t-transparent rounded-full mr-1" />
+                                Analisando Indicadores e Buscando Soluções...
+                              </>
+                            ) : (
+                              <>
+                                <Sparkles size={14} className="text-pink-500" />
+                                Exame Baixo/Fora da Referência? Ver Soluções de IA
+                              </>
+                            )}
+                          </button>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -1135,7 +1180,7 @@ export default function MetricsSection({ user }: MetricsSectionProps) {
                   <label className="text-[9px] uppercase font-bold text-zinc-400 tracking-wider">Tipo de Exame / Nome</label>
                   <select 
                     className="w-full bg-[#fffafa] border border-pink-100 rounded-xl p-3 text-xs text-zinc-800"
-                    value={['Glicose (Jejum)', 'Colesterol Total', 'Colesterol HDL', 'Colesterol LDL', 'Triglicerídeos', 'Testosterona Total', 'Vitamina D', 'Creatinina', 'Ureia', 'Cortisol'].includes(newExam.type) ? newExam.type : (newExam.type === '' ? '' : 'Outro')}
+                    value={['Glicose (Jejum)', 'Colesterol Total', 'Colesterol HDL', 'Colesterol LDL', 'Triglicerídeos', 'Testosterona Total', 'Vitamina D', 'Vitamina C', 'Creatinina', 'Ureia', 'Cortisol'].includes(newExam.type) ? newExam.type : (newExam.type === '' ? '' : 'Outro')}
                     onChange={e => {
                       if (e.target.value === 'Outro') {
                         setNewExam({...newExam, type: ''});
@@ -1143,6 +1188,7 @@ export default function MetricsSection({ user }: MetricsSectionProps) {
                         let unit = 'mg/dL';
                         if (e.target.value === 'Testosterona Total') unit = 'ng/dL';
                         if (e.target.value === 'Vitamina D') unit = 'ng/mL';
+                        if (e.target.value === 'Vitamina C') unit = 'mg/dL';
                         setNewExam({...newExam, type: e.target.value, unit});
                       }
                     }}
@@ -1155,13 +1201,14 @@ export default function MetricsSection({ user }: MetricsSectionProps) {
                     <option value="Triglicerídeos">Triglicerídeos</option>
                     <option value="Testosterona Total">Testosterona Total</option>
                     <option value="Vitamina D">Vitamina D</option>
+                    <option value="Vitamina C">Vitamina C</option>
                     <option value="Creatinina">Creatinina</option>
                     <option value="Ureia">Ureia</option>
                     <option value="Cortisol">Cortisol</option>
                     <option value="Outro">Outro (Digitar manualmente)...</option>
                   </select>
                   
-                  {(!['Glicose (Jejum)', 'Colesterol Total', 'Colesterol HDL', 'Colesterol LDL', 'Triglicerídeos', 'Testosterona Total', 'Vitamina D', 'Creatinina', 'Ureia', 'Cortisol'].includes(newExam.type) || newExam.type === '') && (
+                  {(!['Glicose (Jejum)', 'Colesterol Total', 'Colesterol HDL', 'Colesterol LDL', 'Triglicerídeos', 'Testosterona Total', 'Vitamina D', 'Vitamina C', 'Creatinina', 'Ureia', 'Cortisol'].includes(newExam.type) || newExam.type === '') && (
                     <input 
                       type="text" 
                       placeholder="Digite o nome do exame (ex: Hemoglobina Glicada)" 

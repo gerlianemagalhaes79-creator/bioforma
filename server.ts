@@ -24,6 +24,67 @@ function getAIClient() {
   return aiClient;
 }
 
+function formatGeminiError(err: any): string {
+  if (!err) return "Erro desconhecido";
+  const msg = err.message || String(err);
+  try {
+    if (typeof msg === 'string' && msg.trim().startsWith('{')) {
+      const parsed = JSON.parse(msg);
+      if (parsed.error) {
+        const code = parsed.error.code || "";
+        const status = parsed.error.status || "";
+        const message = parsed.error.message || "";
+        return `[API ${code} - ${status}] ${message}`;
+      }
+    }
+  } catch (_) {
+    // ignore
+  }
+  
+  if (msg.includes("503") || msg.includes("UNAVAILABLE") || msg.includes("high demand")) {
+    return "Servico temporariamente indisponivel (503 - Alta demanda)";
+  }
+  if (msg.includes("429") || msg.includes("RESOURCE_EXHAUSTED") || msg.includes("quota")) {
+    return "Limite de requisicoes atingido (429 - Quota)";
+  }
+  
+  return msg.replace(/[\{\}]/g, '').substring(0, 150);
+}
+
+async function generateContentWithRetry(aiInstance: any, options: {
+  contents: string;
+  config?: any;
+  defaultModel?: string;
+  maxRetries?: number;
+}) {
+  const { contents, config = {}, defaultModel = "gemini-3.5-flash", maxRetries = 2 } = options;
+  // Try defaultModel, then the lightweight gemini-3.1-flash-lite, then gemini-flash-latest
+  const modelsToTry = Array.from(new Set([defaultModel, "gemini-3.1-flash-lite", "gemini-flash-latest"]));
+  
+  for (const model of modelsToTry) {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`[Gemini SDK] Chamando modelo "${model}" (tentativa ${attempt}/${maxRetries})`);
+        const response = await aiInstance.models.generateContent({
+          model,
+          contents,
+          config,
+        });
+        if (response && response.text) {
+          return response;
+        }
+      } catch (err: any) {
+        const cleanMessage = formatGeminiError(err);
+        console.log(`[Gemini SDK] Falha na tentativa ${attempt} com o modelo "${model}": ${cleanMessage}`);
+        if (attempt < maxRetries) {
+          await new Promise(resolve => setTimeout(resolve, 300));
+        }
+      }
+    }
+  }
+  throw new Error("Todos os modelos e tentativas do Gemini falharam.");
+}
+
 async function startServer() {
   const app = express();
   const PORT = 3000;
@@ -180,10 +241,11 @@ Atenção: retorne estritamente um JSON limpo formatado de acordo com o esquema 
 
       // Strategy 2: Attempt standard prompt without the googleSearch tool if AI Client is available
       try {
-        console.log(`[Nutrition] Tentando Gemini normal (sem Search) para: "${foodName}" (${g}g)`);
-        const responseWithoutSearch = await aiInstance.models.generateContent({
-          model: "gemini-3.5-flash",
+        console.log(`[Nutrition] Tentando Gemini normal (com retries) para: "${foodName}" (${g}g)`);
+        const responseWithoutSearch = await generateContentWithRetry(aiInstance, {
           contents: prompt,
+          defaultModel: "gemini-3.5-flash",
+          maxRetries: 2,
           config: {
             responseMimeType: "application/json",
             responseSchema: {
@@ -212,7 +274,7 @@ Atenção: retorne estritamente um JSON limpo formatado de acordo com o esquema 
           return res.json({ success: true, data: parsedData });
         }
       } catch (normalError: any) {
-        console.log(`[Nutrition] Gemini padrao indisponivel (quota). Ativando estimativa offline...`);
+        console.log(`[Nutrition] Gemini padrao indisponivel. Ativando estimativa offline... Erro: ${normalError.message}`);
       }
     } else {
       console.log(`[Nutrition] Pulando IA por falta de chave API. Usando estimativa inteligente local.`);
@@ -320,10 +382,11 @@ Atenção: retorne estritamente um JSON limpo formatado de acordo com o esquema 
       Não inclua markdown extra ou texto de introdução/conclusão. Apenas o JSON em formato puro.`;
 
       try {
-        console.log(`[Aerobics] Tentando calcular calorias com Gemini para: ${type}, ${min}min, intensidade: ${intensity}`);
-        const response = await aiInstance.models.generateContent({
-          model: "gemini-3.5-flash",
+        console.log(`[Aerobics] Tentando calcular calorias com Gemini (com retries) para: ${type}, ${min}min, intensidade: ${intensity}`);
+        const response = await generateContentWithRetry(aiInstance, {
           contents: gptPrompt,
+          defaultModel: "gemini-3.5-flash",
+          maxRetries: 2,
           config: {
             responseMimeType: "application/json",
             responseSchema: {
@@ -345,7 +408,7 @@ Atenção: retorne estritamente um JSON limpo formatado de acordo com o esquema 
           return res.json({ success: true, data: parsedData });
         }
       } catch (geminiError: any) {
-        console.warn(`[Aerobics] Gemini indisponível para cálculo de aeróbico. Usando o algoritmo offline. Error:`, geminiError.message);
+        console.log(`[Aerobics] Gemini indisponível para cálculo de aeróbico. Usando o algoritmo offline. Error: ${geminiError.message}`);
       }
     }
 
@@ -401,6 +464,254 @@ Atenção: retorne estritamente um JSON limpo formatado de acordo com o esquema 
         }
       });
     }
+  });
+
+  // Analyze Lab Exams with Gemini or offline expert knowledge to provide actionable solutions
+  app.post("/api/analyze-exam", async (req, res) => {
+    const { type, value, unit, result, notes } = req.body;
+
+    if (!type) {
+      return res.status(400).json({ error: "O tipo ou nome do exame é obrigatório para a análise." });
+    }
+
+    const numericValue = Number(value);
+    const normalizedType = String(type).toLowerCase().trim();
+
+    const prompt = `Você é um analista médico de inteligência artificial de elite integrado ao aplicativo BioForma.
+O usuário enviou um exame laboratorial e deseja soluções/sugestões práticas para o seu resultado, principalmente se estiver fora dos valores normais ou abaixo da referência.
+
+Detalhes do exame fornecidos:
+- Tipo/Nome do Exame: "${type}"
+- Valor registrado: ${value ? `${value} ${unit || ''}` : "Não informado numericamente"}
+- Texto do Resultado/Laudo Completo: "${result || ''}"
+- Notas/Observações: "${notes || ''}"
+
+Você deve fornecer uma resposta no formato JSON estruturado com os seguintes campos:
+1. "analysis": Breve resumo explicando o que é esse exame e interpretando o valor atual (especialmente se estiver baixo ou alto).
+2. "causes": Uma lista de strings contendo possíveis causas fisiológicas para esse nível (principalmente se estiver abaixo do ideal).
+3. "solutions": Uma lista de strings com soluções práticas e seguras para elevar/ajustar esse marcador (melhorias nos treinos, mudanças de hábitos, regulação de sono, controle de estresse).
+4. "dietaryTips": Uma lista de strings com dicas de alimentação ou alimentos ricos que auxiliam nesse marcador específico.
+5. "warning": Um aviso médico claro, lembrando que a IA é apenas informativa e não substitui a consulta médica.
+
+Escreva a resposta estritamente em português brasileiro de forma profissional, acolhedora e direta. Retorne apenas o JSON puro, sem formatação Markdown externa.`;
+
+    const aiInstance = getAIClient();
+    if (aiInstance) {
+      try {
+        console.log(`[Exam Analysis] Analisando exame com Gemini (com retries) para: "${type}" (valor: ${value})`);
+        const response = await generateContentWithRetry(aiInstance, {
+          contents: prompt,
+          defaultModel: "gemini-3.5-flash",
+          maxRetries: 2,
+          config: {
+            responseMimeType: "application/json",
+            responseSchema: {
+              type: Type.OBJECT,
+              required: ["analysis", "causes", "solutions", "dietaryTips", "warning"],
+              properties: {
+                analysis: { type: Type.STRING, description: "Resumo explicativo do exame e interpretação" },
+                causes: {
+                  type: Type.ARRAY,
+                  items: { type: Type.STRING },
+                  description: "Lista de possíveis causas do nível do exame"
+                },
+                solutions: {
+                  type: Type.ARRAY,
+                  items: { type: Type.STRING },
+                  description: "Lista de sugestões de hábitos, atividades ou soluções gerais"
+                },
+                dietaryTips: {
+                  type: Type.ARRAY,
+                  items: { type: Type.STRING },
+                  description: "Alimentos e estratégias de dieta recomendados"
+                },
+                warning: { type: Type.STRING, description: "Aviso de isenção de responsabilidade médica" }
+              }
+            }
+          }
+        });
+
+        const text = response.text;
+        if (text) {
+          const parsed = JSON.parse(text.trim());
+          console.log(`[Exam Analysis] Gemini analisou com sucesso!`);
+          return res.json({ success: true, data: parsed });
+        }
+      } catch (geminiErr: any) {
+        console.log(`[Exam Analysis] Falha ao consultar o Gemini para exames, usando o analisador offline inteligente. Erro: ${geminiErr.message}`);
+      }
+    }
+
+    // Smart Offline Expert Fallback System for common lab tests
+    try {
+      console.log(`[Exam Analysis] Executando analisador offline de exames para: "${type}"`);
+      
+      let analysis = `O exame de ${type} é fundamental para avaliar as funções metabólicas ou hormonais do organismo.`;
+      let causes: string[] = ["Fatores individuais de genética ou idade", "Padrões alimentares específicos", "Nível de atividade física", "Níveis de estresse ou privação de sono."];
+      let solutions: string[] = ["Manter rotina consistente de atividade física (musculação e aeróbico)", "Priorizar 7 a 8 horas de sono de qualidade para regulação endócrina", "Reduzir consumo de açúcares refinados e gorduras trans", "Monitorar novos resultados em 3 a 6 meses sob supervisão médica."];
+      let dietaryTips: string[] = ["Beba pelo menos 35ml de água por kg de peso corporal diariamente", "Aumente o consumo de vegetais folhosos escuros, legumes e frutas frescas", "Inclua fontes de gorduras saudáveis na alimentação (azeite extra virgem, sementes, abacate, peixes)."];
+      let warning = "Atenção: Esta é uma análise automatizada baseada em diretrizes nutricionais e esportivas de caráter exclusivamente informativo. Nunca altere medicamentos ou inicie suplementações de alta dose sem antes consultar seu médico de confiança.";
+
+      if (normalizedType.includes("vitamina d") || normalizedType.includes("d3") || normalizedType.includes("colecalciferol")) {
+        analysis = "A Vitamina D é crucial para a fixação do cálcio nos ossos, modulação da imunidade, força muscular e síntese hormonal. Níveis baixos (especialmente abaixo de 30 ng/mL) são extremamente comuns em pessoas que passam muito tempo em ambientes fechados.";
+        causes = [
+          "Baixa exposição à luz solar direta sem protetor solar",
+          "Dieta pobre em peixes gordos e gemas de ovos",
+          "Dificuldades metabólicas individuais de síntese cutânea."
+        ];
+        solutions = [
+          "Exposição solar diária inteligente de 15 a 20 minutos (braços e pernas expostos, preferencialmente entre as 10h e as 14h, respeitando a sensibilidade da pele)",
+          "Realizar exercícios físicos regulares (estimula o metabolismo ósseo e muscular)",
+          "Apresentar este resultado ao médico para prescrição de uma dosagem segura de suplementação de Vitamina D3 (ex: 2.000 UI a 5.000 UI diárias, conforme necessidade clínica)."
+        ];
+        dietaryTips = [
+          "Aumentar o consumo de peixes de águas frias (salmão selvagem, atum, sardinha)",
+          "Incluir gemas de ovos orgânicos ou caipiras na dieta",
+          "Consumir cogumelos expostos ao sol ou alimentos fortificados com Vitamina D."
+        ];
+      } else if (normalizedType.includes("vitamina c") || normalizedType.includes("ácido ascórbico") || normalizedType.includes("ascorb")) {
+        analysis = "A Vitamina C (ácido ascórbico) é um poderoso antioxidante vital para a síntese de colágeno, saúde de vasos sanguíneos, cicatrização, absorção do ferro vegetal e excelente função do sistema imunológico. Níveis baixos causam fadiga, imunidade baixa e dores nas articulações.";
+        causes = [
+          "Consumo insuficiente de frutas frescas e vegetais crus no dia a dia",
+          "Cozimento prolongado de alimentos ricos em Vitamina C (que destrói o nutriente devido ao calor)",
+          "Estresse físico muito alto decorrente de treinos exaustivos sem recuperação adequada",
+          "Hábito de fumar ou exposição frequente a toxinas ambientais (que aumentam o gasto de antioxidantes)."
+        ];
+        solutions = [
+          "Aumentar a ingestão de alimentos crus ricos em Vitamina C nas refeições principais",
+          "Melhorar a absorção do ferro de fontes vegetais (como feijão e espinafre) consumindo alimentos com Vitamina C na mesma refeição",
+          "Ajustar a intensidade do treino e priorizar o descanso se a imunidade estiver fragilizada",
+          "Se indicado por médico ou nutricionista, avaliar a suplementação diária de 500mg a 1000mg de Vitamina C pura."
+        ];
+        dietaryTips = [
+          "Consumir frutas cítricas frescas (laranja, limão, mexerica, kiwi, morango)",
+          "Incluir frutas com altíssima concentração como Acerola e Goiaba na sua rotina de sucos ou lanches",
+          "Adicionar pimentão amarelo ou vermelho cru na salada, além de brócolis e couve pouco cozidos."
+        ];
+      } else if (normalizedType.includes("testosterona") || normalizedType.includes("testo")) {
+        analysis = "A testosterona é o principal hormônio androgênico, essencial para o ganho e manutenção de massa muscular, queima de gordura, níveis de energia, libido e saúde cognitiva. Níveis muito baixos podem sabotar seu progresso físico.";
+        causes = [
+          "Estresse crônico elevado (o cortisol alto inibe diretamente a produção de testosterona)",
+          "Privação de sono recorrente ou sono fragmentado",
+          "Deficiência de gorduras boas e micronutrientes como zinco e magnésio na dieta",
+          "Excesso de gordura corporal, que aumenta a conversão de testosterona em estrogênio via aromatase."
+        ];
+        solutions = [
+          "Praticar treinos de força intensos (musculação com pesos livres, agachamentos, levantamento terra) de 3 a 5 vezes na semana",
+          "Garantir 7 a 8 horas de sono profundo ininterrupto por noite",
+          "Gerenciar o estresse por meio de meditação, respiração ou caminhadas ao ar livre",
+          "Evitar consumo excessivo de álcool, que interfere diretamente no eixo hormonal."
+        ];
+        dietaryTips = [
+          "Consumir fontes de gorduras saudáveis (gemas de ovo, azeite extra virgem, abacate, castanhas e nozes) para fornecer colesterol, que é a matéria-prima dos hormônios esteroides",
+          "Garantir alimentos ricos em Zinco e Magnésio (carne vermelha magra, sementes de abóbora, espinafre, cacau 100%)",
+          "Adicionar vegetais crucíferos (brócolis, couve-flor, repolho), que contêm compostos que auxiliam no equilíbrio estrogênico."
+        ];
+      } else if (normalizedType.includes("glicose") || normalizedType.includes("açúcar") || normalizedType.includes("glicemia")) {
+        if (numericValue > 0 && numericValue < 70) {
+          analysis = "Sua Glicose em jejum está abaixo da referência padrão (< 70 mg/dL), indicando uma tendência à hipoglicemia leve. Isso pode gerar fadiga súbita, tontura, tremores ou suor frio.";
+          causes = [
+            "Períodos de jejum prolongado não adaptados",
+            "Treinos de altíssima intensidade combinados com baixa ingestão de carboidratos prévios",
+            "Alta sensibilidade insulínica natural ou resposta metabólica exagerada ao estresse físico."
+          ];
+          solutions = [
+            "Evitar treinar em jejum absoluto se sentir tontura ou fraqueza",
+            "Distribuir a ingestão calórica e de carboidratos de forma mais homogênea ao longo do dia",
+            "Monitorar as taxas de glicemia e relatar tonturas ao seu profissional de saúde."
+          ];
+          dietaryTips = [
+            "Adicionar fontes de carboidratos complexos de baixo índice glicêmico combinados com proteínas e fibras nas refeições principais (aveia, batata doce, arroz integral, lentilha)",
+            "Leve sempre uma fonte rápida de carboidrato (uma banana ou sachê de mel) na bolsa para emergências de tontura durante treinos intensos."
+          ];
+        } else if (numericValue >= 100) {
+          analysis = "Sua Glicose está acima de 99 mg/dL, sugerindo um estado de pré-diabetes ou resistência à insulina que precisa ser abordado para evitar o acúmulo de gordura visceral e proteger o pâncreas.";
+          causes = [
+            "Dieta com alta densidade de carboidratos simples e açúcares refinados",
+            "Sedentarismo ou falta de contração muscular de alta demanda",
+            "Estresse crônico que mantém o cortisol elevado (estimulando a gliconeogênese)."
+          ];
+          solutions = [
+            "Engajar-se em treinos de musculação (o músculo é o principal captador de glicose sem necessidade excessiva de insulina)",
+            "Fazer uma caminhada de 10 a 15 minutos logo após as maiores refeições (ajuda a controlar o pico glicêmico pós-prandial)",
+            "Melhorar a qualidade do sono e praticar controle de estresse."
+          ];
+          dietaryTips = [
+            "Substituir carboidratos refinados (pão branco, massas, doces) por versões integrais e ricos em fibras",
+            "Iniciar as refeições principais consumindo primeiro as fibras (saladas) e proteínas, deixando os carboidratos por último (reduz a velocidade de absorção da glicose)",
+            "Utilizar canela em pó, vinagre de maçã e chá verde, que auxiliam na sensibilidade à insulina."
+          ];
+        }
+      } else if (normalizedType.includes("hdl") || normalizedType.includes("bom")) {
+        analysis = "O HDL é o Colesterol Bom. Ele atua como uma 'limpeza' das artérias, levando o excesso de colesterol de volta ao fígado para ser eliminado. Valores muito baixos (geralmente abaixo de 40 mg/dL) aumentam o risco cardiovascular.";
+        causes = [
+          "Falta de exercícios aeróbicos regulares",
+          "Consumo inadequado de gorduras saudáveis e excesso de carboidratos refinados",
+          "Fatores genéticos ou sedentarismo crônico."
+        ];
+        solutions = [
+          "Adicionar atividades aeróbicas de intensidade moderada a alta de 3 a 5 vezes na semana (corrida, ciclismo, natação)",
+          "Eliminar gorduras trans (biscoitos recheados, salgadinhos de pacote, frituras industriais)",
+          "Controlar o peso e evitar o tabagismo."
+        ];
+        dietaryTips = [
+          "Consumir azeite de oliva extra virgem diariamente (cerca de 1 a 2 colheres de sopa)",
+          "Comer abacate, sementes de linhaça, chia e oleaginosas (nozes, castanhas-do-pará)",
+          "Incluir peixes ricos em Ômega-3 ou avaliar suplementação purificada de óleo de peixe."
+        ];
+      }
+
+      return res.json({
+        success: true,
+        data: {
+          analysis,
+          causes,
+          solutions,
+          dietaryTips,
+          warning
+        }
+      });
+    } catch (offlineErr: any) {
+      return res.status(500).json({ error: "Erro interno ao processar a análise do exame." });
+    }
+  });
+
+  // Analyze Motivation with Gemini or offline expert knowledge
+  app.post("/api/motivation", async (req, res) => {
+    const { name, targetWeight, weight, workouts } = req.body;
+
+    const prompt = `Você é um personal trainer e nutricionista motivacional de elite. 
+O usuário se chama ${name || 'Atleta'}. 
+Dados recentes:
+- Peso atual: ${weight || 'N/A'} kg
+- Meta: ${targetWeight || 'N/A'} kg
+- Últimos treinos: ${workouts || 'Nenhum registrado'}
+
+Gere uma mensagem curta, impactante e motivadora em português para o usuário hoje. 
+Foque em disciplina, consistência e no objetivo de ter músculos mais fortes e menos gordura. 
+Use um tom de "coach" de alto nível, mas encorajador.`;
+
+    const aiInstance = getAIClient();
+    if (aiInstance) {
+      try {
+        console.log(`[Motivation] Gerando mensagem motivacional com Gemini (com retries) para: "${name || 'Atleta'}"`);
+        const response = await generateContentWithRetry(aiInstance, {
+          contents: prompt,
+          defaultModel: "gemini-3.5-flash",
+          maxRetries: 2
+        });
+        if (response && response.text) {
+          return res.json({ success: true, text: response.text });
+        }
+      } catch (err: any) {
+        console.log(`[Motivation] Falha ao consultar o Gemini para motivação: ${err.message}`);
+      }
+    }
+
+    return res.json({
+      success: true,
+      text: "Mantenha o foco! A disciplina é o que separa o sonho da realidade. Cada repetição, cada refeição limpa e cada gota de suor te deixam mais perto da sua melhor versão. Vamos pra cima!"
+    });
   });
 
   // Serve static files in production or delegate to Vite in development
