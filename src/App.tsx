@@ -19,7 +19,7 @@ import DietSection from './components/DietSection';
 import MetricsSection from './components/MetricsSection';
 import ProgressTracker from './components/ProgressTracker';
 import MotivationSection from './components/MotivationSection';
-import { LogIn } from 'lucide-react';
+import { LogIn, Maximize2, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 export default function App() {
@@ -29,6 +29,9 @@ export default function App() {
   const [userProfile, setUserProfile] = useState<any>(null);
   const [signingIn, setSigningIn] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
+  const [activeSession, setActiveSession] = useState<any | null>(null);
+  const [isMinimized, setIsMinimized] = useState(false);
+  const [showCancelWorkoutConfirm, setShowCancelWorkoutConfirm] = useState(false);
 
   const handleLogin = async () => {
     if (signingIn) return;
@@ -171,7 +174,16 @@ export default function App() {
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard': return <Dashboard user={user} profile={userProfile} />;
-      case 'workout': return <WorkoutSection user={user} profile={userProfile} />;
+      case 'workout': return (
+        <WorkoutSection 
+          user={user} 
+          profile={userProfile} 
+          activeSession={activeSession}
+          setActiveSession={setActiveSession}
+          isMinimized={isMinimized}
+          setIsMinimized={setIsMinimized}
+        />
+      );
       case 'diet': return <DietSection user={user} profile={userProfile} />;
       case 'progress': return <ProgressTracker user={user} profile={userProfile} />;
       case 'metrics': return <MetricsSection user={user} />;
@@ -181,24 +193,126 @@ export default function App() {
   };
 
   return (
-    <Layout 
-      activeTab={activeTab} 
-      setActiveTab={setActiveTab} 
-      user={user}
-      logout={logout}
-    >
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={activeTab}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
-          className="pb-24"
-        >
-          {renderContent()}
-        </motion.div>
+    <div className="relative">
+      <Layout 
+        activeTab={activeTab} 
+        setActiveTab={setActiveTab} 
+        user={user}
+        logout={logout}
+      >
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="pb-24"
+          >
+            {renderContent()}
+          </motion.div>
+        </AnimatePresence>
+      </Layout>
+
+      {/* Floating Minimized Workout Tracker Bar */}
+      <AnimatePresence>
+        {activeSession && (isMinimized || activeTab !== 'workout') && (
+          <motion.div
+            initial={{ y: 80, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 80, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+            className="fixed bottom-[74px] left-4 right-4 md:left-1/2 md:right-auto md:w-full md:max-w-md md:-translate-x-1/2 z-[49] bg-gradient-to-r from-zinc-900 to-zinc-950 text-white rounded-2xl px-4 py-3.5 shadow-xl border border-zinc-850 flex items-center justify-between gap-3"
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <span className="flex h-3 w-3 relative shrink-0">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-pink-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-pink-500"></span>
+              </span>
+              <div className="min-w-0">
+                <p className="text-[9px] text-pink-400 font-black uppercase tracking-widest leading-none">Treino Ativo</p>
+                <p className="text-xs font-bold text-zinc-100 truncate mt-1">{activeSession.type}</p>
+                <p className="text-[10px] text-zinc-400 font-bold leading-none mt-1">
+                  {activeSession.exercises.filter((ex: any) => ex.completed).length} de {activeSession.exercises.length} exercícios
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('workout');
+                  setIsMinimized(false);
+                }}
+                className="px-3 py-1.5 bg-pink-500 hover:bg-pink-600 text-white text-[10px] font-black uppercase rounded-xl transition-all cursor-pointer flex items-center gap-1 border-0"
+              >
+                <Maximize2 size={11} strokeWidth={3} />
+                Continuar
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowCancelWorkoutConfirm(true);
+                }}
+                className="p-2 text-zinc-400 hover:text-rose-400 hover:bg-zinc-800 rounded-xl transition-colors cursor-pointer border-0 bg-transparent flex items-center justify-center"
+                title="Descartar treino"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          </motion.div>
+        )}
       </AnimatePresence>
-    </Layout>
+
+      {/* Custom Confirmation Modal for Cancelling Active Session */}
+      <AnimatePresence>
+        {showCancelWorkoutConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 20 }}
+              className="bg-white rounded-3xl p-6 max-w-sm w-full border border-pink-100 shadow-2xl space-y-4 text-zinc-800"
+            >
+              <div className="flex items-center gap-3 text-rose-500">
+                <div className="bg-rose-50 p-2 rounded-xl text-rose-500">
+                  <X size={20} />
+                </div>
+                <h4 className="font-extrabold text-zinc-800 text-lg">Cancelar Treino</h4>
+              </div>
+              <p className="text-sm text-zinc-500 leading-relaxed">
+                Deseja mesmo cancelar e descartar a sessão de treino atual? Todo o progresso desta sessão será perdido de forma permanente.
+              </p>
+              <div className="flex gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setShowCancelWorkoutConfirm(false)}
+                  className="flex-1 py-3 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-xs font-bold uppercase rounded-xl transition-all cursor-pointer border-0"
+                >
+                  Continuar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveSession(null);
+                    setIsMinimized(false);
+                    setShowCancelWorkoutConfirm(false);
+                  }}
+                  className="flex-1 py-3 bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold uppercase rounded-xl transition-all cursor-pointer border-0"
+                >
+                  Sim, Cancelar
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }

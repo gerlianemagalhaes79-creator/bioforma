@@ -73,6 +73,7 @@ export default function ProgressTracker({ user, profile }: ProgressTrackerProps)
   const [uploadNotes, setUploadNotes] = useState<string>('');
   const [compressedImage, setCompressedImage] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [deletingPhotoId, setDeletingPhotoId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Before / After Comparison states
@@ -139,6 +140,17 @@ export default function ProgressTracker({ user, profile }: ProgressTrackerProps)
       unsubPhotos(); 
     };
   }, [user.uid]);
+
+  const confirmDeletePhoto = async () => {
+    if (!deletingPhotoId) return;
+    try {
+      await deleteDoc(doc(db, 'photos', deletingPhotoId));
+    } catch (e) {
+      console.error("Erro ao excluir foto:", e);
+    } finally {
+      setDeletingPhotoId(null);
+    }
+  };
 
   // Extract unique exams types for dropdown chart
   const uniqueExamTypes = useMemo(() => {
@@ -864,10 +876,8 @@ export default function ProgressTracker({ user, profile }: ProgressTrackerProps)
                     </div>
                     {/* Delete handler */}
                     <button
-                      onClick={async () => {
-                        if (confirm("Remover esta foto?")) {
-                          await deleteDoc(doc(db, 'photos', photo.id));
-                        }
+                      onClick={() => {
+                        setDeletingPhotoId(photo.id);
                       }}
                       className="absolute top-2 right-2 p-1.5 bg-black/60 hover:bg-rose-600 text-white rounded-full transition-colors opacity-0 group-hover:opacity-100 cursor-pointer"
                     >
@@ -1494,6 +1504,51 @@ export default function ProgressTracker({ user, profile }: ProgressTrackerProps)
           )}
         </div>
       )}
+
+      {/* Custom Confirmation Modal for Photo Deletion */}
+      <AnimatePresence>
+        {deletingPhotoId && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 20 }}
+              className="bg-white rounded-3xl p-6 max-w-sm w-full border border-pink-100 shadow-2xl space-y-4 text-zinc-800"
+            >
+              <div className="flex items-center gap-3 text-rose-500">
+                <div className="bg-rose-50 p-2 rounded-xl text-rose-500">
+                  <Trash2 size={20} />
+                </div>
+                <h4 className="font-extrabold text-zinc-800 text-lg">Excluir Foto</h4>
+              </div>
+              <p className="text-sm text-zinc-500 leading-relaxed">
+                Tem certeza de que deseja excluir esta foto de progresso? Essa ação é permanente e não poderá ser desfeita.
+              </p>
+              <div className="flex gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setDeletingPhotoId(null)}
+                  className="flex-1 py-3 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-xs font-bold uppercase rounded-xl transition-all cursor-pointer border-0"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmDeletePhoto}
+                  className="flex-1 py-3 bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold uppercase rounded-xl transition-all cursor-pointer border-0"
+                >
+                  Excluir
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

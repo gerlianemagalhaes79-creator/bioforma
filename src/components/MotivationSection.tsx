@@ -12,6 +12,9 @@ interface MotivationSectionProps {
 export default function MotivationSection({ user, profile }: MotivationSectionProps) {
   const [message, setMessage] = useState<string>('');
   const [loading, setLoading] = useState(false);
+  const [consistency, setConsistency] = useState<number>(0);
+  const [statusText, setStatusText] = useState<string>('Iniciando');
+  const [statusColor, setStatusColor] = useState<string>('text-zinc-400');
   const [history, setHistory] = useState<any[]>([]);
 
   const fetchMotivation = async () => {
@@ -20,9 +23,54 @@ export default function MotivationSection({ user, profile }: MotivationSectionPr
       // Fetch recent data for context
       const metricsSnap = await getDocs(query(collection(db, 'metrics'), where('uid', '==', user.uid), orderBy('date', 'desc'), limit(3)));
       const workoutsSnap = await getDocs(query(collection(db, 'workouts'), where('uid', '==', user.uid), orderBy('date', 'desc'), limit(3)));
+      const checkinsSnap = await getDocs(query(collection(db, 'checkins'), where('uid', '==', user.uid)));
       
       const metrics = metricsSnap.docs.map(d => d.data());
       const workouts = workoutsSnap.docs.map(d => d.data());
+      const checkinsList = checkinsSnap.docs.map(d => d.data());
+
+      // Calculate consistency over the last 14 days
+      const dates: string[] = [];
+      for (let i = 0; i < 14; i++) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        dates.push(`${year}-${month}-${day}`);
+      }
+
+      let totalHabitGoals = 14 * 3; // 14 days * 3 habits (workoutDone, dietOnTrack, waterGoalMet)
+      let metHabitGoals = 0;
+
+      dates.forEach(dateStr => {
+        const checkin = checkinsList.find(c => c.date === dateStr);
+        if (checkin) {
+          if (checkin.workoutDone) metHabitGoals++;
+          if (checkin.dietOnTrack) metHabitGoals++;
+          if (checkin.waterGoalMet) metHabitGoals++;
+        }
+      });
+
+      const calculatedConsistency = Math.round((metHabitGoals / totalHabitGoals) * 100);
+      setConsistency(calculatedConsistency);
+
+      let statText = 'Iniciando';
+      let statColor = 'text-zinc-400';
+
+      if (calculatedConsistency >= 80) {
+        statText = 'Foco Elite';
+        statColor = 'text-green-500';
+      } else if (calculatedConsistency >= 50) {
+        statText = 'Ativo';
+        statColor = 'text-orange-500';
+      } else if (calculatedConsistency > 0) {
+        statText = 'Retomando';
+        statColor = 'text-amber-500';
+      }
+
+      setStatusText(statText);
+      setStatusColor(statColor);
 
       const response = await fetch('/api/motivation', {
         method: 'POST',
@@ -33,7 +81,8 @@ export default function MotivationSection({ user, profile }: MotivationSectionPr
           name: profile?.name,
           targetWeight: profile?.targetWeight,
           weight: metrics[0]?.weight,
-          workouts: workouts.map(w => w.type).join(', ')
+          workouts: workouts.map(w => w.type).join(', '),
+          consistency: calculatedConsistency
         })
       });
       const data = await response.json();
@@ -100,12 +149,12 @@ export default function MotivationSection({ user, profile }: MotivationSectionPr
         <div className="bg-zinc-900 p-6 rounded-[2rem] border border-zinc-800">
           <Target className="text-orange-500 mb-3" size={24} />
           <div className="text-xs font-bold uppercase text-zinc-500 mb-1">Consistência</div>
-          <div className="text-xl font-black italic">85%</div>
+          <div className="text-xl font-black italic text-orange-500">{consistency}%</div>
         </div>
         <div className="bg-zinc-900 p-6 rounded-[2rem] border border-zinc-800">
-          <Activity className="text-green-500 mb-3" size={24} />
+          <Activity className={`${statusColor} mb-3`} size={24} />
           <div className="text-xs font-bold uppercase text-zinc-500 mb-1">Status</div>
-          <div className="text-xl font-black italic text-green-500 uppercase">Ativo</div>
+          <div className={`text-xl font-black italic uppercase ${statusColor}`}>{statusText}</div>
         </div>
       </div>
     </div>

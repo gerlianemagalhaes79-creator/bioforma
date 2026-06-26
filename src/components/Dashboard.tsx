@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { db, collection, query, where, onSnapshot, User, orderBy, limit, addDoc, updateDoc, doc, getDocs } from '../firebase';
+import { db, collection, query, where, onSnapshot, User, orderBy, limit, addDoc, updateDoc, doc, getDocs, deleteDoc } from '../firebase';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { motion } from 'motion/react';
-import { Activity, Apple, Droplets, Flame, TrendingUp, Plus, ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Activity, Apple, Droplets, Flame, TrendingUp, Plus, ChevronLeft, ChevronRight, Calendar, Dumbbell, Award, Sparkles, Trash2, X } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, BarChart, Bar, Cell } from 'recharts';
 
 interface DashboardProps {
@@ -14,11 +14,12 @@ interface DashboardProps {
 export default function Dashboard({ user, profile }: DashboardProps) {
   const [checkins, setCheckins] = useState<any[]>([]);
   const [metrics, setMetrics] = useState<any[]>([]);
-  const [recentWorkout, setRecentWorkout] = useState<any>(null);
   const [workouts, setWorkouts] = useState<any[]>([]);
   const [diets, setDiets] = useState<any[]>([]);
   const [aerobics, setAerobics] = useState<any[]>([]);
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [deletingWorkoutId, setDeletingWorkoutId] = useState<string | null>(null);
+  const [deletingAerobicId, setDeletingAerobicId] = useState<string | null>(null);
 
   useEffect(() => {
     const checkinsQuery = query(
@@ -39,16 +40,6 @@ export default function Dashboard({ user, profile }: DashboardProps) {
     );
     const unsubscribeMetrics = onSnapshot(metricsQuery, (snapshot) => {
       setMetrics(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    });
-
-    const workoutQuery = query(
-      collection(db, 'workouts'),
-      where('uid', '==', user.uid),
-      orderBy('date', 'desc'),
-      limit(1)
-    );
-    const unsubscribeWorkout = onSnapshot(workoutQuery, (snapshot) => {
-      if (!snapshot.empty) setRecentWorkout(snapshot.docs[0].data());
     });
 
     const workoutsAllQuery = query(
@@ -81,7 +72,6 @@ export default function Dashboard({ user, profile }: DashboardProps) {
     return () => {
       unsubscribeCheckins();
       unsubscribeMetrics();
-      unsubscribeWorkout();
       unsubscribeWorkoutsAll();
       unsubscribeDiets();
       unsubscribeAerobics();
@@ -96,6 +86,22 @@ export default function Dashboard({ user, profile }: DashboardProps) {
   const getCheckinForDay = (day: Date) => {
     return checkins.find(c => isSameDay(new Date(c.date + 'T00:00:00'), day));
   };
+
+  // Find the last completed gym workout session (isSession: true). Fallback to any workout if no sessions exist.
+  const lastGymWorkout = (() => {
+    const sessions = workouts.filter((w: any) => w.isSession === true);
+    if (sessions.length > 0) {
+      return [...sessions].sort((a: any, b: any) => b.date.localeCompare(a.date))[0];
+    }
+    const allWithDate = workouts.filter((w: any) => w.date);
+    return [...allWithDate].sort((a: any, b: any) => b.date.localeCompare(a.date))[0] || null;
+  })();
+
+  // Find the last aerobic workout
+  const lastAerobicWorkout = (() => {
+    if (aerobics.length === 0) return null;
+    return [...aerobics].sort((a: any, b: any) => b.date.localeCompare(a.date))[0];
+  })();
 
   // Find all unique dates in diets log
   const uniqueDates = Array.from(new Set(diets.map(d => d.date)))
@@ -137,6 +143,36 @@ export default function Dashboard({ user, profile }: DashboardProps) {
     const current = new Date(selectedDate + 'T00:00:00');
     current.setDate(current.getDate() + 1);
     setSelectedDate(format(current, 'yyyy-MM-dd'));
+  };
+
+  const handleDeleteWorkout = async (id: string) => {
+    setDeletingWorkoutId(id);
+  };
+
+  const confirmDeleteWorkout = async () => {
+    if (!deletingWorkoutId) return;
+    try {
+      await deleteDoc(doc(db, 'workouts', deletingWorkoutId));
+    } catch (err) {
+      console.error("Erro ao deletar treino:", err);
+    } finally {
+      setDeletingWorkoutId(null);
+    }
+  };
+
+  const handleDeleteAerobic = async (id: string) => {
+    setDeletingAerobicId(id);
+  };
+
+  const confirmDeleteAerobic = async () => {
+    if (!deletingAerobicId) return;
+    try {
+      await deleteDoc(doc(db, 'aerobics', deletingAerobicId));
+    } catch (err) {
+      console.error("Erro ao deletar aeróbico:", err);
+    } finally {
+      setDeletingAerobicId(null);
+    }
   };
 
   // Filter diets by selected date and sum macros
@@ -563,6 +599,134 @@ export default function Dashboard({ user, profile }: DashboardProps) {
         </div>
       </section>
 
+      {/* Daily Activity Detail Card for Selected Date */}
+      {(() => {
+        const dayAerobics = aerobics.filter((a: any) => a.date === selectedDate);
+        const dayWorkouts = workouts.filter((w: any) => w.date === selectedDate);
+        const hasActivities = dayAerobics.length > 0 || dayWorkouts.length > 0;
+
+        return (
+          <section className="bg-gradient-to-br from-white to-[#fffefc] p-6 rounded-[2rem] border border-pink-100 shadow-sm shadow-pink-100/10 space-y-4">
+            <div className="flex items-center justify-between border-b border-pink-50 pb-3">
+              <div className="flex items-center gap-2">
+                <Calendar size={18} className="text-pink-500 animate-pulse" />
+                <h3 className="text-xs font-black uppercase tracking-widest text-zinc-500">
+                  Resumo de Atividades ({format(new Date(selectedDate + 'T00:00:00'), "dd/MM/yyyy")})
+                </h3>
+              </div>
+              <span className="text-[9px] font-black uppercase bg-pink-50 text-pink-600 px-2.5 py-1 rounded-full">
+                {hasActivities ? `${dayAerobics.length + dayWorkouts.length} atividade(s)` : 'Sem treinos hoje'}
+              </span>
+            </div>
+
+            {!hasActivities ? (
+              <div className="text-center py-6 space-y-2">
+                <p className="text-xs font-semibold text-zinc-400">Nenhum treino registrado neste dia.</p>
+                <p className="text-[10px] text-zinc-450">
+                  Selecione outro dia no calendário acima ou registre seus treinos nas abas de exercícios!
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {/* Strength/Resistance Workouts */}
+                {dayWorkouts.map((w: any, idx: number) => (
+                  <div key={w.id || idx} className="bg-white p-4 rounded-2xl border border-pink-50 shadow-sm flex flex-col gap-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-8 h-8 rounded-xl bg-pink-50 flex items-center justify-center text-pink-500 shrink-0">
+                          <Activity size={16} />
+                        </div>
+                        <div className="min-w-0">
+                          <h4 className="text-xs font-black uppercase tracking-tight text-zinc-800 truncate">
+                            Treino de Força: {w.type}
+                          </h4>
+                          <span className="text-[8px] font-bold text-pink-400 uppercase tracking-widest block">
+                            {w.exercises?.length || 0} exercícios • {w.isSession ? 'Sessão Concluída' : 'Ficha de Treino'}
+                          </span>
+                        </div>
+                      </div>
+                      {w.id && (
+                        <button
+                          onClick={() => handleDeleteWorkout(w.id)}
+                          className="text-zinc-400 hover:text-rose-500 cursor-pointer p-1.5 hover:bg-rose-50 rounded-lg transition-all border-0 bg-transparent flex items-center justify-center shrink-0"
+                          title="Excluir Registro de Treino"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
+                    </div>
+                    {w.exercises?.length > 0 && (
+                      <div className="bg-[#fffbfc]/60 rounded-xl p-2.5 border border-pink-50/40 text-[10px] text-zinc-500 space-y-1 mt-1">
+                        {w.exercises.map((ex: any, exIdx: number) => (
+                          <div key={exIdx} className="flex justify-between items-center py-0.5">
+                            <span className="font-bold text-zinc-650">{ex.name}</span>
+                            <span className="text-pink-550 font-black italic">
+                              {ex.sets}s • {ex.reps}r • {ex.weight}kg
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {w.notes && <p className="text-[9px] text-zinc-450 italic mt-0.5">💬 {w.notes}</p>}
+                  </div>
+                ))}
+
+                {/* Aerobic Workouts */}
+                {dayAerobics.map((aer: any, idx: number) => (
+                  <div key={aer.id || idx} className="bg-white p-4 rounded-2xl border border-pink-50 shadow-sm flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-8 h-8 rounded-xl bg-orange-50 flex items-center justify-center text-orange-500 shrink-0">
+                        <Flame size={16} className="text-orange-400 fill-orange-50" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h4 className="text-xs font-black uppercase tracking-tight text-zinc-800 truncate leading-none">
+                            {aer.type}
+                          </h4>
+                          <span className="text-[8px] font-black uppercase px-2 py-0.5 rounded-full bg-pink-55 text-pink-600 leading-none">
+                            {aer.intensity}
+                          </span>
+                        </div>
+                        <p className="text-[9px] text-zinc-400 mt-1 font-bold">
+                          Duração: {aer.duration} min • Intensidade: {aer.intensity}
+                        </p>
+                        {aer.explanation && (
+                          <p className="text-[9px] text-zinc-500 italic mt-1 font-semibold">
+                            💡 {aer.explanation}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 shrink-0">
+                      <div className="text-right">
+                        <div className="text-sm font-black italic tracking-tight text-[#d4af37]">
+                          -{aer.caloriesBurned} <span className="text-[9px] font-bold not-italic text-zinc-400 uppercase">kcal</span>
+                        </div>
+                        {aer.metUsed && (
+                          <span className="text-[8px] text-zinc-400 font-bold uppercase tracking-wider">
+                            {aer.metUsed} MET
+                          </span>
+                        )}
+                      </div>
+                      {aer.id && (
+                        <button
+                          onClick={() => handleDeleteAerobic(aer.id)}
+                          className="text-zinc-400 hover:text-rose-500 cursor-pointer p-1.5 hover:bg-rose-50 rounded-lg transition-all border-0 bg-transparent flex items-center justify-center shrink-0"
+                          title="Excluir Atividade Aeróbica"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        );
+      })()}
+
       {/* Weight Chart */}
       {metrics.length > 0 && (
         <section className="bg-white p-6 rounded-[2rem] border border-pink-100 shadow-sm shadow-pink-100/15">
@@ -616,23 +780,247 @@ export default function Dashboard({ user, profile }: DashboardProps) {
         </section>
       )}
 
-      {/* Recent Workout */}
-      {recentWorkout && (
-        <section className="bg-white p-6 rounded-[2rem] border border-pink-100 shadow-sm shadow-pink-100/15">
-          <h3 className="text-xs font-bold uppercase tracking-widest text-[#d4af37] mb-4">Último Treino</h3>
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-pink-50 flex items-center justify-center text-pink-500">
-              <Activity size={24} />
-            </div>
-            <div>
-              <div className="text-lg font-black italic uppercase text-zinc-800">{recentWorkout.type}</div>
-              <div className="text-xs text-zinc-400 font-bold uppercase tracking-wider">
-                {format(new Date(recentWorkout.date + 'T00:00:00'), "dd 'de' MMMM", { locale: ptBR })}
+      {/* Latest Registered Activities */}
+      {(lastGymWorkout || lastAerobicWorkout) && (
+        <section className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Sparkles size={16} className="text-[#d4af37] animate-pulse" />
+            <h3 className="text-xs font-black uppercase tracking-widest text-zinc-500">
+              Últimas Atividades Registradas
+            </h3>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Gym Workout (Musculação) Card */}
+            {lastGymWorkout ? (
+              <div className="bg-gradient-to-br from-white to-[#faf9fe] p-6 rounded-[2rem] border border-violet-100 hover:border-violet-200/80 shadow-sm shadow-violet-100/10 flex flex-col justify-between gap-4 transition-all group">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[9px] font-black uppercase tracking-widest text-violet-550 bg-violet-50 px-2.5 py-1 rounded-full flex items-center gap-1.5">
+                      <Dumbbell size={11} className="text-violet-500" />
+                      Treino de Academia
+                    </span>
+                    <span className="text-[10px] text-zinc-400 font-extrabold uppercase">
+                      {format(new Date(lastGymWorkout.date + 'T00:00:00'), "dd 'de' MMMM", { locale: ptBR })}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <div className="w-11 h-11 rounded-2xl bg-violet-50 flex items-center justify-center text-violet-600 shrink-0 group-hover:scale-105 transition-transform">
+                      <Dumbbell size={22} className="text-violet-550" />
+                    </div>
+                    <div>
+                      <h4 className="text-base font-black uppercase italic tracking-tight text-zinc-800 leading-tight">
+                        {lastGymWorkout.type}
+                      </h4>
+                      <p className="text-[10px] text-zinc-400 font-bold mt-0.5 uppercase tracking-wider">
+                        {lastGymWorkout.isSession ? 'Sessão de Força Concluída' : 'Plano de Treino'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* List of exercises performed so the user can easily see their maximums / personal bests on the dashboard */}
+                  {lastGymWorkout.exercises && lastGymWorkout.exercises.length > 0 && (
+                    <div className="space-y-1.5 pt-2 border-t border-violet-50/60">
+                      <span className="text-[9px] font-black uppercase tracking-wider text-zinc-400 block mb-1">
+                        Cargas e Repetições do Treino:
+                      </span>
+                      <div className="bg-white/80 rounded-2xl p-3 border border-violet-50/80 space-y-2 text-[11px] text-zinc-600">
+                        {lastGymWorkout.exercises.map((ex: any, idx: number) => (
+                          <div key={idx} className="flex justify-between items-center py-0.5 border-b border-dashed border-zinc-50 last:border-0">
+                            <span className="font-extrabold text-zinc-700">{ex.name}</span>
+                            <span className="text-violet-600 font-black italic">
+                              {ex.sets}s • {ex.reps}r • <span className="text-zinc-800 font-extrabold">{ex.weight} kg</span>
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {lastGymWorkout.notes && (
+                    <p className="text-[10px] text-zinc-500 italic">
+                      💬 {lastGymWorkout.notes}
+                    </p>
+                  )}
+                </div>
+
+                <div className="text-[9px] font-black text-violet-400 uppercase tracking-widest text-right">
+                  💪 Continue superando seus limites!
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="bg-white p-6 rounded-[2rem] border border-dashed border-zinc-200 flex flex-col items-center justify-center text-center py-12 space-y-2">
+                <Dumbbell size={32} className="text-zinc-300" />
+                <p className="text-xs font-bold text-zinc-400">Nenhum treino de academia registrado</p>
+                <p className="text-[10px] text-zinc-450 max-w-xs">
+                  Crie ou inicie um treino de musculação na aba de Exercícios para acompanhar suas cargas máximas!
+                </p>
+              </div>
+            )}
+
+            {/* Aerobic Workout Card */}
+            {lastAerobicWorkout ? (
+              <div className="bg-gradient-to-br from-white to-[#fffdf9] p-6 rounded-[2rem] border border-orange-100 hover:border-orange-200/80 shadow-sm shadow-orange-100/10 flex flex-col justify-between gap-4 transition-all group">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[9px] font-black uppercase tracking-widest text-orange-650 bg-orange-50 px-2.5 py-1 rounded-full flex items-center gap-1.5">
+                      <Flame size={12} className="text-orange-500" />
+                      Treino Aeróbico
+                    </span>
+                    <span className="text-[10px] text-zinc-400 font-extrabold uppercase">
+                      {format(new Date(lastAerobicWorkout.date + 'T00:00:00'), "dd 'de' MMMM", { locale: ptBR })}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <div className="w-11 h-11 rounded-2xl bg-orange-50 flex items-center justify-center text-orange-500 shrink-0 group-hover:scale-105 transition-transform">
+                      <Flame size={22} className="text-orange-400 fill-orange-50" />
+                    </div>
+                    <div>
+                      <h4 className="text-base font-black uppercase italic tracking-tight text-zinc-800 leading-tight">
+                        {lastAerobicWorkout.type}
+                      </h4>
+                      <p className="text-[10px] text-zinc-400 font-bold mt-0.5 uppercase tracking-wider">
+                        Atividade Cardiovascular
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="bg-white/80 rounded-2xl p-3 border border-orange-50/80 text-[11px] text-zinc-650 space-y-2.5">
+                    <div className="flex justify-between items-center py-0.5 border-b border-dashed border-zinc-50">
+                      <span className="text-zinc-500 font-bold uppercase tracking-wider text-[9px]">Duração</span>
+                      <span className="font-black text-zinc-850 italic text-sm text-orange-550">
+                        {lastAerobicWorkout.duration} <span className="text-[9px] not-italic text-zinc-450 font-bold uppercase">min</span>
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between items-center py-0.5 border-b border-dashed border-zinc-50">
+                      <span className="text-zinc-500 font-bold uppercase tracking-wider text-[9px]">Intensidade</span>
+                      <span className="font-extrabold text-pink-600 bg-pink-50 px-2 py-0.5 rounded text-[10px] uppercase">
+                        {lastAerobicWorkout.intensity}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between items-center py-0.5">
+                      <span className="text-zinc-500 font-bold uppercase tracking-wider text-[9px]">Calorias Queimadas</span>
+                      <span className="font-black text-[#d4af37] italic text-sm">
+                        -{lastAerobicWorkout.caloriesBurned} <span className="text-[9px] not-italic text-zinc-400 font-bold uppercase">kcal</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  {lastAerobicWorkout.explanation && (
+                    <p className="text-[10px] text-zinc-500 italic">
+                      💡 {lastAerobicWorkout.explanation}
+                    </p>
+                  )}
+                </div>
+
+                <div className="text-[9px] font-black text-orange-400 uppercase tracking-widest text-right">
+                  🔥 Ótimo gasto de energia hoje!
+                </div>
+              </div>
+            ) : (
+              <div className="bg-white p-6 rounded-[2rem] border border-dashed border-zinc-200 flex flex-col items-center justify-center text-center py-12 space-y-2">
+                <Flame size={32} className="text-zinc-300" />
+                <p className="text-xs font-bold text-zinc-400">Nenhum treino aeróbico registrado</p>
+                <p className="text-[10px] text-zinc-450 max-w-xs">
+                  Adicione um treino de cardio (corrida, bike, esteira) na aba de Exercícios para acompanhar suas calorias queimadas!
+                </p>
+              </div>
+            )}
           </div>
         </section>
       )}
+      {/* Custom Confirmation Modals for Deletions */}
+      <AnimatePresence>
+        {deletingWorkoutId && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 20 }}
+              className="bg-white rounded-3xl p-6 max-w-sm w-full border border-pink-100 shadow-2xl space-y-4 text-zinc-800"
+            >
+              <div className="flex items-center gap-3 text-rose-500">
+                <div className="bg-rose-50 p-2 rounded-xl text-rose-500">
+                  <Trash2 size={20} />
+                </div>
+                <h4 className="font-extrabold text-zinc-800 text-lg">Excluir Treino</h4>
+              </div>
+              <p className="text-sm text-zinc-500 leading-relaxed">
+                Tem certeza de que deseja excluir este treino? Essa ação é permanente e não poderá ser desfeita.
+              </p>
+              <div className="flex gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setDeletingWorkoutId(null)}
+                  className="flex-1 py-3 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-xs font-bold uppercase rounded-xl transition-all cursor-pointer border-0"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmDeleteWorkout}
+                  className="flex-1 py-3 bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold uppercase rounded-xl transition-all cursor-pointer border-0"
+                >
+                  Excluir
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {deletingAerobicId && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 20 }}
+              className="bg-white rounded-3xl p-6 max-w-sm w-full border border-pink-100 shadow-2xl space-y-4 text-zinc-800"
+            >
+              <div className="flex items-center gap-3 text-rose-500">
+                <div className="bg-rose-50 p-2 rounded-xl text-rose-500">
+                  <Trash2 size={20} />
+                </div>
+                <h4 className="font-extrabold text-zinc-800 text-lg">Excluir Atividade Aeróbica</h4>
+              </div>
+              <p className="text-sm text-zinc-500 leading-relaxed">
+                Tem certeza de que deseja excluir esta atividade aeróbica? Essa ação é permanente e não poderá ser desfeita.
+              </p>
+              <div className="flex gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setDeletingAerobicId(null)}
+                  className="flex-1 py-3 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-xs font-bold uppercase rounded-xl transition-all cursor-pointer border-0"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmDeleteAerobic}
+                  className="flex-1 py-3 bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold uppercase rounded-xl transition-all cursor-pointer border-0"
+                >
+                  Excluir
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

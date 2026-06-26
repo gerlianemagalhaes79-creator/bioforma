@@ -2,16 +2,27 @@ import { useState, useEffect } from 'react';
 import { db, collection, query, where, onSnapshot, User, orderBy, addDoc, deleteDoc, doc, updateDoc, getDocs } from '../firebase';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Plus, Trash2, Dumbbell, X, Play, Check, TrendingUp, ChevronDown, ChevronUp, Calendar, Award, Edit2, Flame, Heart, Sparkles } from 'lucide-react';
+import { Plus, Trash2, Dumbbell, X, Play, Check, TrendingUp, ChevronDown, ChevronUp, Calendar, Award, Edit2, Flame, Heart, Sparkles, Minimize2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface WorkoutSectionProps {
   user: User;
   profile?: any;
+  activeSession: any | null;
+  setActiveSession: (session: any | null) => void;
+  isMinimized: boolean;
+  setIsMinimized: (val: boolean) => void;
 }
 
-export default function WorkoutSection({ user, profile }: WorkoutSectionProps) {
+export default function WorkoutSection({ 
+  user, 
+  profile, 
+  activeSession, 
+  setActiveSession, 
+  isMinimized, 
+  setIsMinimized 
+}: WorkoutSectionProps) {
   const [workouts, setWorkouts] = useState<any[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -21,6 +32,7 @@ export default function WorkoutSection({ user, profile }: WorkoutSectionProps) {
   // Aerobic states
   const [aerobics, setAerobics] = useState<any[]>([]);
   const [showAddAerobicModal, setShowAddAerobicModal] = useState(false);
+  const [showAerobicHistory, setShowAerobicHistory] = useState(false);
   const [calculatingAerobic, setCalculatingAerobic] = useState(false);
   const [computedKcal, setComputedKcal] = useState<number | null>(null);
   const [computedExplanation, setComputedExplanation] = useState<string | null>(null);
@@ -35,8 +47,15 @@ export default function WorkoutSection({ user, profile }: WorkoutSectionProps) {
   });
   
   // Real-time workout tracking state
-  const [activeSession, setActiveSession] = useState<any | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
+  const [finishingSession, setFinishingSession] = useState(false);
+  const [showWorkoutHistory, setShowWorkoutHistory] = useState(false);
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [workoutFeedbackData, setWorkoutFeedbackData] = useState<any>(null);
+  const [loadingFeedback, setLoadingFeedback] = useState(false);
+  const [deletingWorkoutId, setDeletingWorkoutId] = useState<string | null>(null);
+  const [deletingAerobicId, setDeletingAerobicId] = useState<string | null>(null);
+  const [showCancelWorkoutConfirm, setShowCancelWorkoutConfirm] = useState(false);
 
   const [newWorkout, setNewWorkout] = useState({
     type: '',
@@ -259,24 +278,34 @@ export default function WorkoutSection({ user, profile }: WorkoutSectionProps) {
 
   const handleDeleteAerobic = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (confirm("Deseja excluir esta atividade aeróbica?")) {
-      try {
-        await deleteDoc(doc(db, 'aerobics', id));
-      } catch (e) {
-        console.error("Erro ao excluir aeróbico:", e);
-      }
+    setDeletingAerobicId(id);
+  };
+
+  const confirmDeleteAerobic = async () => {
+    if (!deletingAerobicId) return;
+    try {
+      await deleteDoc(doc(db, 'aerobics', deletingAerobicId));
+    } catch (e) {
+      console.error("Erro ao excluir aeróbico:", e);
+    } finally {
+      setDeletingAerobicId(null);
     }
   };
 
   const handleDeleteWorkout = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation(); // Avoid triggering open/close accordion
-    if (confirm("Tem certeza que deseja excluir este treino?")) {
-      try {
-        await deleteDoc(doc(db, 'workouts', id));
-        if (expandedWorkoutId === id) setExpandedWorkoutId(null);
-      } catch (e) {
-        console.error(e);
-      }
+    setDeletingWorkoutId(id);
+  };
+
+  const confirmDeleteWorkout = async () => {
+    if (!deletingWorkoutId) return;
+    try {
+      await deleteDoc(doc(db, 'workouts', deletingWorkoutId));
+      if (expandedWorkoutId === deletingWorkoutId) setExpandedWorkoutId(null);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setDeletingWorkoutId(null);
     }
   };
 
@@ -330,6 +359,10 @@ export default function WorkoutSection({ user, profile }: WorkoutSectionProps) {
 
   // Workout live tracker actions
   const handleStartWorkoutSession = (workout: any) => {
+    if (activeSession) {
+      alert("Você já possui um treino em andamento! Por favor, conclua ou cancele o treino atual antes de iniciar um novo.");
+      return;
+    }
     setActiveSession({
       originalWorkoutId: workout.id,
       type: workout.type,
@@ -338,6 +371,7 @@ export default function WorkoutSection({ user, profile }: WorkoutSectionProps) {
         completed: false // checklist check-in status per exercise
       }))
     });
+    setIsMinimized(false);
   };
 
   const handleToggleExerciseCheckin = (index: number) => {
@@ -363,7 +397,8 @@ export default function WorkoutSection({ user, profile }: WorkoutSectionProps) {
   };
 
   const handleFinishWorkoutSession = async () => {
-    if (!activeSession) return;
+    if (!activeSession || finishingSession) return;
+    setFinishingSession(true);
     try {
       // 1. Update the original template workout weights so next run is pre-filled with the latest loads
       const originalWorkout = workouts.find(w => w.id === activeSession.originalWorkoutId);
@@ -415,12 +450,71 @@ export default function WorkoutSection({ user, profile }: WorkoutSectionProps) {
         });
       }
 
+      // 4. Capture session details for AI Feedback before closing activeSession
+      const sessionForFeedback = {
+        type: activeSession.type,
+        exercises: activeSession.exercises.map((ex: any) => ({
+          name: ex.name,
+          sets: Number(ex.sets) || 0,
+          reps: Number(ex.reps) || 0,
+          weight: Number(ex.weight) || 0
+        }))
+      };
+
       // Show celebration feedback & close
       setActiveSession(null);
       setShowCelebration(true);
       setTimeout(() => setShowCelebration(false), 4000);
+
+      // Trigger loading AI feedback modal
+      setLoadingFeedback(true);
+      setShowFeedbackModal(true);
+
+      try {
+        const res = await fetch("/api/workout-feedback", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            workoutType: sessionForFeedback.type,
+            exercises: sessionForFeedback.exercises
+          })
+        });
+        const responseData = await res.json();
+        if (responseData.success && responseData.data) {
+          setWorkoutFeedbackData(responseData.data);
+        } else {
+          throw new Error("Falha ao gerar feedback do treino");
+        }
+      } catch (err) {
+        console.error("Erro ao obter feedback da IA:", err);
+        const totalVolume = sessionForFeedback.exercises.reduce((acc: number, ex: any) => {
+          return acc + (ex.weight * ex.sets * ex.reps);
+        }, 0);
+        setWorkoutFeedbackData({
+          generalFeedback: `Sensacional! Você concluiu o seu treino "${sessionForFeedback.type}" com excelente dedicação! Analisando os seus dados de cargas e séries, você realizou uma sessão de treino extremamente sólida com volume total de ${totalVolume} kg. Esse estímulo é ideal para promover hipertrofia e fortalecimento muscular contínuo.`,
+          progressiveOverloadSolutions: [
+            `No primeiro exercício ("${sessionForFeedback.exercises[0]?.name || 'principal'}"), se as séries foram executadas com facilidade e postura perfeita, tente progredir 1kg a 2kg de cada lado no próximo treino.`,
+            "Tente adicionar de 1 a 2 repetições extras nas últimas séries de cada exercício antes de aumentar a carga.",
+            "Controle o intervalo de descanso: intervalos fixos entre 60 a 90 segundos auxiliam na recuperação e otimizam a densidade de estímulo do treino.",
+            "Foque na fase excêntrica: faça a descida de forma lenta (3 segundos) para aumentar o tempo sob tensão e potencializar os ganhos."
+          ],
+          biomechanicsFormTips: [
+            "Conexão Mente-Músculo: visualize o grupo muscular alvo se contraindo e concentre o esforço nele a cada repetição, reduzindo o uso de impulsos corporais.",
+            "Mantenha as articulações estabilizadas e a postura firme ao longo de toda a amplitude de movimento para evitar lesões."
+          ],
+          nutritionalStrategy: [
+            "Faça uma refeição contendo 20g a 30g de proteínas de rápida absorção e carboidratos complexos nas próximas 1 a 2 horas para repor o glicogênio e iniciar a regeneração muscular.",
+            "Hidratação pós-treino: beba de 500ml a 700ml de água para reidratar suas células musculares e acelerar a recuperação metabólica."
+          ],
+          totalVolume
+        });
+      } finally {
+        setLoadingFeedback(false);
+      }
     } catch (e) {
       console.error(e);
+    } finally {
+      setFinishingSession(false);
     }
   };
 
@@ -514,10 +608,19 @@ export default function WorkoutSection({ user, profile }: WorkoutSectionProps) {
                     <div className="py-4">
                       <button
                         onClick={() => handleStartWorkoutSession(workout)}
-                        className="w-full py-3.5 bg-gradient-to-r from-pink-500 to-rose-500 text-white font-bold uppercase text-xs tracking-wider rounded-xl shadow-md shadow-pink-200/50 hover:opacity-95 flex items-center justify-center gap-2 cursor-pointer transition-all"
+                        className={`w-full py-3.5 text-white font-bold uppercase text-xs tracking-wider rounded-xl shadow-md flex items-center justify-center gap-2 cursor-pointer transition-all ${
+                          activeSession 
+                            ? 'bg-zinc-200 text-zinc-400 shadow-none cursor-not-allowed opacity-70' 
+                            : 'bg-gradient-to-r from-pink-500 to-rose-500 shadow-pink-200/50 hover:opacity-95'
+                        }`}
                       >
                         <Play size={14} className="fill-current" /> Iniciar Treino
                       </button>
+                      {activeSession && (
+                        <p className="text-[10px] text-rose-500 font-bold text-center mt-2 uppercase tracking-wide">
+                          ⚠️ Você já possui um treino ativo em andamento!
+                        </p>
+                      )}
                     </div>
 
                     <div className="space-y-2">
@@ -545,6 +648,85 @@ export default function WorkoutSection({ user, profile }: WorkoutSectionProps) {
             </motion.div>
           ))
         )}
+
+        {/* Collapsible history of completed gym workouts */}
+        {workouts.filter(w => w.isSession).length > 0 && (
+          <div className="mt-4 pt-3 border-t border-pink-50/50 space-y-3">
+            <button
+              type="button"
+              onClick={() => setShowWorkoutHistory(!showWorkoutHistory)}
+              className="w-full flex items-center justify-between py-2 text-xs font-bold text-zinc-500 hover:text-pink-500 transition-colors cursor-pointer border-0 bg-transparent focus:outline-none select-none"
+            >
+              <span className="flex items-center gap-1.5 uppercase tracking-wider text-[10px]">
+                <Calendar size={13} className="text-pink-400" />
+                {showWorkoutHistory ? 'Ocultar Histórico de Treinos' : `Ver Histórico de Treinos Concluídos (${workouts.filter(w => w.isSession).length})`}
+              </span>
+              <div>
+                {showWorkoutHistory ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+              </div>
+            </button>
+
+            <AnimatePresence>
+              {showWorkoutHistory && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="space-y-3 overflow-hidden"
+                >
+                  {workouts
+                    .filter((w: any) => w.isSession)
+                    .sort((a: any, b: any) => b.date.localeCompare(a.date))
+                    .map((session) => (
+                      <div
+                        key={session.id}
+                        className="bg-white p-4 rounded-2xl border border-pink-50 hover:border-pink-200/60 shadow-sm transition-all flex flex-col gap-2.5"
+                      >
+                        <div className="flex items-center justify-between gap-4">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-10 h-10 rounded-xl bg-pink-50 flex items-center justify-center text-pink-500 shrink-0">
+                              <Dumbbell size={20} className="text-pink-400" />
+                            </div>
+                            <div className="min-w-0">
+                              <h4 className="text-sm font-black italic uppercase tracking-tight text-zinc-800 truncate leading-none">
+                                {session.type}
+                              </h4>
+                              <p className="text-[10px] text-zinc-400 mt-1 font-bold">
+                                {format(new Date(session.date + 'T00:00:00'), "dd 'de' MMMM", { locale: ptBR })} • Sessão Concluída
+                              </p>
+                            </div>
+                          </div>
+
+                          <button
+                            onClick={(e) => handleDeleteWorkout(session.id, e)}
+                            className="text-zinc-400 hover:text-rose-500 cursor-pointer p-1.5 hover:bg-rose-50 rounded-lg transition-all border-0 bg-transparent flex items-center justify-center shrink-0"
+                            title="Excluir Histórico"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+
+                        {session.exercises && session.exercises.length > 0 && (
+                          <div className="bg-[#fffbfc]/60 rounded-xl p-2.5 border border-pink-50/40 text-[10px] text-zinc-500 space-y-1">
+                            {session.exercises.map((ex: any, exIdx: number) => (
+                              <div key={exIdx} className="flex justify-between items-center py-0.5">
+                                <span className="font-bold text-zinc-650">{ex.name}</span>
+                                <span className="text-pink-550 font-black italic">
+                                  {ex.sets}s • {ex.reps}r • {ex.weight}kg
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {session.notes && <p className="text-[9px] text-zinc-450 italic">💬 {session.notes}</p>}
+                      </div>
+                    ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
       </div>
 
       {/* SEÇÃO: ATIVIDADES AERÓBICAS (COM ESTIMATIVA DE CALORIAS POR IA) */}
@@ -565,8 +747,58 @@ export default function WorkoutSection({ user, profile }: WorkoutSectionProps) {
           </button>
         </div>
 
-        {/* List of registered aerobics */}
-        <div className="space-y-3">
+        {/* Recordes Pessoais / Meus Máximos */}
+        {(() => {
+          const getPersonalBests = () => {
+            const bests: { [type: string]: any } = {};
+            aerobics.forEach(aer => {
+              const key = aer.type.trim().toLowerCase();
+              if (!bests[key] || aer.duration > bests[key].duration) {
+                bests[key] = aer;
+              }
+            });
+            return Object.values(bests);
+          };
+          const personalBests = getPersonalBests();
+
+          if (personalBests.length === 0) return null;
+
+          return (
+            <div className="space-y-2.5">
+              <span className="text-[10px] font-black uppercase tracking-widest text-[#d4af37] flex items-center gap-1">
+                <Award size={13} /> Seus Recordes Máximos (Melhor Marca por Exercício)
+              </span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {personalBests.map((best: any) => (
+                  <div key={best.id} className="bg-gradient-to-r from-amber-50/20 to-pink-50/10 p-3.5 rounded-2xl border border-yellow-150/40 flex items-center justify-between gap-3 shadow-sm hover:shadow transition-all">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center text-yellow-600 shrink-0">
+                        <Award size={18} className="text-[#d4af37]" />
+                      </div>
+                      <div className="min-w-0">
+                        <h4 className="text-xs font-black uppercase tracking-tight text-zinc-800 truncate leading-tight">{best.type}</h4>
+                        <p className="text-[9px] text-zinc-400 font-bold mt-0.5">
+                          Meta batida em {format(new Date(best.date + 'T00:00:00'), "dd/MM/yyyy")}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="text-sm font-black italic tracking-tight text-pink-500">
+                        {best.duration} <span className="text-[9px] font-bold not-italic text-zinc-400">min</span>
+                      </div>
+                      <div className="text-[9px] font-extrabold text-zinc-500 uppercase">
+                        -{best.caloriesBurned} kcal
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* Collapsible history of aerobics */}
+        <div className="space-y-3 pt-3 border-t border-pink-50/50">
           {aerobics.length === 0 ? (
             <div className="py-8 text-center bg-white/50 rounded-2xl border border-dashed border-pink-100 space-y-2">
               <Flame size={32} className="text-pink-300 mx-auto animate-bounce" />
@@ -576,50 +808,78 @@ export default function WorkoutSection({ user, profile }: WorkoutSectionProps) {
               </div>
             </div>
           ) : (
-            aerobics.map((aer) => (
-              <div 
-                key={aer.id}
-                className="bg-white p-4 rounded-2xl border border-pink-50 hover:border-pink-200/60 shadow-sm transition-all flex items-center justify-between gap-4"
+            <>
+              <button
+                type="button"
+                onClick={() => setShowAerobicHistory(!showAerobicHistory)}
+                className="w-full flex items-center justify-between py-2 text-xs font-bold text-zinc-500 hover:text-pink-500 transition-colors cursor-pointer border-0 bg-transparent focus:outline-none select-none"
               >
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center text-orange-500 shrink-0">
-                    <Flame size={20} className="fill-orange-100 text-orange-400" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h4 className="text-sm font-black italic uppercase tracking-tight text-zinc-800 truncate leading-none">{aer.type}</h4>
-                      <span className="text-[8px] font-black uppercase px-2 py-0.5 rounded-full bg-pink-50 text-pink-600 leading-none">
-                        {aer.intensity}
-                      </span>
-                    </div>
-                    <p className="text-[10px] text-zinc-400 mt-1 font-bold">
-                      {aer.duration} min • {format(new Date(aer.date + 'T00:00:00'), "dd 'de' MMMM", { locale: ptBR })}
-                    </p>
-                    {aer.explanation && (
-                      <p className="text-[9px] text-zinc-500 italic mt-1 font-semibold select-none">
-                        💡 {aer.explanation}
-                      </p>
-                    )}
-                  </div>
+                <span className="flex items-center gap-1.5 uppercase tracking-wider text-[10px]">
+                  <Calendar size={13} className="text-pink-400" />
+                  {showAerobicHistory ? 'Ocultar Histórico de Aeróbicos' : `Ver Histórico Completo (${aerobics.length})`}
+                </span>
+                <div>
+                  {showAerobicHistory ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                 </div>
+              </button>
 
-                <div className="flex items-center gap-3 shrink-0">
-                  <div className="text-right">
-                    <div className="text-base font-black italic tracking-tight text-[#d4af37]">
-                      -{aer.caloriesBurned} <span className="text-[9px] font-bold not-italic text-zinc-400 uppercase">kcal</span>
-                    </div>
-                    {aer.metUsed && <span className="text-[8px] text-zinc-400 font-bold uppercase tracking-wider">{aer.metUsed} MET</span>}
-                  </div>
-                  <button
-                    onClick={(e) => handleDeleteAerobic(aer.id, e)}
-                    className="text-zinc-400 hover:text-rose-500 cursor-pointer p-1.5 hover:bg-rose-50 rounded-lg transition-all border-0 bg-transparent flex items-center justify-center"
-                    title="Excluir"
+              <AnimatePresence>
+                {showAerobicHistory && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="space-y-3 overflow-hidden"
                   >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              </div>
-            ))
+                    {aerobics.map((aer) => (
+                      <div 
+                        key={aer.id}
+                        className="bg-white p-4 rounded-2xl border border-pink-50 hover:border-pink-200/60 shadow-sm transition-all flex items-center justify-between gap-4"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center text-orange-500 shrink-0">
+                            <Flame size={20} className="fill-orange-100 text-orange-400" />
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h4 className="text-sm font-black italic uppercase tracking-tight text-zinc-800 truncate leading-none">{aer.type}</h4>
+                              <span className="text-[8px] font-black uppercase px-2 py-0.5 rounded-full bg-pink-50 text-pink-600 leading-none">
+                                {aer.intensity}
+                              </span>
+                            </div>
+                            <p className="text-[10px] text-zinc-400 mt-1 font-bold">
+                              {aer.duration} min • {format(new Date(aer.date + 'T00:00:00'), "dd 'de' MMMM", { locale: ptBR })}
+                            </p>
+                            {aer.explanation && (
+                              <p className="text-[9px] text-zinc-500 italic mt-1 font-semibold select-none">
+                                💡 {aer.explanation}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3 shrink-0">
+                          <div className="text-right">
+                            <div className="text-base font-black italic tracking-tight text-[#d4af37]">
+                              -{aer.caloriesBurned} <span className="text-[9px] font-bold not-italic text-zinc-400 uppercase">kcal</span>
+                            </div>
+                            {aer.metUsed && <span className="text-[8px] text-zinc-400 font-bold uppercase tracking-wider">{aer.metUsed} MET</span>}
+                          </div>
+                          <button
+                            onClick={(e) => handleDeleteAerobic(aer.id, e)}
+                            className="text-zinc-400 hover:text-rose-500 cursor-pointer p-1.5 hover:bg-rose-50 rounded-lg transition-all border-0 bg-transparent flex items-center justify-center"
+                            title="Excluir"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </>
           )}
         </div>
       </div>
@@ -893,7 +1153,7 @@ export default function WorkoutSection({ user, profile }: WorkoutSectionProps) {
 
       {/* ACTIVE WORKOUT SESSION TRACKER INTERFACE MODAL */}
       <AnimatePresence>
-        {activeSession && (
+        {activeSession && !isMinimized && (
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -919,16 +1179,26 @@ export default function WorkoutSection({ user, profile }: WorkoutSectionProps) {
                   </div>
                 </div>
                 
-                <button 
-                  onClick={() => {
-                    if (confirm("Deseja mesmo cancelar e abandonar esta sessão de treino atual?")) {
-                      setActiveSession(null);
-                    }
-                  }} 
-                  className="text-zinc-400 hover:text-zinc-650 cursor-pointer p-1.5 hover:bg-zinc-100 rounded-lg"
-                >
-                  <X size={20} />
-                </button>
+                <div className="flex items-center gap-1">
+                  <button 
+                    type="button"
+                    onClick={() => setIsMinimized(true)} 
+                    className="text-zinc-400 hover:text-pink-500 cursor-pointer p-2 hover:bg-pink-50 rounded-xl transition-all border-0 bg-transparent flex items-center justify-center"
+                    title="Minimizar Treino (Continuar em Segundo Plano)"
+                  >
+                    <Minimize2 size={18} />
+                  </button>
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      setShowCancelWorkoutConfirm(true);
+                    }} 
+                    className="text-zinc-400 hover:text-rose-500 cursor-pointer p-2 hover:bg-rose-50 rounded-xl transition-all border-0 bg-transparent flex items-center justify-center"
+                    title="Cancelar e Sair"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
               </div>
 
               {/* Exercises check-in and weight control list */}
@@ -1038,6 +1308,154 @@ export default function WorkoutSection({ user, profile }: WorkoutSectionProps) {
             className="fixed top-6 left-1/2 -translate-x-1/2 z-[110] bg-gradient-to-r from-pink-500 to-rose-400 text-white font-black italic uppercase text-xs tracking-wider px-6 py-3.5 rounded-2xl shadow-xl flex items-center gap-3 border border-pink-300"
           >
             <span className="text-sm">🔥</span> Treino Concluído com Sucesso! Check-in e Cargas Registrados.
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* AI COACH FEEDBACK MODAL */}
+      <AnimatePresence>
+        {showFeedbackModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="bg-white w-full max-w-2xl rounded-[2.5rem] border border-pink-100 shadow-2xl overflow-hidden text-zinc-800 my-8 flex flex-col max-h-[90vh]"
+            >
+              {/* Header */}
+              <div className="relative bg-gradient-to-r from-zinc-900 via-zinc-850 to-zinc-900 text-white p-8 border-b border-zinc-800 flex items-center justify-between">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-pink-500/10 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none"></div>
+                <div className="flex items-center gap-3">
+                  <div className="bg-pink-500/20 p-2.5 rounded-2xl border border-pink-500/30 text-pink-400">
+                    <Sparkles className="animate-pulse" size={24} />
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-pink-400">BioForma AI Coach</span>
+                    <h3 className="text-xl font-black italic uppercase tracking-tight flex items-center gap-2">Feedback Inteligente</h3>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowFeedbackModal(false);
+                    setWorkoutFeedbackData(null);
+                  }}
+                  className="bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white p-2 rounded-xl transition-all cursor-pointer"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="p-8 overflow-y-auto space-y-6 flex-1">
+                {loadingFeedback ? (
+                  <div className="py-20 flex flex-col items-center justify-center space-y-4">
+                    <div className="relative w-16 h-16">
+                      <div className="absolute inset-0 border-4 border-pink-100 rounded-full"></div>
+                      <div className="absolute inset-0 border-4 border-pink-500 rounded-full border-t-transparent animate-spin"></div>
+                    </div>
+                    <p className="text-xs font-bold uppercase tracking-widest text-zinc-400 animate-pulse text-center">
+                      Analisando suas séries, cargas e volumes...<br />
+                      <span className="text-[10px] lowercase italic font-medium normal-case text-zinc-500">O Treinador IA está elaborando suas soluções exclusivas</span>
+                    </p>
+                  </div>
+                ) : workoutFeedbackData ? (
+                  <div className="space-y-6">
+                    {/* General Analaysis Card */}
+                    <div className="bg-gradient-to-b from-pink-50/50 to-zinc-50/50 rounded-3xl p-6 border border-pink-50/80 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-black uppercase tracking-wider text-pink-500 flex items-center gap-1.5">
+                          <Award size={15} /> Avaliação Geral do Treino
+                        </span>
+                        {workoutFeedbackData.totalVolume > 0 && (
+                          <span className="text-xs font-bold text-zinc-500 bg-white border border-pink-100/50 px-3 py-1 rounded-full flex items-center gap-1.5">
+                            <Flame size={13} className="text-rose-500" /> Volume: <strong className="text-pink-500 font-black italic">{workoutFeedbackData.totalVolume} kg</strong>
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-zinc-650 leading-relaxed text-sm">
+                        {workoutFeedbackData.generalFeedback}
+                      </p>
+                    </div>
+
+                    {/* Solutions & Recommendations Sections */}
+                    <div className="space-y-6">
+                      {/* Progressive Overload Solutions */}
+                      {workoutFeedbackData.progressiveOverloadSolutions && workoutFeedbackData.progressiveOverloadSolutions.length > 0 && (
+                        <div className="space-y-3">
+                          <h4 className="text-xs font-black uppercase tracking-wider text-amber-600 flex items-center gap-2">
+                            <TrendingUp size={16} /> Soluções para Sobrecarga Progressiva
+                          </h4>
+                          <div className="grid gap-2.5">
+                            {workoutFeedbackData.progressiveOverloadSolutions.map((sol: string, idx: number) => (
+                              <div key={idx} className="bg-amber-50/40 border border-amber-100/50 rounded-2xl p-4 flex gap-3 text-sm leading-relaxed text-zinc-700">
+                                <span className="text-amber-500 font-black text-xs mt-0.5">0{idx + 1}.</span>
+                                <span>{sol}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Biomechanics and Form */}
+                      {workoutFeedbackData.biomechanicsFormTips && workoutFeedbackData.biomechanicsFormTips.length > 0 && (
+                        <div className="space-y-3">
+                          <h4 className="text-xs font-black uppercase tracking-wider text-pink-500 flex items-center gap-2">
+                            <Dumbbell size={16} /> Soluções Posturais e Biomecânica
+                          </h4>
+                          <div className="grid gap-2.5">
+                            {workoutFeedbackData.biomechanicsFormTips.map((tip: string, idx: number) => (
+                              <div key={idx} className="bg-pink-50/20 border border-pink-100/30 rounded-2xl p-4 flex gap-3 text-sm leading-relaxed text-zinc-700">
+                                <span className="text-pink-400 font-black text-xs mt-0.5">✓</span>
+                                <span>{tip}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Nutritional Strategy */}
+                      {workoutFeedbackData.nutritionalStrategy && workoutFeedbackData.nutritionalStrategy.length > 0 && (
+                        <div className="space-y-3">
+                          <h4 className="text-xs font-black uppercase tracking-wider text-emerald-600 flex items-center gap-2">
+                            <Flame size={16} className="text-emerald-500" /> Estratégia Nutricional Pós-Treino
+                          </h4>
+                          <div className="grid gap-2.5">
+                            {workoutFeedbackData.nutritionalStrategy.map((nut: string, idx: number) => (
+                              <div key={idx} className="bg-emerald-50/30 border border-emerald-100/40 rounded-2xl p-4 flex gap-3 text-sm leading-relaxed text-zinc-700">
+                                <span className="text-emerald-500 font-black text-xs mt-0.5">★</span>
+                                <span>{nut}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-10 text-zinc-400 text-xs">
+                    Nenhum dado de feedback disponível.
+                  </div>
+                )}
+              </div>
+
+              {/* Footer CTA */}
+              <div className="p-8 bg-zinc-50 border-t border-zinc-100 flex justify-end">
+                <button
+                  onClick={() => {
+                    setShowFeedbackModal(false);
+                    setWorkoutFeedbackData(null);
+                  }}
+                  className="px-6 py-3 bg-zinc-900 text-white font-extrabold uppercase text-xs tracking-wider rounded-xl shadow-md hover:bg-zinc-850 cursor-pointer transition-all"
+                >
+                  Entendido, Excelente Dica!
+                </button>
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -1309,6 +1727,143 @@ export default function WorkoutSection({ user, profile }: WorkoutSectionProps) {
                   className="w-full bg-gradient-to-r from-pink-500 to-rose-400 text-white font-semibold uppercase py-4 rounded-2xl shadow-lg shadow-pink-200/50 cursor-pointer hover:opacity-95 transition-all text-sm font-black"
                 >
                   Confirmar Alterações
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Custom Confirmation Modals */}
+      <AnimatePresence>
+        {deletingWorkoutId && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 20 }}
+              className="bg-white rounded-3xl p-6 max-w-sm w-full border border-pink-100 shadow-2xl space-y-4 text-zinc-800"
+            >
+              <div className="flex items-center gap-3 text-rose-500">
+                <div className="bg-rose-50 p-2 rounded-xl text-rose-500">
+                  <Trash2 size={20} />
+                </div>
+                <h4 className="font-extrabold text-zinc-800 text-lg">Excluir Treino</h4>
+              </div>
+              <p className="text-sm text-zinc-500 leading-relaxed">
+                Tem certeza de que deseja excluir este treino? Essa ação é permanente e não poderá ser desfeita.
+              </p>
+              <div className="flex gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setDeletingWorkoutId(null)}
+                  className="flex-1 py-3 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-xs font-bold uppercase rounded-xl transition-all cursor-pointer border-0"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmDeleteWorkout}
+                  className="flex-1 py-3 bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold uppercase rounded-xl transition-all cursor-pointer border-0"
+                >
+                  Excluir
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {deletingAerobicId && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 20 }}
+              className="bg-white rounded-3xl p-6 max-w-sm w-full border border-pink-100 shadow-2xl space-y-4 text-zinc-800"
+            >
+              <div className="flex items-center gap-3 text-rose-500">
+                <div className="bg-rose-50 p-2 rounded-xl text-rose-500">
+                  <Trash2 size={20} />
+                </div>
+                <h4 className="font-extrabold text-zinc-800 text-lg">Excluir Atividade</h4>
+              </div>
+              <p className="text-sm text-zinc-500 leading-relaxed">
+                Tem certeza de que deseja excluir esta atividade aeróbica? Essa ação é permanente e não poderá ser desfeita.
+              </p>
+              <div className="flex gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setDeletingAerobicId(null)}
+                  className="flex-1 py-3 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-xs font-bold uppercase rounded-xl transition-all cursor-pointer border-0"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmDeleteAerobic}
+                  className="flex-1 py-3 bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold uppercase rounded-xl transition-all cursor-pointer border-0"
+                >
+                  Excluir
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showCancelWorkoutConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 20 }}
+              className="bg-white rounded-3xl p-6 max-w-sm w-full border border-pink-100 shadow-2xl space-y-4 text-zinc-800"
+            >
+              <div className="flex items-center gap-3 text-rose-500">
+                <div className="bg-rose-50 p-2 rounded-xl text-rose-500">
+                  <X size={20} />
+                </div>
+                <h4 className="font-extrabold text-zinc-800 text-lg">Cancelar Treino</h4>
+              </div>
+              <p className="text-sm text-zinc-500 leading-relaxed">
+                Deseja mesmo cancelar e abandonar esta sessão de treino atual? Todo o progresso desta sessão será perdido.
+              </p>
+              <div className="flex gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setShowCancelWorkoutConfirm(false)}
+                  className="flex-1 py-3 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-xs font-bold uppercase rounded-xl transition-all cursor-pointer border-0"
+                >
+                  Continuar Treino
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveSession(null);
+                    setIsMinimized(false);
+                    setShowCancelWorkoutConfirm(false);
+                  }}
+                  className="flex-1 py-3 bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold uppercase rounded-xl transition-all cursor-pointer border-0"
+                >
+                  Sim, Cancelar
                 </button>
               </div>
             </motion.div>

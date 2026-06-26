@@ -678,7 +678,7 @@ Escreva a resposta estritamente em português brasileiro de forma profissional, 
 
   // Analyze Motivation with Gemini or offline expert knowledge
   app.post("/api/motivation", async (req, res) => {
-    const { name, targetWeight, weight, workouts } = req.body;
+    const { name, targetWeight, weight, workouts, consistency } = req.body;
 
     const prompt = `Você é um personal trainer e nutricionista motivacional de elite. 
 O usuário se chama ${name || 'Atleta'}. 
@@ -686,10 +686,12 @@ Dados recentes:
 - Peso atual: ${weight || 'N/A'} kg
 - Meta: ${targetWeight || 'N/A'} kg
 - Últimos treinos: ${workouts || 'Nenhum registrado'}
+- Consistência de hábitos nos últimos 14 dias (treinos, dieta e hidratação): ${consistency !== undefined ? consistency + "%" : 'Não calculada ainda'}
 
-Gere uma mensagem curta, impactante e motivadora em português para o usuário hoje. 
-Foque em disciplina, consistência e no objetivo de ter músculos mais fortes e menos gordura. 
-Use um tom de "coach" de alto nível, mas encorajador.`;
+Gere uma mensagem curta, altamente personalizada, impactante e motivadora em português para o usuário hoje. 
+Se a consistência estiver alta (acima de 75%), parabenize a disciplina implacável. Se estiver média (50% a 75%), incentive a continuar subindo e manter a constância. Se estiver abaixo de 50%, dê um "puxão de orelha" amigável e encorajador, lembrando-o de que cada pequeno passo conta e que ele precisa retomar a rotina de treinos, água e dieta hoje mesmo.
+Foques em disciplina, consistência e no objetivo de ter músculos mais fortes e menos gordura. 
+Use um tom de "coach" de alto nível, dinâmico e focado em resultados reais, sem enrolação.`;
 
     const aiInstance = getAIClient();
     if (aiInstance) {
@@ -712,6 +714,129 @@ Use um tom de "coach" de alto nível, mas encorajador.`;
       success: true,
       text: "Mantenha o foco! A disciplina é o que separa o sonho da realidade. Cada repetição, cada refeição limpa e cada gota de suor te deixam mais perto da sua melhor versão. Vamos pra cima!"
     });
+  });
+
+  // Intelligent Post-Workout Feedback using Gemini to evaluate loads/sets and suggest solutions
+  app.post("/api/workout-feedback", async (req, res) => {
+    const { workoutType, exercises } = req.body;
+
+    if (!workoutType || !exercises || !Array.isArray(exercises) || exercises.length === 0) {
+      return res.status(400).json({ error: "O tipo de treino e a lista de exercícios realizados são obrigatórios." });
+    }
+
+    const totalVolume = exercises.reduce((acc, ex) => {
+      const w = Number(ex.weight) || 0;
+      const s = Number(ex.sets) || 0;
+      const r = Number(ex.reps) || 0;
+      return acc + (w * s * r);
+    }, 0);
+
+    const exercisesSummary = exercises.map(ex => 
+      `- ${ex.name}: ${ex.sets} séries x ${ex.reps} repetições com ${ex.weight} kg`
+    ).join("\n");
+
+    const prompt = `Você é um Personal Trainer Inteligente de elite e especialista em fisiologia do exercício integrado ao aplicativo BioForma.
+O usuário acabou de concluir uma sessão de treino real. Você deve analisar a carga (peso), as séries (sets) e repetições de cada exercício realizado para fornecer soluções práticas de sobrecarga progressiva, dicas biomecânicas de execução e estratégias alimentares.
+
+Detalhes da Sessão de Treino:
+- Tipo/Nome do Treino: "${workoutType}"
+- Volume Total Movimentado: ${totalVolume} kg
+- Exercícios Realizados:
+${exercisesSummary}
+
+Você deve retornar obrigatoriamente um objeto JSON com as seguintes chaves em português do Brasil:
+1. "generalFeedback": Um parágrafo de feedback motivacional e fisiológico geral, parabenizando o esforço e avaliando de forma científica o estímulo gerado (ex: hipertrofia muscular, força, condicionamento) com base na combinação de cargas e repetições realizadas.
+2. "progressiveOverloadSolutions": Uma lista de strings (3 a 4 itens) sugerindo soluções inteligentes de sobrecarga progressiva para a próxima sessão de alguns dos exercícios realizados (ex: sugerir aumento de carga fracionada, incremento de repetições por série, ou aumento da densidade do treino controlando o descanso).
+3. "biomechanicsFormTips": Uma lista de strings (2 a 3 itens) focadas em ajuste postural, segurança articular, cadência da fase excêntrica/concêntrica e recrutamento de unidades motoras para os grupos musculares envolvidos nesse treino.
+4. "nutritionalStrategy": Uma lista de strings (2 a 3 itens) com soluções nutricionais imediatas pós-treino de síntese proteica, reidratação e ressíntese de glicogênio adequadas para a recuperação dessa sessão.
+
+Atenção: retorne estritamente um JSON limpo e válido formatado de acordo com o esquema mapeado. Não inclua Markdown extra como \`\`\`json ou introduções.`;
+
+    const aiInstance = getAIClient();
+    if (aiInstance) {
+      try {
+        console.log(`[Workout Feedback] Gerando feedback com Gemini para treino: "${workoutType}" (volume: ${totalVolume}kg)`);
+        const response = await generateContentWithRetry(aiInstance, {
+          contents: prompt,
+          defaultModel: "gemini-3.5-flash",
+          maxRetries: 2,
+          config: {
+            responseMimeType: "application/json",
+            responseSchema: {
+              type: Type.OBJECT,
+              required: ["generalFeedback", "progressiveOverloadSolutions", "biomechanicsFormTips", "nutritionalStrategy"],
+              properties: {
+                generalFeedback: { type: Type.STRING, description: "Feedback geral e motivacional do treino realizado" },
+                progressiveOverloadSolutions: {
+                  type: Type.ARRAY,
+                  items: { type: Type.STRING },
+                  description: "Lista de propostas para sobrecarga progressiva no próximo treino"
+                },
+                biomechanicsFormTips: {
+                  type: Type.ARRAY,
+                  items: { type: Type.STRING },
+                  description: "Lista de soluções e correções biomecânicas e posturais"
+                },
+                nutritionalStrategy: {
+                  type: Type.ARRAY,
+                  items: { type: Type.STRING },
+                  description: "Sugestões de nutrição e hidratação pós-treino"
+                }
+              }
+            }
+          }
+        });
+
+        const text = response.text;
+        if (text) {
+          const parsed = JSON.parse(text.trim());
+          console.log(`[Workout Feedback] Gemini gerou feedback com sucesso!`);
+          return res.json({ success: true, data: { ...parsed, totalVolume } });
+        }
+      } catch (geminiErr: any) {
+        console.log(`[Workout Feedback] Gemini indisponível para feedback de treino. Ativando fallback inteligente offline. Erro: ${geminiErr.message}`);
+      }
+    }
+
+    // High-Quality Rule-Based Offline Fallback
+    try {
+      console.log(`[Workout Feedback] Executando gerador offline de feedback para treino: "${workoutType}"`);
+      
+      const generalFeedback = `Sensacional! Você concluiu o seu treino "${workoutType}" com excelente dedicação! Analisando os seus dados de cargas e séries, você movimentou um volume total acumulado de ${totalVolume} kg nesta sessão. Este estímulo de volume e tensão mecânica é altamente eficiente para desencadear cascatas de sinalização molecular para a hipertrofia e fortalecimento do tecido muscular. Continue consistente!`;
+      
+      const firstExerciseName = exercises[0]?.name || "exercício principal";
+      const progressiveOverloadSolutions = [
+        `No exercício "${firstExerciseName}", se conseguiu completar as séries com a postura ideal, experimente aumentar a carga de 1kg a 2kg de cada lado na próxima sessão para impor um novo estímulo de sobrecarga à musculatura.`,
+        "Aplique a sobrecarga de repetições: se a carga atual estiver muito pesada para aumentar, tente adicionar apenas 1 a 2 repetições extras na última série de cada exercício antes de subir o peso.",
+        "Diminua o tempo de intervalo em 10 segundos nos exercícios em que obteve maior facilidade. Isso aumenta a densidade do treino e estimula mais o estresse metabólico produtivo.",
+        "Controle a fase excêntrica: realize a descida do peso de forma lenta (3 segundos) para ampliar o tempo sob tensão, o que gera microlesões positivas fundamentais para o ganho muscular."
+      ];
+
+      const biomechanicsFormTips = [
+        "Foque na conexão mente-músculo: contraia conscientemente o grupo muscular alvo no topo de cada repetição, ao invés de apenas empurrar ou puxar o peso sem intenção.",
+        "Mantenha suas articulações estabilizadas e evite realizar movimentos compensatórios ('roubar' com a lombar ou balançar o tronco) para manter o estresse isolado no músculo correto.",
+        "Respire de maneira coordenada: expire na fase concêntrica (quando vence a resistência) e inspire na fase excêntrica (quando segura o peso de volta)."
+      ];
+
+      const nutritionalStrategy = [
+        "Consuma uma porção proteica de alta qualidade (como ovos, frango, peixe ou whey) nas próximas 1 a 2 horas para maximizar o balanço nitrogenado positivo e acelerar a síntese de proteínas.",
+        "Reponha os estoques de energia de forma inteligente adicionando carboidratos de médio/alto índice glicêmico (como banana, aveia ou arroz) para acelerar a ressíntese de glicogênio muscular.",
+        "Hidratação essencial: beba pelo menos 500ml de água imediatamente e continue bebendo pequenos goles ao longo das próximas horas para recuperar a hidratação das células musculares, o que otimiza a recuperação."
+      ];
+
+      return res.json({
+        success: true,
+        data: {
+          generalFeedback,
+          progressiveOverloadSolutions,
+          biomechanicsFormTips,
+          nutritionalStrategy,
+          totalVolume
+        }
+      });
+    } catch (offlineErr: any) {
+      return res.status(500).json({ error: "Erro interno ao processar o feedback do treino." });
+    }
   });
 
   // Serve static files in production or delegate to Vite in development
