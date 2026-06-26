@@ -56,6 +56,8 @@ export default function DietSection({ user, profile }: DietSectionProps) {
   const [proteinGoal, setProteinGoal] = useState(profile?.proteinGoal || 130);
   const [carbGoal, setCarbGoal] = useState(profile?.carbGoal || 240);
   const [fatGoal, setFatGoal] = useState(profile?.fatGoal || 60);
+  const [userAge, setUserAge] = useState(profile?.age || 25);
+  const [userWeight, setUserWeight] = useState(profile?.weight || 70);
 
   // State to track expanded meal cards (to see full micro/macros details)
   const [expandedDietId, setExpandedDietId] = useState<string | null>(null);
@@ -75,6 +77,11 @@ export default function DietSection({ user, profile }: DietSectionProps) {
       potassium: 0,
       calcium: 0,
       iron: 0,
+      vitaminA: 0,
+      vitaminC: 0,
+      vitaminD: 0,
+      vitaminB6: 0,
+      vitaminB12: 0,
       source: ''
     }],
     waterIntake: 0,
@@ -104,6 +111,8 @@ export default function DietSection({ user, profile }: DietSectionProps) {
       setProteinGoal(profile.proteinGoal ?? 130);
       setCarbGoal(profile.carbGoal ?? 240);
       setFatGoal(profile.fatGoal ?? 60);
+      setUserAge(profile.age ?? 25);
+      setUserWeight(profile.weight ?? 70);
     }
   }, [profile, showSettingsModal]);
 
@@ -117,6 +126,8 @@ export default function DietSection({ user, profile }: DietSectionProps) {
       setProteinGoal(profile.proteinGoal ?? 130);
       setCarbGoal(profile.carbGoal ?? 240);
       setFatGoal(profile.fatGoal ?? 60);
+      setUserAge(profile.age ?? 25);
+      setUserWeight(profile.weight ?? 70);
     }
   }, [showSettingsModal]);
 
@@ -176,7 +187,9 @@ export default function DietSection({ user, profile }: DietSectionProps) {
         dailyCalorieGoal: Number(calorieGoal),
         proteinGoal: Number(proteinGoal),
         carbGoal: Number(carbGoal),
-        fatGoal: Number(fatGoal)
+        fatGoal: Number(fatGoal),
+        age: Number(userAge),
+        weight: Number(userWeight)
       });
       setShowSettingsModal(false);
     } catch (e) {
@@ -200,6 +213,11 @@ export default function DietSection({ user, profile }: DietSectionProps) {
         potassium: 0,
         calcium: 0,
         iron: 0,
+        vitaminA: 0,
+        vitaminC: 0,
+        vitaminD: 0,
+        vitaminB6: 0,
+        vitaminB12: 0,
         source: ''
       }]
     });
@@ -223,6 +241,11 @@ export default function DietSection({ user, profile }: DietSectionProps) {
         potassium: 0,
         calcium: 0,
         iron: 0,
+        vitaminA: 0,
+        vitaminC: 0,
+        vitaminD: 0,
+        vitaminB6: 0,
+        vitaminB12: 0,
         source: ''
       }]
     });
@@ -231,62 +254,62 @@ export default function DietSection({ user, profile }: DietSectionProps) {
   const getLocalNutritionEstimate = (foodName: string, g: number) => {
     const normalized = foodName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
     
-    // Base nutrition values per 100g
-    let base = { kcal: 120, p: 4, c: 15, f: 3, sodium: 50, fiber: 1.2, potassium: 150, calcium: 15, iron: 0.5, name: "Alimento Geral" };
+    // Base nutrition values per 100g including vitamins
+    let base = { kcal: 120, p: 4, c: 15, f: 3, sodium: 50, fiber: 1.2, potassium: 150, calcium: 15, iron: 0.5, vitaminA: 5, vitaminC: 1, vitaminD: 0, vitaminB6: 0.05, vitaminB12: 0, name: "Alimento Geral" };
 
     const db: Record<string, typeof base> = {
-      "ovo": { kcal: 155, p: 13, c: 1.1, f: 11, sodium: 124, fiber: 0, potassium: 126, calcium: 50, iron: 1.2, name: "Ovo Cozido" },
-      "frango": { kcal: 165, p: 31, c: 0, f: 3.6, sodium: 74, fiber: 0, potassium: 256, calcium: 15, iron: 1.0, name: "Peito de Frango Grelhado" },
-      "peito de frango": { kcal: 165, p: 31, c: 0, f: 3.6, sodium: 74, fiber: 0, potassium: 256, calcium: 15, iron: 1.0, name: "Peito de Frango" },
-      "frango grelhado": { kcal: 170, p: 32, c: 0, f: 4.5, sodium: 80, fiber: 0, potassium: 260, calcium: 15, iron: 1.0, name: "Frango Grelhado" },
-      "frango cozido": { kcal: 163, p: 31.5, c: 0, f: 3.2, sodium: 70, fiber: 0, potassium: 250, calcium: 15, iron: 1.0, name: "Frango Cozido" },
-      "arroz": { kcal: 130, p: 2.7, c: 28, f: 0.3, sodium: 1, fiber: 0.4, potassium: 35, calcium: 10, iron: 0.2, name: "Arroz Branco Cozido" },
-      "arroz branco": { kcal: 130, p: 2.7, c: 28, f: 0.3, sodium: 1, fiber: 0.4, potassium: 35, calcium: 10, iron: 0.2, name: "Arroz Branco" },
-      "arroz integral": { kcal: 111, p: 2.6, c: 23, f: 0.9, sodium: 1, fiber: 1.8, potassium: 43, calcium: 10, iron: 0.4, name: "Arroz Integral" },
-      "feijao": { kcal: 90, p: 5, c: 16, f: 0.5, sodium: 2, fiber: 6.4, potassium: 355, calcium: 35, iron: 1.5, name: "Feijão Cozido" },
-      "feijao carioca": { kcal: 90, p: 5, c: 16, f: 0.5, sodium: 2, fiber: 6.4, potassium: 355, calcium: 35, iron: 1.5, name: "Feijão Carioca" },
-      "feijao preto": { kcal: 91, p: 6, c: 14, f: 0.5, sodium: 2, fiber: 7.0, potassium: 350, calcium: 30, iron: 1.5, name: "Feijão Preto" },
-      "banana": { kcal: 89, p: 1.1, c: 23, f: 0.3, sodium: 1, fiber: 2.6, potassium: 358, calcium: 5, iron: 0.3, name: "Banana" },
-      "maca": { kcal: 52, p: 0.3, c: 14, f: 0.2, sodium: 1, fiber: 2.4, potassium: 107, calcium: 6, iron: 0.1, name: "Maçã" },
-      "aveia": { kcal: 389, p: 16.9, c: 66, f: 6.9, sodium: 2, fiber: 10.6, potassium: 429, calcium: 54, iron: 4.7, name: "Aveia em Flocos" },
-      "leite": { kcal: 60, p: 3.2, c: 4.8, f: 3.2, sodium: 44, fiber: 0, potassium: 150, calcium: 120, iron: 0.1, name: "Leite Integral" },
-      "leite integral": { kcal: 60, p: 3.2, c: 4.8, f: 3.2, sodium: 44, fiber: 0, potassium: 150, calcium: 120, iron: 0.1, name: "Leite Integral" },
-      "leite desnatado": { kcal: 35, p: 3.2, c: 5, f: 0.1, sodium: 45, fiber: 0, potassium: 150, calcium: 122, iron: 0.1, name: "Leite Desnatado" },
-      "whey": { kcal: 380, p: 80, c: 6, f: 4, sodium: 160, fiber: 0, potassium: 180, calcium: 400, iron: 0.5, name: "Whey Protein" },
-      "whey protein": { kcal: 380, p: 80, c: 6, f: 4, sodium: 160, fiber: 0, potassium: 180, calcium: 400, iron: 0.5, name: "Whey Protein" },
-      "creatina": { kcal: 0, p: 0, c: 0, f: 0, sodium: 0, fiber: 0, potassium: 0, calcium: 0, iron: 0, name: "Creatina" },
-      "pao": { kcal: 265, p: 9, c: 49, f: 3.2, sodium: 490, fiber: 2.7, potassium: 115, calcium: 260, iron: 3.6, name: "Pão de Forma" },
-      "pao frances": { kcal: 300, p: 8, c: 58, f: 3, sodium: 640, fiber: 2.3, potassium: 110, calcium: 20, iron: 1.0, name: "Pão Francês" },
-      "carne": { kcal: 250, p: 26, c: 0, f: 15, sodium: 60, fiber: 0, potassium: 318, calcium: 18, iron: 2.6, name: "Carne Vermelha" },
-      "patinho": { kcal: 140, p: 21, c: 0, f: 5, sodium: 55, fiber: 0, potassium: 330, calcium: 10, iron: 2.5, name: "Carne Patinho" },
-      "alcatra": { kcal: 160, p: 22, c: 0, f: 7, sodium: 52, fiber: 0, potassium: 310, calcium: 10, iron: 2.3, name: "Carne Alcatra" },
-      "batata": { kcal: 86, p: 2, c: 20, f: 0.1, sodium: 6, fiber: 1.8, potassium: 320, calcium: 12, iron: 0.3, name: "Batata Inglesa" },
-      "batata doce": { kcal: 86, p: 1.3, c: 20, f: 0.1, sodium: 30, fiber: 3, potassium: 337, calcium: 30, iron: 0.6, name: "Batata Doce" },
-      "salmao": { kcal: 208, p: 20, c: 0, f: 13, sodium: 59, fiber: 0, potassium: 363, calcium: 9, iron: 0.3, name: "Salmão" },
-      "azeite": { kcal: 884, p: 0, f: 100, c: 0, sodium: 2, fiber: 0, potassium: 1, calcium: 1, iron: 0.2, name: "Azeite de Oliva" },
-      "queijo": { kcal: 350, p: 23, c: 2.3, f: 28, sodium: 620, fiber: 0, potassium: 80, calcium: 700, iron: 0.4, name: "Queijo Mussarela" },
-      "manteiga": { kcal: 717, p: 0.8, c: 0.1, f: 81, sodium: 576, fiber: 0, potassium: 24, calcium: 24, iron: 0.1, name: "Manteiga" },
-      "mandioca": { kcal: 125, p: 0.6, c: 30, f: 0.3, sodium: 1, fiber: 1.6, potassium: 271, calcium: 19, iron: 0.3, name: "Mandioca Cozida" },
-      "iogurte": { kcal: 60, p: 3.5, c: 5, f: 3, sodium: 50, fiber: 0, potassium: 140, calcium: 120, iron: 0.1, name: "Iogurte Natural" },
-      "castanha": { kcal: 650, p: 15, c: 15, f: 60, sodium: 3, fiber: 6, potassium: 660, calcium: 110, iron: 6.0, name: "Castanhas" },
-      "tomate": { kcal: 18, p: 0.9, c: 3.9, f: 0.2, sodium: 5, fiber: 1.2, potassium: 237, calcium: 10, iron: 0.3, name: "Tomate" },
-      "alface": { kcal: 15, p: 1.3, c: 2.8, f: 0.2, sodium: 10, fiber: 1.3, potassium: 194, calcium: 36, iron: 0.8, name: "Alface" },
-      "tapioca": { kcal: 350, p: 0, c: 87, f: 0, sodium: 2, fiber: 0, potassium: 10, calcium: 10, iron: 0.1, name: "Tapioca (Goma)" },
-      "cafe": { kcal: 2, p: 0.1, c: 0, f: 0, sodium: 2, fiber: 0, potassium: 49, calcium: 2, iron: 0, name: "Café sem Açúcar" },
-      "agua": { kcal: 0, p: 0, c: 0, f: 0, sodium: 5, fiber: 0, potassium: 1, calcium: 3, iron: 0, name: "Água Mineral" },
-      "pasta de amendoim": { kcal: 588, p: 25, c: 20, f: 50, sodium: 10, fiber: 6, potassium: 649, calcium: 43, iron: 1.9, name: "Pasta de Amendoim" },
-      "suco de laranja": { kcal: 45, p: 0.7, c: 10.4, f: 0.2, sodium: 1, fiber: 0.2, potassium: 200, calcium: 11, iron: 0.2, name: "Suco de Laranja" },
-      "mamao": { kcal: 43, p: 0.5, c: 11, f: 0.3, sodium: 8, fiber: 1.7, potassium: 182, calcium: 20, iron: 0.3, name: "Mamão Papaia" },
-      "morango": { kcal: 32, p: 0.7, c: 7.7, f: 0.3, sodium: 1, fiber: 2, potassium: 153, calcium: 16, iron: 0.4, name: "Morango" },
-      "pipoca": { kcal: 387, p: 12, c: 78, f: 4.5, sodium: 8, fiber: 14, potassium: 329, calcium: 7, iron: 3.1, name: "Pipoca" },
-      "doce de leite": { kcal: 315, p: 6, c: 55, f: 7, sodium: 130, fiber: 0, potassium: 250, calcium: 200, iron: 0.1, name: "Doce de Leite" },
-      "chocolate": { kcal: 546, p: 4.9, c: 61, f: 31, sodium: 24, fiber: 7, potassium: 372, calcium: 56, iron: 8.0, name: "Chocolate" },
-      "coca cola": { kcal: 42, p: 0, c: 10, f: 0, sodium: 4, fiber: 0, potassium: 2, calcium: 2, iron: 0, name: "Coca Cola" },
-      "refrigerante": { kcal: 42, p: 0, c: 10.4, f: 0, sodium: 5, fiber: 0, potassium: 2, calcium: 2, iron: 0, name: "Refrigerante" },
-      "cerveja": { kcal: 43, p: 0.5, c: 3.6, f: 0, sodium: 4, fiber: 0, potassium: 27, calcium: 4, iron: 0, name: "Cerveja" },
-      "vinho": { kcal: 85, p: 0.1, c: 2.6, f: 0, sodium: 4, fiber: 0, potassium: 127, calcium: 8, iron: 0.5, name: "Vinho" },
-      "suco": { kcal: 40, p: 0.5, c: 10, f: 0.1, sodium: 2, fiber: 0.5, potassium: 120, calcium: 10, iron: 0.1, name: "Suco Natural" },
-      "mel": { kcal: 304, p: 0.3, c: 82, f: 0, sodium: 4, fiber: 0, potassium: 52, calcium: 6, iron: 0.4, name: "Mel" }
+      "ovo": { kcal: 155, p: 13, c: 1.1, f: 11, sodium: 124, fiber: 0, potassium: 126, calcium: 50, iron: 1.2, vitaminA: 140, vitaminC: 0, vitaminD: 2.0, vitaminB6: 0.12, vitaminB12: 1.1, name: "Ovo Cozido" },
+      "frango": { kcal: 165, p: 31, c: 0, f: 3.6, sodium: 74, fiber: 0, potassium: 256, calcium: 15, iron: 1.0, vitaminA: 6, vitaminC: 0, vitaminD: 0.1, vitaminB6: 0.6, vitaminB12: 0.3, name: "Peito de Frango Grelhado" },
+      "peito de frango": { kcal: 165, p: 31, c: 0, f: 3.6, sodium: 74, fiber: 0, potassium: 256, calcium: 15, iron: 1.0, vitaminA: 6, vitaminC: 0, vitaminD: 0.1, vitaminB6: 0.6, vitaminB12: 0.3, name: "Peito de Frango" },
+      "frango grelhado": { kcal: 170, p: 32, c: 0, f: 4.5, sodium: 80, fiber: 0, potassium: 260, calcium: 15, iron: 1.0, vitaminA: 6, vitaminC: 0, vitaminD: 0.1, vitaminB6: 0.6, vitaminB12: 0.3, name: "Frango Grelhado" },
+      "frango cozido": { kcal: 163, p: 31.5, c: 0, f: 3.2, sodium: 70, fiber: 0, potassium: 250, calcium: 15, iron: 1.0, vitaminA: 6, vitaminC: 0, vitaminD: 0.1, vitaminB6: 0.6, vitaminB12: 0.3, name: "Frango Cozido" },
+      "arroz": { kcal: 130, p: 2.7, c: 28, f: 0.3, sodium: 1, fiber: 0.4, potassium: 35, calcium: 10, iron: 0.2, vitaminA: 0, vitaminC: 0, vitaminD: 0, vitaminB6: 0.09, vitaminB12: 0, name: "Arroz Branco Cozido" },
+      "arroz branco": { kcal: 130, p: 2.7, c: 28, f: 0.3, sodium: 1, fiber: 0.4, potassium: 35, calcium: 10, iron: 0.2, vitaminA: 0, vitaminC: 0, vitaminD: 0, vitaminB6: 0.09, vitaminB12: 0, name: "Arroz Branco" },
+      "arroz integral": { kcal: 111, p: 2.6, c: 23, f: 0.9, sodium: 1, fiber: 1.8, potassium: 43, calcium: 10, iron: 0.4, vitaminA: 0, vitaminC: 0, vitaminD: 0, vitaminB6: 0.18, vitaminB12: 0, name: "Arroz Integral" },
+      "feijao": { kcal: 90, p: 5, c: 16, f: 0.5, sodium: 2, fiber: 6.4, potassium: 355, calcium: 35, iron: 1.5, vitaminA: 0, vitaminC: 0, vitaminD: 0, vitaminB6: 0.15, vitaminB12: 0, name: "Feijão Cozido" },
+      "feijao carioca": { kcal: 90, p: 5, c: 16, f: 0.5, sodium: 2, fiber: 6.4, potassium: 355, calcium: 35, iron: 1.5, vitaminA: 0, vitaminC: 0, vitaminD: 0, vitaminB6: 0.15, vitaminB12: 0, name: "Feijão Carioca" },
+      "feijao preto": { kcal: 91, p: 6, c: 14, f: 0.5, sodium: 2, fiber: 7.0, potassium: 350, calcium: 30, iron: 1.5, vitaminA: 0, vitaminC: 0, vitaminD: 0, vitaminB6: 0.15, vitaminB12: 0, name: "Feijão Preto" },
+      "banana": { kcal: 89, p: 1.1, c: 23, f: 0.3, sodium: 1, fiber: 2.6, potassium: 358, calcium: 5, iron: 0.3, vitaminA: 3, vitaminC: 8.7, vitaminD: 0, vitaminB6: 0.4, vitaminB12: 0, name: "Banana" },
+      "maca": { kcal: 52, p: 0.3, c: 14, f: 0.2, sodium: 1, fiber: 2.4, potassium: 107, calcium: 6, iron: 0.1, vitaminA: 3, vitaminC: 4.6, vitaminD: 0, vitaminB6: 0.04, vitaminB12: 0, name: "Maçã" },
+      "aveia": { kcal: 389, p: 16.9, c: 66, f: 6.9, sodium: 2, fiber: 10.6, potassium: 429, calcium: 54, iron: 4.7, vitaminA: 0, vitaminC: 0, vitaminD: 0, vitaminB6: 0.1, vitaminB12: 0, name: "Aveia em Flocos" },
+      "leite": { kcal: 60, p: 3.2, c: 4.8, f: 3.2, sodium: 44, fiber: 0, potassium: 150, calcium: 120, iron: 0.1, vitaminA: 46, vitaminC: 0, vitaminD: 1.2, vitaminB6: 0.04, vitaminB12: 0.45, name: "Leite Integral" },
+      "leite integral": { kcal: 60, p: 3.2, c: 4.8, f: 3.2, sodium: 44, fiber: 0, potassium: 150, calcium: 120, iron: 0.1, vitaminA: 46, vitaminC: 0, vitaminD: 1.2, vitaminB6: 0.04, vitaminB12: 0.45, name: "Leite Integral" },
+      "leite desnatado": { kcal: 35, p: 3.2, c: 5, f: 0.1, sodium: 45, fiber: 0, potassium: 150, calcium: 122, iron: 0.1, vitaminA: 46, vitaminC: 0, vitaminD: 1.2, vitaminB6: 0.04, vitaminB12: 0.45, name: "Leite Desnatado" },
+      "whey": { kcal: 380, p: 80, c: 6, f: 4, sodium: 160, fiber: 0, potassium: 180, calcium: 400, iron: 0.5, vitaminA: 0, vitaminC: 0, vitaminD: 0, vitaminB6: 0, vitaminB12: 0, name: "Whey Protein" },
+      "whey protein": { kcal: 380, p: 80, c: 6, f: 4, sodium: 160, fiber: 0, potassium: 180, calcium: 400, iron: 0.5, vitaminA: 0, vitaminC: 0, vitaminD: 0, vitaminB6: 0, vitaminB12: 0, name: "Whey Protein" },
+      "creatina": { kcal: 0, p: 0, c: 0, f: 0, sodium: 0, fiber: 0, potassium: 0, calcium: 0, iron: 0, vitaminA: 0, vitaminC: 0, vitaminD: 0, vitaminB6: 0, vitaminB12: 0, name: "Creatina" },
+      "pao": { kcal: 265, p: 9, c: 49, f: 3.2, sodium: 490, fiber: 2.7, potassium: 115, calcium: 260, iron: 3.6, vitaminA: 0, vitaminC: 0, vitaminD: 0, vitaminB6: 0.05, vitaminB12: 0, name: "Pão de Forma" },
+      "pao frances": { kcal: 300, p: 8, c: 58, f: 3, sodium: 640, fiber: 2.3, potassium: 110, calcium: 20, iron: 1.0, vitaminA: 0, vitaminC: 0, vitaminD: 0, vitaminB6: 0.04, vitaminB12: 0, name: "Pão Francês" },
+      "carne": { kcal: 250, p: 26, c: 0, f: 15, sodium: 60, fiber: 0, potassium: 318, calcium: 18, iron: 2.6, vitaminA: 2, vitaminC: 0, vitaminD: 0.1, vitaminB6: 0.5, vitaminB12: 2.6, name: "Carne Vermelha" },
+      "patinho": { kcal: 140, p: 21, c: 0, f: 5, sodium: 55, fiber: 0, potassium: 330, calcium: 10, iron: 2.5, vitaminA: 2, vitaminC: 0, vitaminD: 0.1, vitaminB6: 0.5, vitaminB12: 2.3, name: "Carne Patinho" },
+      "alcatra": { kcal: 160, p: 22, c: 0, f: 7, sodium: 52, fiber: 0, potassium: 310, calcium: 10, iron: 2.3, vitaminA: 2, vitaminC: 0, vitaminD: 0.1, vitaminB6: 0.5, vitaminB12: 2.5, name: "Carne Alcatra" },
+      "batata": { kcal: 86, p: 2, c: 20, f: 0.1, sodium: 6, fiber: 1.8, potassium: 320, calcium: 12, iron: 0.3, vitaminA: 1, vitaminC: 20.0, vitaminD: 0, vitaminB6: 0.3, vitaminB12: 0, name: "Batata Inglesa" },
+      "batata doce": { kcal: 86, p: 1.3, c: 20, f: 0.1, sodium: 30, fiber: 3, potassium: 337, calcium: 30, iron: 0.6, vitaminA: 700, vitaminC: 2.4, vitaminD: 0, vitaminB6: 0.2, vitaminB12: 0, name: "Batata Doce" },
+      "salmao": { kcal: 208, p: 20, c: 0, f: 13, sodium: 59, fiber: 0, potassium: 363, calcium: 9, iron: 0.3, vitaminA: 50, vitaminC: 0, vitaminD: 11.0, vitaminB6: 0.6, vitaminB12: 3.2, name: "Salmão" },
+      "azeite": { kcal: 884, p: 0, f: 100, c: 0, sodium: 2, fiber: 0, potassium: 1, calcium: 1, iron: 0.2, vitaminA: 0, vitaminC: 0, vitaminD: 0, vitaminB6: 0, vitaminB12: 0, name: "Azeite de Oliva" },
+      "queijo": { kcal: 350, p: 23, c: 2.3, f: 28, sodium: 620, fiber: 0, potassium: 80, calcium: 700, iron: 0.4, vitaminA: 260, vitaminC: 0, vitaminD: 0.6, vitaminB6: 0.08, vitaminB12: 1.5, name: "Queijo Mussarela" },
+      "manteiga": { kcal: 717, p: 0.8, c: 0.1, f: 81, sodium: 576, fiber: 0, potassium: 24, calcium: 24, iron: 0.1, vitaminA: 680, vitaminC: 0, vitaminD: 1.5, vitaminB6: 0.01, vitaminB12: 0.17, name: "Manteiga" },
+      "mandioca": { kcal: 125, p: 0.6, c: 30, f: 0.3, sodium: 1, fiber: 1.6, potassium: 271, calcium: 19, iron: 0.3, vitaminA: 1, vitaminC: 20.6, vitaminD: 0, vitaminB6: 0.09, vitaminB12: 0, name: "Mandioca Cozida" },
+      "iogurte": { kcal: 60, p: 3.5, c: 5, f: 3, sodium: 50, fiber: 0, potassium: 140, calcium: 120, iron: 0.1, vitaminA: 27, vitaminC: 0.5, vitaminD: 0.1, vitaminB6: 0.05, vitaminB12: 0.4, name: "Iogurte Natural" },
+      "castanha": { kcal: 650, p: 15, c: 15, f: 60, sodium: 3, fiber: 6, potassium: 660, calcium: 110, iron: 6.0, vitaminA: 0, vitaminC: 0, vitaminD: 0, vitaminB6: 0.3, vitaminB12: 0, name: "Castanhas" },
+      "tomate": { kcal: 18, p: 0.9, c: 3.9, f: 0.2, sodium: 5, fiber: 1.2, potassium: 237, calcium: 10, iron: 0.3, vitaminA: 42, vitaminC: 13.7, vitaminD: 0, vitaminB6: 0.08, vitaminB12: 0, name: "Tomate" },
+      "alface": { kcal: 15, p: 1.3, c: 2.8, f: 0.2, sodium: 10, fiber: 1.3, potassium: 194, calcium: 36, iron: 0.8, vitaminA: 370, vitaminC: 9.2, vitaminD: 0, vitaminB6: 0.09, vitaminB12: 0, name: "Alface" },
+      "tapioca": { kcal: 350, p: 0, c: 87, f: 0, sodium: 2, fiber: 0, potassium: 10, calcium: 10, iron: 0.1, vitaminA: 0, vitaminC: 0, vitaminD: 0, vitaminB6: 0, vitaminB12: 0, name: "Tapioca (Goma)" },
+      "cafe": { kcal: 2, p: 0.1, c: 0, f: 0, sodium: 2, fiber: 0, potassium: 49, calcium: 2, iron: 0, vitaminA: 0, vitaminC: 0, vitaminD: 0, vitaminB6: 0, vitaminB12: 0, name: "Café sem Açúcar" },
+      "agua": { kcal: 0, p: 0, c: 0, f: 0, sodium: 5, fiber: 0, potassium: 1, calcium: 3, iron: 0, vitaminA: 0, vitaminC: 0, vitaminD: 0, vitaminB6: 0, vitaminB12: 0, name: "Água Mineral" },
+      "pasta de amendoim": { kcal: 588, p: 25, c: 20, f: 50, sodium: 10, fiber: 6, potassium: 649, calcium: 43, iron: 1.9, vitaminA: 0, vitaminC: 0, vitaminD: 0, vitaminB6: 0.1, vitaminB12: 0, name: "Pasta de Amendoim" },
+      "suco de laranja": { kcal: 45, p: 0.7, c: 10.4, f: 0.2, sodium: 1, fiber: 0.2, potassium: 200, calcium: 11, iron: 0.2, vitaminA: 10, vitaminC: 50.0, vitaminD: 0, vitaminB6: 0.04, vitaminB12: 0, name: "Suco de Laranja" },
+      "mamao": { kcal: 43, p: 0.5, c: 11, f: 0.3, sodium: 8, fiber: 1.7, potassium: 182, calcium: 20, iron: 0.3, vitaminA: 47, vitaminC: 60.9, vitaminD: 0, vitaminB6: 0.03, vitaminB12: 0, name: "Mamão Papaia" },
+      "morango": { kcal: 32, p: 0.7, c: 7.7, f: 0.3, sodium: 1, fiber: 2, potassium: 153, calcium: 16, iron: 0.4, vitaminA: 1, vitaminC: 58.8, vitaminD: 0, vitaminB6: 0.05, vitaminB12: 0, name: "Morango" },
+      "pipoca": { kcal: 387, p: 12, c: 78, f: 4.5, sodium: 8, fiber: 14, potassium: 329, calcium: 7, iron: 3.1, vitaminA: 0, vitaminC: 0, vitaminD: 0, vitaminB6: 0.15, vitaminB12: 0, name: "Pipoca" },
+      "doce de leite": { kcal: 315, p: 6, c: 55, f: 7, sodium: 130, fiber: 0, potassium: 250, calcium: 200, iron: 0.1, vitaminA: 50, vitaminC: 0.5, vitaminD: 0.1, vitaminB6: 0.03, vitaminB12: 0.15, name: "Doce de Leite" },
+      "chocolate": { kcal: 546, p: 4.9, c: 61, f: 31, sodium: 24, fiber: 7, potassium: 372, calcium: 56, iron: 8.0, vitaminA: 15, vitaminC: 0.2, vitaminD: 0, vitaminB6: 0.04, vitaminB12: 0.1, name: "Chocolate" },
+      "coca cola": { kcal: 42, p: 0, c: 10, f: 0, sodium: 4, fiber: 0, potassium: 2, calcium: 2, iron: 0, vitaminA: 0, vitaminC: 0, vitaminD: 0, vitaminB6: 0, vitaminB12: 0, name: "Coca Cola" },
+      "refrigerante": { kcal: 42, p: 0, c: 10.4, f: 0, sodium: 5, fiber: 0, potassium: 2, calcium: 2, iron: 0, vitaminA: 0, vitaminC: 0, vitaminD: 0, vitaminB6: 0, vitaminB12: 0, name: "Refrigerante" },
+      "cerveja": { kcal: 43, p: 0.5, c: 3.6, f: 0, sodium: 4, fiber: 0, potassium: 27, calcium: 4, iron: 0, vitaminA: 0, vitaminC: 0, vitaminD: 0, vitaminB6: 0.01, vitaminB12: 0, name: "Cerveja" },
+      "vinho": { kcal: 85, p: 0.1, c: 2.6, f: 0, sodium: 4, fiber: 0, potassium: 127, calcium: 8, iron: 0.5, vitaminA: 0, vitaminC: 0, vitaminD: 0, vitaminB6: 0.02, vitaminB12: 0, name: "Vinho" },
+      "suco": { kcal: 40, p: 0.5, c: 10, f: 0.1, sodium: 2, fiber: 0.5, potassium: 120, calcium: 10, iron: 0.1, vitaminA: 5, vitaminC: 10.0, vitaminD: 0, vitaminB6: 0.02, vitaminB12: 0, name: "Suco Natural" },
+      "mel": { kcal: 304, p: 0.3, c: 82, f: 0, sodium: 4, fiber: 0, potassium: 52, calcium: 6, iron: 0.4, vitaminA: 0, vitaminC: 0.5, vitaminD: 0, vitaminB6: 0.01, vitaminB12: 0, name: "Mel" }
     };
 
     // Find custom match
@@ -303,31 +326,31 @@ export default function DietSection({ user, profile }: DietSectionProps) {
     } else {
       // Heuristic analyzers based on words for high accuracy in case of custom terms
       if (normalized.includes("frango") || normalized.includes("chicken") || normalized.includes("peru") || normalized.includes("ave") || normalized.includes("peito")) {
-        base = { kcal: 165, p: 31, c: 0, f: 3.6, sodium: 74, fiber: 0, potassium: 256, calcium: 15, iron: 1.0, name: "Aves" };
+        base = { kcal: 165, p: 31, c: 0, f: 3.6, sodium: 74, fiber: 0, potassium: 256, calcium: 15, iron: 1.0, vitaminA: 6, vitaminC: 0, vitaminD: 0.1, vitaminB6: 0.6, vitaminB12: 0.3, name: "Aves" };
       } else if (normalized.includes("boi") || normalized.includes("vaca") || normalized.includes("carne") || normalized.includes("patinho") || normalized.includes("mignon") || normalized.includes("alcatra") || normalized.includes("picanha") || normalized.includes("churrasco") || normalized.includes("bife")) {
-        base = { kcal: 200, p: 26, c: 0, f: 10, sodium: 65, fiber: 0, potassium: 315, calcium: 15, iron: 2.5, name: "Carne Bovina" };
+        base = { kcal: 200, p: 26, c: 0, f: 10, sodium: 65, fiber: 0, potassium: 315, calcium: 15, iron: 2.5, vitaminA: 2, vitaminC: 0, vitaminD: 0.1, vitaminB6: 0.5, vitaminB12: 2.5, name: "Carne Bovina" };
       } else if (normalized.includes("peixe") || normalized.includes("pargo") || normalized.includes("pescada") || normalized.includes("atum") || normalized.includes("sardinha") || normalized.includes("tilapia") || normalized.includes("merluza")) {
-        base = { kcal: 130, p: 22, c: 0, f: 4.5, sodium: 70, fiber: 0, potassium: 350, calcium: 20, iron: 0.8, name: "Pescados" };
+        base = { kcal: 130, p: 22, c: 0, f: 4.5, sodium: 70, fiber: 0, potassium: 350, calcium: 20, iron: 0.8, vitaminA: 50, vitaminC: 0, vitaminD: 10.0, vitaminB6: 0.5, vitaminB12: 3.0, name: "Pescados" };
       } else if (normalized.includes("queijo") || normalized.includes("cheese") || normalized.includes("mussarela") || normalized.includes("ricota") || normalized.includes("requeijao") || normalized.includes("requeijão") || normalized.includes("cream")) {
-        base = { kcal: 320, p: 22, c: 2.5, f: 25, sodium: 550, fiber: 0, potassium: 85, calcium: 600, iron: 0.3, name: "Queijos" };
+        base = { kcal: 320, p: 22, c: 2.5, f: 25, sodium: 550, fiber: 0, potassium: 85, calcium: 600, iron: 0.3, vitaminA: 260, vitaminC: 0, vitaminD: 0.6, vitaminB6: 0.08, vitaminB12: 1.5, name: "Queijos" };
       } else if (normalized.includes("leite") || normalized.includes("iogurte") || normalized.includes("coalhada")) {
-        base = { kcal: 55, p: 3.2, c: 4.8, f: 2.5, sodium: 45, fiber: 0, potassium: 145, calcium: 115, iron: 0.1, name: "Laticínios" };
+        base = { kcal: 55, p: 3.2, c: 4.8, f: 2.5, sodium: 45, fiber: 0, potassium: 145, calcium: 115, iron: 0.1, vitaminA: 46, vitaminC: 0, vitaminD: 1.2, vitaminB6: 0.04, vitaminB12: 0.45, name: "Laticínios" };
       } else if (normalized.includes("pao") || normalized.includes("pão") || normalized.includes("torrada") || normalized.includes("biscoito") || normalized.includes("bolacha") || normalized.includes("croissant")) {
-        base = { kcal: 270, p: 8.5, c: 52, f: 3.5, sodium: 500, fiber: 2.5, potassium: 120, calcium: 25, iron: 1.5, name: "Panificados" };
+        base = { kcal: 270, p: 8.5, c: 52, f: 3.5, sodium: 500, fiber: 2.5, potassium: 120, calcium: 25, iron: 1.5, vitaminA: 0, vitaminC: 0, vitaminD: 0, vitaminB6: 0.05, vitaminB12: 0, name: "Panificados" };
       } else if (normalized.includes("arroz") || normalized.includes("massa") || normalized.includes("macarrao") || normalized.includes("macarrão") || normalized.includes("pasta") || normalized.includes("miojo") || normalized.includes("lasanha")) {
-        base = { kcal: 135, p: 2.8, c: 29, f: 0.4, sodium: 2, fiber: 0.6, potassium: 40, calcium: 10, iron: 0.3, name: "Cereais e Massas" };
+        base = { kcal: 135, p: 2.8, c: 29, f: 0.4, sodium: 2, fiber: 0.6, potassium: 40, calcium: 10, iron: 0.3, vitaminA: 0, vitaminC: 0, vitaminD: 0, vitaminB6: 0.09, vitaminB12: 0, name: "Cereais e Massas" };
       } else if (normalized.includes("doce") || normalized.includes("açucar") || normalized.includes("açúcar") || normalized.includes("chocolate") || normalized.includes("bala") || normalized.includes("pirulito") || normalized.includes("sobremesa") || normalized.includes("sorvete")) {
-        base = { kcal: 380, p: 2, c: 68, f: 12, sodium: 60, fiber: 0.5, potassium: 110, calcium: 40, iron: 1.0, name: "Doces e Sobremesas" };
+        base = { kcal: 380, p: 2, c: 68, f: 12, sodium: 60, fiber: 0.5, potassium: 110, calcium: 40, iron: 1.0, vitaminA: 10, vitaminC: 0.2, vitaminD: 0.05, vitaminB6: 0.03, vitaminB12: 0.1, name: "Doces e Sobremesas" };
       } else if (normalized.includes("azeite") || normalized.includes("oleo") || normalized.includes("óleo") || normalized.includes("manteiga") || normalized.includes("gordura") || normalized.includes("banha")) {
-        base = { kcal: 850, p: 0.2, c: 0.2, f: 95, sodium: 5, fiber: 0, potassium: 5, calcium: 5, iron: 0.1, name: "Lipídios" };
+        base = { kcal: 850, p: 0.2, c: 0.2, f: 95, sodium: 5, fiber: 0, potassium: 5, calcium: 5, iron: 0.1, vitaminA: 20, vitaminC: 0, vitaminD: 0.05, vitaminB6: 0, vitaminB12: 0, name: "Lipídios" };
       } else if (normalized.includes("suco") || normalized.includes("refri") || normalized.includes("refrigerante") || normalized.includes("nectar")) {
-        base = { kcal: 45, p: 0.3, c: 11, f: 0, sodium: 4, fiber: 0.1, potassium: 100, calcium: 8, iron: 0.1, name: "Bebidas Açucaradas" };
+        base = { kcal: 45, p: 0.3, c: 11, f: 0, sodium: 4, fiber: 0.1, potassium: 100, calcium: 8, iron: 0.1, vitaminA: 5, vitaminC: 10.0, vitaminD: 0, vitaminB6: 0.02, vitaminB12: 0, name: "Bebidas Açucaradas" };
       } else if (normalized.includes("alface") || normalized.includes("salada") || normalized.includes("folha") || normalized.includes("couve") || normalized.includes("brocolis") || normalized.includes("brócolis") || normalized.includes("legume") || normalized.includes("vegetal") || normalized.includes("tomate")) {
-        base = { kcal: 22, p: 1.2, c: 4.5, f: 0.2, sodium: 10, fiber: 1.8, potassium: 210, calcium: 24, iron: 0.5, name: "Hortaliças e Legumes" };
+        base = { kcal: 22, p: 1.2, c: 4.5, f: 0.2, sodium: 10, fiber: 1.8, potassium: 210, calcium: 24, iron: 0.5, vitaminA: 150, vitaminC: 15.0, vitaminD: 0, vitaminB6: 0.1, vitaminB12: 0, name: "Hortaliças e Legumes" };
       } else if (normalized.includes("banana") || normalized.includes("maca") || normalized.includes("maçã") || normalized.includes("fruta") || normalized.includes("uva") || normalized.includes("mamao") || normalized.includes("mamão") || normalized.includes("morango") || normalized.includes("laranja") || normalized.includes("abacaxi")) {
-        base = { kcal: 55, p: 0.6, c: 13.5, f: 0.2, sodium: 2, fiber: 2.1, potassium: 160, calcium: 12, iron: 0.2, name: "Frutas Frescas" };
+        base = { kcal: 55, p: 0.6, c: 13.5, f: 0.2, sodium: 2, fiber: 2.1, potassium: 160, calcium: 12, iron: 0.2, vitaminA: 20, vitaminC: 30.0, vitaminD: 0, vitaminB6: 0.1, vitaminB12: 0, name: "Frutas Frescas" };
       } else if (normalized.includes("whey") || normalized.includes("proteina") || normalized.includes("proteína") || normalized.includes("albumina") || normalized.includes("creatina")) {
-        base = { kcal: 380, p: 78, c: 7, f: 4, sodium: 155, fiber: 0, potassium: 175, calcium: 380, iron: 0.5, name: "Suplementos" };
+        base = { kcal: 380, p: 78, c: 7, f: 4, sodium: 155, fiber: 0, potassium: 175, calcium: 380, iron: 0.5, vitaminA: 0, vitaminC: 0, vitaminD: 0, vitaminB6: 0, vitaminB12: 0, name: "Suplementos" };
       }
     }
 
@@ -342,6 +365,11 @@ export default function DietSection({ user, profile }: DietSectionProps) {
       potassium: Math.round(base.potassium * factor),
       calcium: Math.round(base.calcium * factor),
       iron: parseFloat((base.iron * factor).toFixed(1)),
+      vitaminA: parseFloat(((base.vitaminA || 0) * factor).toFixed(1)),
+      vitaminC: parseFloat(((base.vitaminC || 0) * factor).toFixed(1)),
+      vitaminD: parseFloat(((base.vitaminD || 0) * factor).toFixed(1)),
+      vitaminB6: parseFloat(((base.vitaminB6 || 0) * factor).toFixed(1)),
+      vitaminB12: parseFloat(((base.vitaminB12 || 0) * factor).toFixed(1)),
       source: `Tabela Oficial Local (${base.name})`
     };
   };
@@ -404,6 +432,11 @@ export default function DietSection({ user, profile }: DietSectionProps) {
             potassium: Math.round(nutData.potassium || 0),
             calcium: Math.round(nutData.calcium || 0),
             iron: parseFloat((nutData.iron || 0).toFixed(1)),
+            vitaminA: parseFloat((nutData.vitaminA || 0).toFixed(1)),
+            vitaminC: parseFloat((nutData.vitaminC || 0).toFixed(1)),
+            vitaminD: parseFloat((nutData.vitaminD || 0).toFixed(1)),
+            vitaminB6: parseFloat((nutData.vitaminB6 || 0).toFixed(1)),
+            vitaminB12: parseFloat((nutData.vitaminB12 || 0).toFixed(1)),
             source: nutData.source || "Grounded Web Search"
           };
           setNewDiet({
@@ -432,6 +465,11 @@ export default function DietSection({ user, profile }: DietSectionProps) {
           potassium: Math.round(nutData.potassium || 0),
           calcium: Math.round(nutData.calcium || 0),
           iron: parseFloat((nutData.iron || 0).toFixed(1)),
+          vitaminA: parseFloat((nutData.vitaminA || 0).toFixed(1)),
+          vitaminC: parseFloat((nutData.vitaminC || 0).toFixed(1)),
+          vitaminD: parseFloat((nutData.vitaminD || 0).toFixed(1)),
+          vitaminB6: parseFloat((nutData.vitaminB6 || 0).toFixed(1)),
+          vitaminB12: parseFloat((nutData.vitaminB12 || 0).toFixed(1)),
           source: `${nutData.source} (Offline Fallback)`
         };
         setNewDiet({
@@ -498,6 +536,11 @@ export default function DietSection({ user, profile }: DietSectionProps) {
           potassium: 0,
           calcium: 0,
           iron: 0,
+          vitaminA: 0,
+          vitaminC: 0,
+          vitaminD: 0,
+          vitaminB6: 0,
+          vitaminB12: 0,
           source: ''
         }],
         waterIntake: 0,
@@ -613,6 +656,88 @@ export default function DietSection({ user, profile }: DietSectionProps) {
   const selectedTotalIron = selectedDateDiets.reduce((acc, d) => 
     acc + d.meals.reduce((mAcc: number, m: any) => mAcc + (m.iron || 0), 0), 0
   );
+
+  // Vitamin totals for the selected date
+  const selectedTotalVitA = selectedDateDiets.reduce((acc, d) => 
+    acc + d.meals.reduce((mAcc: number, m: any) => mAcc + (m.vitaminA || 0), 0), 0
+  );
+  const selectedTotalVitC = selectedDateDiets.reduce((acc, d) => 
+    acc + d.meals.reduce((mAcc: number, m: any) => mAcc + (m.vitaminC || 0), 0), 0
+  );
+  const selectedTotalVitD = selectedDateDiets.reduce((acc, d) => 
+    acc + d.meals.reduce((mAcc: number, m: any) => mAcc + (m.vitaminD || 0), 0), 0
+  );
+  const selectedTotalVitB6 = selectedDateDiets.reduce((acc, d) => 
+    acc + d.meals.reduce((mAcc: number, m: any) => mAcc + (m.vitaminB6 || 0), 0), 0
+  );
+  const selectedTotalVitB12 = selectedDateDiets.reduce((acc, d) => 
+    acc + d.meals.reduce((mAcc: number, m: any) => mAcc + (m.vitaminB12 || 0), 0), 0
+  );
+
+  // Get active weight and age for RDAs
+  const activeAge = profile?.age || 25;
+  const activeWeight = profile?.weight || profile?.bodyWeight || 70;
+
+  // Custom Recommended Daily Allowances (RDAs) calculated based on age and weight
+  const getVitaminRDAs = (age: number, weight: number) => {
+    const safeAge = Number(age) || 25;
+    const safeWeight = Number(weight) || 70;
+
+    // Vitamin A (mcg RAE) - scales with weight up to metabolic cap
+    let vitA = 900;
+    if (safeAge < 4) vitA = 300;
+    else if (safeAge < 9) vitA = 400;
+    else if (safeAge < 14) vitA = 600;
+    else if (safeAge < 19) vitA = 700;
+    // metabolic scaling for heavier active individuals
+    if (safeWeight > 80 && safeAge >= 19) {
+      vitA = Math.round(vitA * (1 + (safeWeight - 80) * 0.003));
+    }
+
+    // Vitamin C (mg)
+    let vitC = 90;
+    if (safeAge < 4) vitC = 15;
+    else if (safeAge < 9) vitC = 25;
+    else if (safeAge < 14) vitC = 45;
+    else if (safeAge < 19) vitC = 75;
+    if (safeWeight > 80) {
+      vitC = Math.round(vitC * (1 + (safeWeight - 80) * 0.002));
+    }
+
+    // Vitamin D (mcg) - 1 mcg = 40 IU. Standard is 15mcg, higher weight requires more due to fat tissue distribution
+    let vitD = 15;
+    if (safeAge > 70) vitD = 20;
+    if (safeWeight > 90) vitD = 20; // heavier individuals often require more Vit D
+
+    // Vitamin B6 (mg) - critical for protein metabolism. Scales with bodyweight
+    let vitB6 = 1.3;
+    if (safeAge < 4) vitB6 = 0.5;
+    else if (safeAge < 9) vitB6 = 0.6;
+    else if (safeAge < 14) vitB6 = 1.0;
+    else if (safeAge > 50) vitB6 = 1.6;
+    if (safeWeight > 80) {
+      vitB6 = parseFloat((vitB6 * (1 + (safeWeight - 80) * 0.004)).toFixed(2));
+    }
+
+    // Vitamin B12 (mcg)
+    let vitB12 = 2.4;
+    if (safeAge < 4) vitB12 = 0.9;
+    else if (safeAge < 9) vitB12 = 1.2;
+    else if (safeAge < 14) vitB12 = 1.8;
+    if (safeWeight > 80) {
+      vitB12 = parseFloat((vitB12 * (1 + (safeWeight - 80) * 0.002)).toFixed(2));
+    }
+
+    return {
+      vitaminA: vitA,
+      vitaminC: vitC,
+      vitaminD: vitD,
+      vitaminB6: vitB6,
+      vitaminB12: vitB12
+    };
+  };
+
+  const rdaTargets = getVitaminRDAs(activeAge, activeWeight);
 
   const calorieTarget = profile?.dailyCalorieGoal || 2000;
   const caloriePct = calorieTarget > 0 ? Math.min(100, Math.round((selectedTotalCals / calorieTarget) * 100)) : 0;
@@ -880,7 +1005,140 @@ export default function DietSection({ user, profile }: DietSectionProps) {
             )}
           </AnimatePresence>
         </div>
-          {/* SELECTED DATE DIET DIARY */}
+
+        {/* PAINEL DE VITAMINAS E METAS PERSONALIZADAS (RDA) */}
+        <div className="bg-gradient-to-br from-white to-[#fffbfa] p-6 rounded-[2rem] border border-pink-100 shadow-sm shadow-pink-100/5 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-pink-50 pb-4">
+            <div className="flex items-start gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-pink-50 flex items-center justify-center text-pink-500 shrink-0">
+                <Sparkles size={18} />
+              </div>
+              <div>
+                <h4 className="text-sm font-black uppercase tracking-tight text-zinc-850">Rastreador de Vitaminas</h4>
+                <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider mt-0.5">
+                  Meta diária (RDA) personalizada para <span className="text-pink-500 font-extrabold">{activeAge} anos</span> e <span className="text-pink-500 font-extrabold">{activeWeight} kg</span>
+                </p>
+              </div>
+            </div>
+            <div className="text-[9px] font-black uppercase text-amber-500 bg-amber-50 px-2 py-1 rounded-lg self-start sm:self-center">
+              Cálculo Metabólico Ativo ⚡
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+            {/* Vitamina A */}
+            <div className="space-y-1.5 p-3 rounded-2xl bg-amber-50/15 border border-amber-100/30">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-extrabold text-zinc-700">Vitamina A <span className="text-[10px] text-zinc-400 font-normal">(Visão e Imunidade)</span></span>
+                <span className="font-mono font-black text-amber-600">{selectedTotalVitA.toFixed(1)} / {rdaTargets.vitaminA} mcg</span>
+              </div>
+              <div className="relative w-full h-2 bg-zinc-100 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-amber-500 transition-all duration-500"
+                  style={{ width: `${Math.min(100, (selectedTotalVitA / rdaTargets.vitaminA) * 100)}%` }}
+                />
+              </div>
+              <div className="flex items-center justify-between text-[9px] font-bold text-zinc-400 uppercase tracking-wider">
+                <span>{Math.round((selectedTotalVitA / rdaTargets.vitaminA) * 100)}% da meta</span>
+                {selectedTotalVitA >= rdaTargets.vitaminA ? (
+                  <span className="text-emerald-500 font-extrabold">Meta Atingida! 🎉</span>
+                ) : (
+                  <span>Falta {(rdaTargets.vitaminA - selectedTotalVitA).toFixed(0)} mcg</span>
+                )}
+              </div>
+            </div>
+
+            {/* Vitamina C */}
+            <div className="space-y-1.5 p-3 rounded-2xl bg-pink-50/15 border border-pink-100/30">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-extrabold text-zinc-700">Vitamina C <span className="text-[10px] text-zinc-400 font-normal">(Antioxidante e Colágeno)</span></span>
+                <span className="font-mono font-black text-pink-600">{selectedTotalVitC.toFixed(1)} / {rdaTargets.vitaminC} mg</span>
+              </div>
+              <div className="relative w-full h-2 bg-zinc-100 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-pink-500 transition-all duration-500"
+                  style={{ width: `${Math.min(100, (selectedTotalVitC / rdaTargets.vitaminC) * 100)}%` }}
+                />
+              </div>
+              <div className="flex items-center justify-between text-[9px] font-bold text-zinc-400 uppercase tracking-wider">
+                <span>{Math.round((selectedTotalVitC / rdaTargets.vitaminC) * 100)}% da meta</span>
+                {selectedTotalVitC >= rdaTargets.vitaminC ? (
+                  <span className="text-emerald-500 font-extrabold">Meta Atingida! 🎉</span>
+                ) : (
+                  <span>Falta {(rdaTargets.vitaminC - selectedTotalVitC).toFixed(0)} mg</span>
+                )}
+              </div>
+            </div>
+
+            {/* Vitamina D */}
+            <div className="space-y-1.5 p-3 rounded-2xl bg-sky-50/15 border border-sky-100/30">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-extrabold text-zinc-700">Vitamina D <span className="text-[10px] text-zinc-400 font-normal">(Ossos e Hormônios)</span></span>
+                <span className="font-mono font-black text-sky-600">{selectedTotalVitD.toFixed(1)} / {rdaTargets.vitaminD} mcg</span>
+              </div>
+              <div className="relative w-full h-2 bg-zinc-100 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-sky-500 transition-all duration-500"
+                  style={{ width: `${Math.min(100, (selectedTotalVitD / rdaTargets.vitaminD) * 100)}%` }}
+                />
+              </div>
+              <div className="flex items-center justify-between text-[9px] font-bold text-zinc-400 uppercase tracking-wider">
+                <span>{Math.round((selectedTotalVitD / rdaTargets.vitaminD) * 100)}% da meta</span>
+                {selectedTotalVitD >= rdaTargets.vitaminD ? (
+                  <span className="text-emerald-500 font-extrabold">Meta Atingida! 🎉</span>
+                ) : (
+                  <span>Falta {(rdaTargets.vitaminD - selectedTotalVitD).toFixed(0)} mcg</span>
+                )}
+              </div>
+            </div>
+
+            {/* Vitamina B6 */}
+            <div className="space-y-1.5 p-3 rounded-2xl bg-indigo-50/15 border border-indigo-100/30">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-extrabold text-zinc-700">Vitamina B6 <span className="text-[10px] text-zinc-400 font-normal">(Foco e Energia)</span></span>
+                <span className="font-mono font-black text-indigo-600">{selectedTotalVitB6.toFixed(2)} / {rdaTargets.vitaminB6} mg</span>
+              </div>
+              <div className="relative w-full h-2 bg-zinc-100 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-indigo-500 transition-all duration-500"
+                  style={{ width: `${Math.min(100, (selectedTotalVitB6 / rdaTargets.vitaminB6) * 100)}%` }}
+                />
+              </div>
+              <div className="flex items-center justify-between text-[9px] font-bold text-zinc-400 uppercase tracking-wider">
+                <span>{Math.round((selectedTotalVitB6 / rdaTargets.vitaminB6) * 100)}% da meta</span>
+                {selectedTotalVitB6 >= rdaTargets.vitaminB6 ? (
+                  <span className="text-emerald-500 font-extrabold">Meta Atingida! 🎉</span>
+                ) : (
+                  <span>Falta {(rdaTargets.vitaminB6 - selectedTotalVitB6).toFixed(1)} mg</span>
+                )}
+              </div>
+            </div>
+
+            {/* Vitamina B12 */}
+            <div className="space-y-1.5 p-3 rounded-2xl bg-emerald-50/15 border border-emerald-100/30 md:col-span-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-extrabold text-zinc-700">Vitamina B12 <span className="text-[10px] text-zinc-400 font-normal">(Células e Sistema Nervoso)</span></span>
+                <span className="font-mono font-black text-emerald-600">{selectedTotalVitB12.toFixed(2)} / {rdaTargets.vitaminB12} mcg</span>
+              </div>
+              <div className="relative w-full h-2 bg-zinc-100 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-emerald-500 transition-all duration-500"
+                  style={{ width: `${Math.min(100, (selectedTotalVitB12 / rdaTargets.vitaminB12) * 100)}%` }}
+                />
+              </div>
+              <div className="flex items-center justify-between text-[9px] font-bold text-zinc-400 uppercase tracking-wider">
+                <span>{Math.round((selectedTotalVitB12 / rdaTargets.vitaminB12) * 100)}% da meta</span>
+                {selectedTotalVitB12 >= rdaTargets.vitaminB12 ? (
+                  <span className="text-emerald-500 font-extrabold">Meta Atingida! 🎉</span>
+                ) : (
+                  <span>Falta {(rdaTargets.vitaminB12 - selectedTotalVitB12).toFixed(1)} mcg</span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* SELECTED DATE DIET DIARY */}
           <div className="space-y-4">
             {selectedDateDiets.length === 0 ? (
               <div className="py-12 px-6 bg-white border border-dashed border-pink-100 rounded-[2rem] flex flex-col items-center justify-center text-center">
@@ -915,6 +1173,11 @@ export default function DietSection({ user, profile }: DietSectionProps) {
                   const totalPotassium = diet.meals.reduce((acc: number, m: any) => acc + (m.potassium || 0), 0);
                   const totalCalcium = diet.meals.reduce((acc: number, m: any) => acc + (m.calcium || 0), 0);
                   const totalIron = diet.meals.reduce((acc: number, m: any) => acc + (m.iron || 0), 0);
+                  const totalVitA = diet.meals.reduce((acc: number, m: any) => acc + (m.vitaminA || 0), 0);
+                  const totalVitC = diet.meals.reduce((acc: number, m: any) => acc + (m.vitaminC || 0), 0);
+                  const totalVitD = diet.meals.reduce((acc: number, m: any) => acc + (m.vitaminD || 0), 0);
+                  const totalVitB6 = diet.meals.reduce((acc: number, m: any) => acc + (m.vitaminB6 || 0), 0);
+                  const totalVitB12 = diet.meals.reduce((acc: number, m: any) => acc + (m.vitaminB12 || 0), 0);
 
                   const isExpanded = expandedDietId === diet.id;
 
@@ -1006,9 +1269,9 @@ export default function DietSection({ user, profile }: DietSectionProps) {
                             {/* Accumulated nutrient analysis */}
                             <div className="bg-[#fffdfd] p-4 rounded-2xl border border-pink-100 flex flex-col gap-2">
                               <span className="text-[9px] font-black uppercase tracking-widest text-[#d4af37] flex items-center gap-1">
-                                <Sparkles size={11} /> Micronutrientes Consolidados do Dia
+                                <Sparkles size={11} /> Micronutrientes Consolidados
                               </span>
-                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-2 gap-x-3 text-xs font-semibold text-zinc-600 mt-1">
+                              <div className="grid grid-cols-2 sm:grid-cols-4 gap-y-2 gap-x-3 text-xs font-semibold text-zinc-600 mt-1">
                                 <div className="flex flex-col">
                                   <span className="text-[8px] uppercase font-bold text-zinc-400">Fibra</span>
                                   <span className="font-extrabold text-zinc-700">{totalFiber.toFixed(1)}g</span>
@@ -1028,6 +1291,26 @@ export default function DietSection({ user, profile }: DietSectionProps) {
                                 <div className="flex flex-col">
                                   <span className="text-[8px] uppercase font-bold text-zinc-400">Ferro</span>
                                   <span className="font-extrabold text-zinc-700">{totalIron.toFixed(1)}mg</span>
+                                </div>
+                                <div className="flex flex-col">
+                                  <span className="text-[8px] uppercase font-bold text-zinc-400">Vit. A</span>
+                                  <span className="font-extrabold text-zinc-700">{totalVitA.toFixed(1)}mcg</span>
+                                </div>
+                                <div className="flex flex-col">
+                                  <span className="text-[8px] uppercase font-bold text-zinc-400">Vit. C</span>
+                                  <span className="font-extrabold text-zinc-700">{totalVitC.toFixed(1)}mg</span>
+                                </div>
+                                <div className="flex flex-col">
+                                  <span className="text-[8px] uppercase font-bold text-zinc-400">Vit. D</span>
+                                  <span className="font-extrabold text-zinc-700">{totalVitD.toFixed(1)}mcg</span>
+                                </div>
+                                <div className="flex flex-col">
+                                  <span className="text-[8px] uppercase font-bold text-zinc-400">Vit. B6</span>
+                                  <span className="font-extrabold text-zinc-700">{totalVitB6.toFixed(2)}mg</span>
+                                </div>
+                                <div className="flex flex-col">
+                                  <span className="text-[8px] uppercase font-bold text-zinc-400">Vit. B12</span>
+                                  <span className="font-extrabold text-zinc-700">{totalVitB12.toFixed(2)}mcg</span>
                                 </div>
                               </div>
                             </div>
@@ -1074,6 +1357,28 @@ export default function DietSection({ user, profile }: DietSectionProps) {
               </div>
 
               <div className="space-y-5">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-2 block">Idade (anos)</label>
+                    <input 
+                      type="number" 
+                      className="w-full bg-[#fffafa] border border-pink-100 rounded-2xl px-4 py-3 text-zinc-800 font-bold"
+                      value={userAge || ''}
+                      onChange={(e) => setUserAge(parseInt(e.target.value) || 0)}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-2 block">Peso Atual (kg)</label>
+                    <input 
+                      type="number" 
+                      step="0.1"
+                      className="w-full bg-[#fffafa] border border-pink-100 rounded-2xl px-4 py-3 text-zinc-800 font-bold"
+                      value={userWeight || ''}
+                      onChange={(e) => setUserWeight(parseFloat(e.target.value) || 0)}
+                    />
+                  </div>
+                </div>
+
                 <div>
                   <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-2 block">Gasto Calórico Base (kcal)</label>
                   <input 

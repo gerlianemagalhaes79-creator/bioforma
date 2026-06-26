@@ -5,6 +5,7 @@ import { ptBR } from 'date-fns/locale';
 import { Plus, Trash2, Dumbbell, X, Play, Check, TrendingUp, ChevronDown, ChevronUp, Calendar, Award, Edit2, Flame, Heart, Sparkles, Minimize2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import confetti from 'canvas-confetti';
 
 interface WorkoutSectionProps {
   user: User;
@@ -57,10 +58,15 @@ export default function WorkoutSection({
   const [deletingAerobicId, setDeletingAerobicId] = useState<string | null>(null);
   const [showCancelWorkoutConfirm, setShowCancelWorkoutConfirm] = useState(false);
 
-  const [newWorkout, setNewWorkout] = useState({
+  const [newWorkout, setNewWorkout] = useState<{
+    type: string;
+    date: string;
+    exercises: Array<{ name: string; sets: number; reps: number; weight: number; conjugated?: boolean; completed?: boolean }>;
+    notes: string;
+  }>({
     type: '',
     date: format(new Date(), 'yyyy-MM-dd'),
-    exercises: [{ name: '', sets: 0, reps: 0, weight: 0 }],
+    exercises: [{ name: '', sets: 0, reps: 0, weight: 0, conjugated: false }],
     notes: ''
   });
 
@@ -90,6 +96,31 @@ export default function WorkoutSection({
       unsubscribeAerobics();
     };
   }, [user.uid]);
+
+  // Fire confetti upon workout completion & feedback modal opening
+  useEffect(() => {
+    if (showFeedbackModal) {
+      // Fire confetti!
+      confetti({
+        particleCount: 150,
+        spread: 80,
+        origin: { y: 0.6 },
+        colors: ['#ec4899', '#f43f5e', '#f59e0b', '#10b981', '#3b82f6']
+      });
+
+      // Fire a second wave slightly later for extra satisfaction
+      const timer = setTimeout(() => {
+        confetti({
+          particleCount: 100,
+          spread: 100,
+          origin: { y: 0.7 },
+          colors: ['#ec4899', '#f43f5e', '#3b82f6']
+        });
+      }, 500);
+
+      return () => clearTimeout(timer);
+    }
+  }, [showFeedbackModal]);
 
   // Derive unique exercise names for load selection graph
   const allExerciseNames = Array.from(
@@ -284,7 +315,28 @@ export default function WorkoutSection({
   const confirmDeleteAerobic = async () => {
     if (!deletingAerobicId) return;
     try {
+      const aerobicToDelete = aerobics.find(a => a.id === deletingAerobicId);
+      const dateOfAerobic = aerobicToDelete?.date;
+
       await deleteDoc(doc(db, 'aerobics', deletingAerobicId));
+
+      if (dateOfAerobic) {
+        const otherWorkouts = workouts.filter(w => w.date === dateOfAerobic);
+        const otherAerobics = aerobics.filter(a => a.date === dateOfAerobic && a.id !== deletingAerobicId);
+        if (otherWorkouts.length === 0 && otherAerobics.length === 0) {
+          const checkinQuery = query(
+            collection(db, 'checkins'),
+            where('uid', '==', user.uid),
+            where('date', '==', dateOfAerobic)
+          );
+          const checkinSnap = await getDocs(checkinQuery);
+          if (!checkinSnap.empty) {
+            await updateDoc(doc(db, 'checkins', checkinSnap.docs[0].id), {
+              workoutDone: false
+            });
+          }
+        }
+      }
     } catch (e) {
       console.error("Erro ao excluir aeróbico:", e);
     } finally {
@@ -300,8 +352,29 @@ export default function WorkoutSection({
   const confirmDeleteWorkout = async () => {
     if (!deletingWorkoutId) return;
     try {
+      const workoutToDelete = workouts.find(w => w.id === deletingWorkoutId);
+      const dateOfWorkout = workoutToDelete?.date;
+
       await deleteDoc(doc(db, 'workouts', deletingWorkoutId));
       if (expandedWorkoutId === deletingWorkoutId) setExpandedWorkoutId(null);
+
+      if (dateOfWorkout) {
+        const otherWorkouts = workouts.filter(w => w.date === dateOfWorkout && w.id !== deletingWorkoutId);
+        const otherAerobics = aerobics.filter(a => a.date === dateOfWorkout);
+        if (otherWorkouts.length === 0 && otherAerobics.length === 0) {
+          const checkinQuery = query(
+            collection(db, 'checkins'),
+            where('uid', '==', user.uid),
+            where('date', '==', dateOfWorkout)
+          );
+          const checkinSnap = await getDocs(checkinQuery);
+          if (!checkinSnap.empty) {
+            await updateDoc(doc(db, 'checkins', checkinSnap.docs[0].id), {
+              workoutDone: false
+            });
+          }
+        }
+      }
     } catch (e) {
       console.error(e);
     } finally {
@@ -314,6 +387,39 @@ export default function WorkoutSection({
     setNewWorkout({
       ...newWorkout,
       exercises: filtered.length > 0 ? filtered : [{ name: '', sets: 0, reps: 0, weight: 0 }]
+    });
+  };
+
+  const handleToggleConjugatedNew = (index: number) => {
+    const newExs = [...newWorkout.exercises];
+    const isConjugated = !newExs[index].conjugated;
+    newExs[index].conjugated = isConjugated;
+    
+    // If conjugated is activated and there is no next exercise, automatically add one!
+    if (isConjugated && index === newExs.length - 1) {
+      newExs.push({ name: '', sets: 0, reps: 0, weight: 0, conjugated: false });
+    }
+    
+    setNewWorkout({
+      ...newWorkout,
+      exercises: newExs
+    });
+  };
+
+  const handleToggleConjugatedEdit = (index: number) => {
+    if (!editingWorkout) return;
+    const newExs = [...editingWorkout.exercises];
+    const isConjugated = !newExs[index].conjugated;
+    newExs[index].conjugated = isConjugated;
+    
+    // If conjugated is activated and there is no next exercise, automatically add one!
+    if (isConjugated && index === newExs.length - 1) {
+      newExs.push({ name: '', sets: 0, reps: 0, weight: 0, conjugated: false });
+    }
+    
+    setEditingWorkout({
+      ...editingWorkout,
+      exercises: newExs
     });
   };
 
@@ -426,7 +532,8 @@ export default function WorkoutSection({
           name: ex.name,
           sets: ex.sets,
           reps: ex.reps,
-          weight: ex.weight
+          weight: ex.weight,
+          conjugated: ex.conjugated || false
         })),
         notes: "Sessão concluída com sucesso! 🔥"
       });
@@ -531,7 +638,7 @@ export default function WorkoutSection({
         </h2>
         <button 
           onClick={() => setShowAddModal(true)}
-          className="w-12 h-12 rounded-2xl bg-gradient-to-r from-pink-500 to-rose-400 flex items-center justify-center text-white shadow-lg shadow-pink-400/25 hover:opacity-90 cursor-pointer animate-pulse"
+          className="w-12 h-12 rounded-2xl bg-gradient-to-r from-pink-500 to-rose-400 flex items-center justify-center text-white shadow-lg shadow-pink-400/25 hover:opacity-90 cursor-pointer"
         >
           <Plus size={24} strokeWidth={3} />
         </button>
@@ -625,16 +732,31 @@ export default function WorkoutSection({
 
                     <div className="space-y-2">
                       <p className="text-[10px] uppercase font-bold tracking-wider text-zinc-400 mb-1">Lista de Exercícios</p>
-                      {workout.exercises?.map((ex: any, i: number) => (
-                        <div key={i} className="flex items-center justify-between py-2 border-b border-pink-50/40 last:border-0 text-xs">
-                          <span className="font-semibold text-zinc-700">{ex.name}</span>
-                          <div className="flex gap-3 text-[10px] font-black italic uppercase text-pink-500 bg-pink-50/45 px-2.5 py-1 rounded-lg">
-                            <span>{ex.sets} s</span>
-                            <span>{ex.reps} r</span>
-                            <span className="text-[#d4af37]">{ex.weight} kg</span>
+                      {workout.exercises?.map((ex: any, i: number) => {
+                        const isConjugated = ex.conjugated;
+                        return (
+                          <div 
+                            key={i} 
+                            className={`flex items-center justify-between py-2 border-b border-pink-50/40 last:border-0 text-xs transition-all ${
+                              isConjugated ? 'border-l-2 border-purple-400 pl-2 bg-purple-50/10' : ''
+                            }`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-zinc-700">{ex.name}</span>
+                              {isConjugated && (
+                                <span className="text-[8px] font-black uppercase px-1.5 py-0.5 rounded bg-purple-50 text-purple-600 border border-purple-100 flex items-center gap-0.5 shrink-0 select-none">
+                                  🔗 Conjugado
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex gap-3 text-[10px] font-black italic uppercase text-pink-500 bg-pink-50/45 px-2.5 py-1 rounded-lg">
+                              <span>{ex.sets} s</span>
+                              <span>{ex.reps} r</span>
+                              <span className="text-[#d4af37]">{ex.weight} kg</span>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
 
                     {workout.notes && (
@@ -709,14 +831,24 @@ export default function WorkoutSection({
 
                         {session.exercises && session.exercises.length > 0 && (
                           <div className="bg-[#fffbfc]/60 rounded-xl p-2.5 border border-pink-50/40 text-[10px] text-zinc-500 space-y-1">
-                            {session.exercises.map((ex: any, exIdx: number) => (
-                              <div key={exIdx} className="flex justify-between items-center py-0.5">
-                                <span className="font-bold text-zinc-650">{ex.name}</span>
-                                <span className="text-pink-550 font-black italic">
-                                  {ex.sets}s • {ex.reps}r • {ex.weight}kg
-                                </span>
-                              </div>
-                            ))}
+                            {session.exercises.map((ex: any, exIdx: number) => {
+                              const isConjugated = ex.conjugated;
+                              return (
+                                <div key={exIdx} className={`flex justify-between items-center py-0.5 ${isConjugated ? 'border-l-2 border-purple-400 pl-1.5 bg-purple-50/5' : ''}`}>
+                                  <div className="flex items-center gap-1.5 min-w-0">
+                                    <span className="font-bold text-zinc-650 truncate">{ex.name}</span>
+                                    {isConjugated && (
+                                      <span className="text-[7px] font-black uppercase px-1 rounded bg-purple-50 text-purple-600 border border-purple-100 shrink-0 select-none scale-90 origin-left">
+                                        Conj.
+                                      </span>
+                                    )}
+                                  </div>
+                                  <span className="text-pink-550 font-black italic shrink-0">
+                                    {ex.sets}s • {ex.reps}r • {ex.weight}kg
+                                  </span>
+                                </div>
+                              );
+                            })}
                           </div>
                         )}
                         {session.notes && <p className="text-[9px] text-zinc-450 italic">💬 {session.notes}</p>}
@@ -1097,7 +1229,7 @@ export default function WorkoutSection({
 
           {selectedExercise ? (
             chartData.length >= 2 ? (
-              <div className="h-64 mt-4 w-full">
+              <div className="h-44 mt-4 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={chartData} margin={{ top: 15, right: 15, left: -25, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#fce7f3" vertical={false} />
@@ -1209,37 +1341,48 @@ export default function WorkoutSection({
                 </div>
 
                 <div className="space-y-3.5 max-h-[50vh] overflow-y-auto pr-1">
-                  {activeSession.exercises.map((ex: any, i: number) => (
-                    <div 
-                      key={i} 
-                      className={`flex flex-col sm:flex-row sm:items-center justify-between p-3.5 rounded-2xl border transition-all gap-3 ${
-                        ex.completed 
-                          ? 'bg-pink-50/10 border-pink-200 ring-1 ring-pink-100' 
-                          : 'bg-white border-zinc-100 hover:border-zinc-200'
-                      }`}
-                    >
-                      {/* Check-in Trigger */}
-                      <div className="flex items-center gap-3">
-                        <button
-                          onClick={() => handleToggleExerciseCheckin(i)}
-                          className={`w-6 h-6 rounded-lg flex items-center justify-center cursor-pointer border transition-all ${
-                            ex.completed 
-                              ? 'bg-pink-500 border-pink-500 text-white' 
-                              : 'border-zinc-300 hover:border-pink-300 bg-[#fffafa]/40'
-                          }`}
-                        >
-                          {ex.completed && <Check size={14} strokeWidth={4} />}
-                        </button>
-                        
-                        <div>
-                          <p className={`text-xs font-bold leading-tight ${ex.completed ? 'text-zinc-900 line-through' : 'text-zinc-700'}`}>
-                            {ex.name}
-                          </p>
-                          <p className="text-[10px] text-zinc-400 font-semibold uppercase tracking-wider mt-0.5">
-                            {ex.sets ?? 0} Séries x {ex.reps ?? 0} Reps
-                          </p>
+                  {activeSession.exercises.map((ex: any, i: number) => {
+                    const isConjugated = ex.conjugated;
+                    return (
+                      <div 
+                        key={i} 
+                        className={`flex flex-col sm:flex-row sm:items-center justify-between p-3.5 rounded-2xl border transition-all gap-3 ${
+                          ex.completed 
+                            ? 'bg-pink-50/10 border-pink-200 ring-1 ring-pink-100' 
+                            : isConjugated 
+                              ? 'bg-purple-50/5 border-purple-150 hover:border-purple-250 border-l-4 border-l-purple-400'
+                              : 'bg-white border-zinc-100 hover:border-zinc-200'
+                        }`}
+                      >
+                        {/* Check-in Trigger */}
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={() => handleToggleExerciseCheckin(i)}
+                            className={`w-6 h-6 rounded-lg flex items-center justify-center cursor-pointer border transition-all ${
+                              ex.completed 
+                                ? 'bg-pink-500 border-pink-500 text-white' 
+                                : 'border-zinc-300 hover:border-pink-300 bg-[#fffafa]/40'
+                            }`}
+                          >
+                            {ex.completed && <Check size={14} strokeWidth={4} />}
+                          </button>
+                          
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <p className={`text-xs font-bold leading-tight ${ex.completed ? 'text-zinc-900 line-through' : 'text-zinc-700'}`}>
+                                {ex.name}
+                              </p>
+                              {isConjugated && (
+                                <span className="text-[8px] font-black uppercase px-1.5 py-0.5 rounded bg-purple-50 text-purple-600 border border-purple-100 flex items-center gap-0.5 shrink-0 select-none">
+                                  🔗 Conjugado
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[10px] text-zinc-400 font-semibold uppercase tracking-wider mt-0.5">
+                              {ex.sets ?? 0} Séries x {ex.reps ?? 0} Reps
+                            </p>
+                          </div>
                         </div>
-                      </div>
 
                       {/* Weight adjusting control */}
                       <div className="flex items-center gap-2 justify-end">
@@ -1282,7 +1425,8 @@ export default function WorkoutSection({
                         </button>
                       </div>
                     </div>
-                  ))}
+                  );
+                })}
                 </div>
               </div>
 
@@ -1322,9 +1466,14 @@ export default function WorkoutSection({
             className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto"
           >
             <motion.div
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 20 }}
+              initial={{ scale: 0.92, opacity: 0, y: 30 }}
+              animate={{ 
+                scale: 1, 
+                opacity: 1, 
+                y: 0,
+                transition: { type: "spring", duration: 0.65, bounce: 0.25 }
+              }}
+              exit={{ scale: 0.95, opacity: 0, y: 15, transition: { duration: 0.2 } }}
               className="bg-white w-full max-w-2xl rounded-[2.5rem] border border-pink-100 shadow-2xl overflow-hidden text-zinc-800 my-8 flex flex-col max-h-[90vh]"
             >
               {/* Header */}
@@ -1506,65 +1655,115 @@ export default function WorkoutSection({
                 <div>
                   <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-2 block">Exercícios</label>
                   <div className="space-y-4">
-                    {newWorkout.exercises.map((ex, i) => (
-                      <div key={i} className="grid grid-cols-12 gap-2 items-center">
-                        <input 
-                          type="text" 
-                          placeholder="Nome"
-                          className="col-span-5 bg-[#fffafa] border border-pink-100 rounded-xl px-3 py-2 text-xs font-semibold text-zinc-800"
-                          value={ex.name}
-                          onChange={(e) => {
-                            const newExs = [...newWorkout.exercises];
-                            newExs[i].name = e.target.value;
-                            setNewWorkout({...newWorkout, exercises: newExs});
-                          }}
-                        />
-                        <input 
-                          type="number" 
-                          placeholder="S"
-                          className="col-span-2 bg-[#fffafa] border border-pink-100 rounded-xl px-1.5 py-2 text-xs font-bold text-center text-zinc-800"
-                          value={ex.sets || ''}
-                          onChange={(e) => {
-                            const newExs = [...newWorkout.exercises];
-                            newExs[i].sets = parseInt(e.target.value) || 0;
-                            setNewWorkout({...newWorkout, exercises: newExs});
-                          }}
-                        />
-                        <input 
-                          type="number" 
-                          placeholder="R"
-                          className="col-span-2 bg-[#fffafa] border border-pink-100 rounded-xl px-1.5 py-2 text-xs font-bold text-center text-zinc-800"
-                          value={ex.reps || ''}
-                          onChange={(e) => {
-                            const newExs = [...newWorkout.exercises];
-                            newExs[i].reps = parseInt(e.target.value) || 0;
-                            setNewWorkout({...newWorkout, exercises: newExs});
-                          }}
-                        />
-                        <input 
-                          type="number" 
-                          placeholder="kg"
-                          className="col-span-2 bg-[#fffafa] border border-pink-100 rounded-xl px-1.5 py-2 text-xs font-bold text-center text-zinc-800"
-                          value={ex.weight || ''}
-                          onChange={(e) => {
-                            const newExs = [...newWorkout.exercises];
-                            newExs[i].weight = parseInt(e.target.value) || 0;
-                            setNewWorkout({...newWorkout, exercises: newExs});
-                          }}
-                        />
-                        <button
-                          onClick={() => handleRemoveNewExercise(i)}
-                          className="col-span-1 text-rose-400 hover:text-rose-600 cursor-pointer p-1 flex justify-center items-center"
-                          type="button"
-                          title="Remover Exercício"
-                        >
-                          <X size={15} />
-                        </button>
-                      </div>
-                    ))}
+                    {newWorkout.exercises.map((ex: any, i: number) => {
+                      const isFirstPart = !!ex.conjugated;
+                      const isSecondPart = i > 0 && !!newWorkout.exercises[i - 1]?.conjugated;
+                      const isConjugated = isFirstPart || isSecondPart;
+
+                      let borderClasses = "border border-pink-50 rounded-2xl bg-[#fffbfc]";
+                      if (isFirstPart && isSecondPart) {
+                        borderClasses = "border-x-2 border-purple-300 bg-purple-50/5 rounded-none";
+                      } else if (isFirstPart && !isSecondPart) {
+                        borderClasses = "border-x-2 border-t-2 border-b border-b-purple-100 border-purple-300 bg-purple-50/5 rounded-t-2xl rounded-b-none";
+                      } else if (!isFirstPart && isSecondPart) {
+                        borderClasses = "border-x-2 border-b-2 border-t border-t-purple-100 border-purple-300 bg-purple-50/5 rounded-b-2xl rounded-t-none";
+                      }
+
+                      return (
+                        <div key={i} className={`p-4 space-y-2 transition-all ${borderClasses}`}>
+                          {isConjugated && (
+                            <div className="flex items-center gap-1.5 mb-1">
+                              <span className="text-[9px] font-black uppercase tracking-wider text-purple-700 bg-purple-50 px-2 py-0.5 rounded-lg border border-purple-100">
+                                🔗 Conjugado {isFirstPart && !isSecondPart ? '• Parte A' : !isFirstPart && isSecondPart ? '• Parte B' : '• Parte Intermediária'}
+                              </span>
+                            </div>
+                          )}
+                          <div className="grid grid-cols-12 gap-2 items-center">
+                            <input 
+                              type="text" 
+                              placeholder="Nome do Exercício"
+                              className="col-span-11 bg-white border border-pink-100 rounded-xl px-3 py-2 text-xs font-semibold text-zinc-800 focus:outline-none focus:border-pink-300"
+                              value={ex.name}
+                              onChange={(e) => {
+                                const newExs = [...newWorkout.exercises];
+                                newExs[i].name = e.target.value;
+                                setNewWorkout({...newWorkout, exercises: newExs});
+                              }}
+                            />
+                            <button
+                              onClick={() => handleRemoveNewExercise(i)}
+                              className="col-span-1 text-rose-400 hover:text-rose-600 cursor-pointer p-1 flex justify-center items-center bg-transparent border-0"
+                              type="button"
+                              title="Remover Exercício"
+                            >
+                              <X size={15} />
+                            </button>
+                          </div>
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <div className="flex items-center gap-1 bg-white border border-pink-100 rounded-xl px-2 py-1">
+                                <span className="text-[8px] font-black text-zinc-400 uppercase">Séries:</span>
+                                <input 
+                                  type="number" 
+                                  placeholder="0"
+                                  className="w-8 text-center text-xs font-bold text-zinc-850 focus:outline-none"
+                                  value={ex.sets || ''}
+                                  onChange={(e) => {
+                                    const newExs = [...newWorkout.exercises];
+                                    newExs[i].sets = parseInt(e.target.value) || 0;
+                                    setNewWorkout({...newWorkout, exercises: newExs});
+                                  }}
+                                />
+                              </div>
+                              <div className="flex items-center gap-1 bg-white border border-pink-100 rounded-xl px-2 py-1">
+                                <span className="text-[8px] font-black text-zinc-400 uppercase">Reps:</span>
+                                <input 
+                                  type="number" 
+                                  placeholder="0"
+                                  className="w-8 text-center text-xs font-bold text-zinc-850 focus:outline-none"
+                                  value={ex.reps || ''}
+                                  onChange={(e) => {
+                                    const newExs = [...newWorkout.exercises];
+                                    newExs[i].reps = parseInt(e.target.value) || 0;
+                                    setNewWorkout({...newWorkout, exercises: newExs});
+                                  }}
+                                />
+                              </div>
+                              <div className="flex items-center gap-1 bg-white border border-pink-100 rounded-xl px-2 py-1">
+                                <span className="text-[8px] font-black text-zinc-400 uppercase">Carga:</span>
+                                <input 
+                                  type="number" 
+                                  placeholder="0"
+                                  className="w-10 text-center text-xs font-bold text-zinc-850 focus:outline-none"
+                                  value={ex.weight || ''}
+                                  onChange={(e) => {
+                                    const newExs = [...newWorkout.exercises];
+                                    newExs[i].weight = parseFloat(e.target.value) || 0;
+                                    setNewWorkout({...newWorkout, exercises: newExs});
+                                  }}
+                                />
+                                <span className="text-[8px] text-zinc-400 font-bold uppercase">kg</span>
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleToggleConjugatedNew(i)}
+                              className={`text-[8px] font-black uppercase py-1 px-2.5 rounded-lg border transition-all cursor-pointer flex items-center gap-1 ${
+                                ex.conjugated
+                                  ? 'bg-purple-500 text-white border-purple-400 shadow-sm'
+                                  : 'bg-white border-purple-100 text-purple-600 hover:bg-purple-50/50'
+                              }`}
+                            >
+                              🔗 {ex.conjugated ? 'Conjugado!' : 'Conjugar'}
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
                     <button 
                       onClick={handleAddExercise}
-                      className="w-full py-3 border border-dashed border-pink-200 rounded-2xl text-[10px] font-bold uppercase tracking-widest text-pink-400 hover:border-pink-500 hover:text-pink-500 transition-all cursor-pointer"
+                      className="w-full py-3 border border-dashed border-pink-200 rounded-2xl text-[10px] font-bold uppercase tracking-widest text-pink-400 hover:border-pink-500 hover:text-pink-500 transition-all cursor-pointer bg-transparent"
+                      type="button"
                     >
                       + Adicionar Exercício
                     </button>
@@ -1645,66 +1844,115 @@ export default function WorkoutSection({
                 <div>
                   <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-2 block">Exercícios</label>
                   <div className="space-y-4">
-                    {editingWorkout.exercises.map((ex: any, i: number) => (
-                      <div key={i} className="grid grid-cols-12 gap-2 items-center">
-                        <input 
-                          type="text" 
-                          placeholder="Nome"
-                          className="col-span-5 bg-[#fffafa] border border-pink-100 rounded-xl px-3 py-2 text-xs font-semibold text-zinc-800"
-                          value={ex.name}
-                          onChange={(e) => {
-                            const newExs = [...editingWorkout.exercises];
-                            newExs[i].name = e.target.value;
-                            setEditingWorkout({...editingWorkout, exercises: newExs});
-                          }}
-                        />
-                        <input 
-                          type="number" 
-                          placeholder="S"
-                          className="col-span-2 bg-[#fffafa] border border-pink-100 rounded-xl px-1.5 py-2 text-xs font-bold text-center text-zinc-800"
-                          value={ex.sets || ''}
-                          onChange={(e) => {
-                            const newExs = [...editingWorkout.exercises];
-                            newExs[i].sets = parseInt(e.target.value) || 0;
-                            setEditingWorkout({...editingWorkout, exercises: newExs});
-                          }}
-                        />
-                        <input 
-                          type="number" 
-                          placeholder="R"
-                          className="col-span-2 bg-[#fffafa] border border-pink-100 rounded-xl px-1.5 py-2 text-xs font-bold text-center text-zinc-800"
-                          value={ex.reps || ''}
-                          onChange={(e) => {
-                            const newExs = [...editingWorkout.exercises];
-                            newExs[i].reps = parseInt(e.target.value) || 0;
-                            setEditingWorkout({...editingWorkout, exercises: newExs});
-                          }}
-                        />
-                        <input 
-                          type="number" 
-                          placeholder="kg"
-                          step="any"
-                          className="col-span-2 bg-[#fffafa] border border-pink-100 rounded-xl px-1.5 py-2 text-xs font-bold text-center text-zinc-800"
-                          value={ex.weight || ''}
-                          onChange={(e) => {
-                            const newExs = [...editingWorkout.exercises];
-                            newExs[i].weight = parseFloat(e.target.value) || 0;
-                            setEditingWorkout({...editingWorkout, exercises: newExs});
-                          }}
-                        />
-                        <button
-                          onClick={() => handleRemoveEditExercise(i)}
-                          className="col-span-1 text-rose-450 hover:text-rose-600 cursor-pointer p-1 flex justify-center items-center"
-                          type="button"
-                          title="Remover Exercício"
-                        >
-                          <X size={15} />
-                        </button>
-                      </div>
-                    ))}
+                    {editingWorkout.exercises.map((ex: any, i: number) => {
+                      const isFirstPart = !!ex.conjugated;
+                      const isSecondPart = i > 0 && !!editingWorkout.exercises[i - 1]?.conjugated;
+                      const isConjugated = isFirstPart || isSecondPart;
+
+                      let borderClasses = "border border-pink-50 rounded-2xl bg-[#fffbfc]";
+                      if (isFirstPart && isSecondPart) {
+                        borderClasses = "border-x-2 border-purple-300 bg-purple-50/5 rounded-none";
+                      } else if (isFirstPart && !isSecondPart) {
+                        borderClasses = "border-x-2 border-t-2 border-b border-b-purple-100 border-purple-300 bg-purple-50/5 rounded-t-2xl rounded-b-none";
+                      } else if (!isFirstPart && isSecondPart) {
+                        borderClasses = "border-x-2 border-b-2 border-t border-t-purple-100 border-purple-300 bg-purple-50/5 rounded-b-2xl rounded-t-none";
+                      }
+
+                      return (
+                        <div key={i} className={`p-4 space-y-2 transition-all ${borderClasses}`}>
+                          {isConjugated && (
+                            <div className="flex items-center gap-1.5 mb-1">
+                              <span className="text-[9px] font-black uppercase tracking-wider text-purple-700 bg-purple-50 px-2 py-0.5 rounded-lg border border-purple-100">
+                                🔗 Conjugado {isFirstPart && !isSecondPart ? '• Parte A' : !isFirstPart && isSecondPart ? '• Parte B' : '• Parte Intermediária'}
+                              </span>
+                            </div>
+                          )}
+                          <div className="grid grid-cols-12 gap-2 items-center">
+                            <input 
+                              type="text" 
+                              placeholder="Nome do Exercício"
+                              className="col-span-11 bg-white border border-pink-100 rounded-xl px-3 py-2 text-xs font-semibold text-zinc-800 focus:outline-none focus:border-pink-300"
+                              value={ex.name}
+                              onChange={(e) => {
+                                const newExs = [...editingWorkout.exercises];
+                                newExs[i].name = e.target.value;
+                                setEditingWorkout({...editingWorkout, exercises: newExs});
+                              }}
+                            />
+                            <button
+                              onClick={() => handleRemoveEditExercise(i)}
+                              className="col-span-1 text-rose-450 hover:text-rose-600 cursor-pointer p-1 flex justify-center items-center bg-transparent border-0"
+                              type="button"
+                              title="Remover Exercício"
+                            >
+                              <X size={15} />
+                            </button>
+                          </div>
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <div className="flex items-center gap-1 bg-white border border-pink-100 rounded-xl px-2 py-1">
+                                <span className="text-[8px] font-black text-zinc-400 uppercase">Séries:</span>
+                                <input 
+                                  type="number" 
+                                  placeholder="0"
+                                  className="w-8 text-center text-xs font-bold text-zinc-850 focus:outline-none"
+                                  value={ex.sets || ''}
+                                  onChange={(e) => {
+                                    const newExs = [...editingWorkout.exercises];
+                                    newExs[i].sets = parseInt(e.target.value) || 0;
+                                    setEditingWorkout({...editingWorkout, exercises: newExs});
+                                  }}
+                                />
+                              </div>
+                              <div className="flex items-center gap-1 bg-white border border-pink-100 rounded-xl px-2 py-1">
+                                <span className="text-[8px] font-black text-zinc-400 uppercase">Reps:</span>
+                                <input 
+                                  type="number" 
+                                  placeholder="0"
+                                  className="w-8 text-center text-xs font-bold text-zinc-850 focus:outline-none"
+                                  value={ex.reps || ''}
+                                  onChange={(e) => {
+                                    const newExs = [...editingWorkout.exercises];
+                                    newExs[i].reps = parseInt(e.target.value) || 0;
+                                    setEditingWorkout({...editingWorkout, exercises: newExs});
+                                  }}
+                                />
+                              </div>
+                              <div className="flex items-center gap-1 bg-white border border-pink-100 rounded-xl px-2 py-1">
+                                <span className="text-[8px] font-black text-zinc-400 uppercase">Carga:</span>
+                                <input 
+                                  type="number" 
+                                  placeholder="0"
+                                  className="w-10 text-center text-xs font-bold text-zinc-850 focus:outline-none"
+                                  value={ex.weight || ''}
+                                  onChange={(e) => {
+                                    const newExs = [...editingWorkout.exercises];
+                                    newExs[i].weight = parseFloat(e.target.value) || 0;
+                                    setEditingWorkout({...editingWorkout, exercises: newExs});
+                                  }}
+                                />
+                                <span className="text-[8px] text-zinc-400 font-bold uppercase">kg</span>
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleToggleConjugatedEdit(i)}
+                              className={`text-[8px] font-black uppercase py-1 px-2.5 rounded-lg border transition-all cursor-pointer flex items-center gap-1 ${
+                                ex.conjugated
+                                  ? 'bg-purple-500 text-white border-purple-400 shadow-sm'
+                                  : 'bg-white border-purple-100 text-purple-600 hover:bg-purple-50/50'
+                              }`}
+                            >
+                              🔗 {ex.conjugated ? 'Conjugado!' : 'Conjugar'}
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
                     <button 
                       onClick={handleEditAddExercise}
-                      className="w-full py-3 border border-dashed border-pink-200 rounded-2xl text-[10px] font-bold uppercase tracking-widest text-pink-400 hover:border-pink-500 hover:text-pink-500 transition-all cursor-pointer"
+                      className="w-full py-3 border border-dashed border-pink-200 rounded-2xl text-[10px] font-bold uppercase tracking-widest text-pink-400 hover:border-pink-500 hover:text-pink-500 transition-all cursor-pointer bg-transparent"
+                      type="button"
                     >
                       + Adicionar Exercício
                     </button>
