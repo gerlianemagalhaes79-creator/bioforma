@@ -194,6 +194,18 @@ service cloud.firestore {
              data.caloriesBurned is number;
     }
 
+    function isValidSupplement(data) {
+      return data.uid == request.auth.uid &&
+             isValidDateString(data.date) &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 150 &&
+             (!('vitaminA' in data) || data.vitaminA is number) &&
+             (!('vitaminC' in data) || data.vitaminC is number) &&
+             (!('vitaminD' in data) || data.vitaminD is number) &&
+             (!('vitaminB6' in data) || data.vitaminB6 is number) &&
+             (!('vitaminB12' in data) || data.vitaminB12 is number) &&
+             (!('notes' in data) || (data.notes is string && data.notes.size() <= 1000));
+    }
+
     // ===============================================================
     // Rules
     // ===============================================================
@@ -251,6 +263,13 @@ service cloud.firestore {
       allow read: if isDocOwner() || isAdmin();
       allow create: if isRequestOwner() && isValidAerobics(request.resource.data);
       allow update: if isDocOwner() && isRequestOwner() && isValidAerobics(request.resource.data);
+      allow delete: if isDocOwner() || isAdmin();
+    }
+
+    match /supplements/{id} {
+      allow read: if isDocOwner() || isAdmin();
+      allow create: if isRequestOwner() && isValidSupplement(request.resource.data);
+      allow update: if isDocOwner() && isRequestOwner() && isValidSupplement(request.resource.data);
       allow delete: if isDocOwner() || isAdmin();
     }
 

@@ -22,7 +22,8 @@ import {
   ChevronUp,
   ChevronLeft,
   ChevronRight,
-  Calendar
+  Calendar,
+  Pill
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -33,6 +34,19 @@ interface DietSectionProps {
 
 export default function DietSection({ user, profile }: DietSectionProps) {
   const [diets, setDiets] = useState<any[]>([]);
+  const [supplements, setSupplements] = useState<any[]>([]);
+  const [showAddSupplement, setShowAddSupplement] = useState(false);
+  const [activeVitaminTip, setActiveVitaminTip] = useState<string | null>(null);
+  const [newSupplement, setNewSupplement] = useState({
+    name: '',
+    vitaminA: 0,
+    vitaminC: 0,
+    vitaminD: 0,
+    vitaminB6: 0,
+    vitaminB12: 0,
+    notes: ''
+  });
+
   const [showAddModal, setShowAddModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [searchingIndex, setSearchingIndex] = useState<number | null>(null);
@@ -99,6 +113,58 @@ export default function DietSection({ user, profile }: DietSectionProps) {
     });
     return () => unsubscribe();
   }, [user.uid]);
+
+  useEffect(() => {
+    const q = query(
+      collection(db, 'supplements'),
+      where('uid', '==', user.uid),
+      orderBy('date', 'desc')
+    );
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      setSupplements(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    }, (error) => {
+      console.error("Error loading supplements:", error);
+    });
+    return () => unsubscribe();
+  }, [user.uid]);
+
+  const handleAddSupplement = async () => {
+    if (!newSupplement.name.trim()) return;
+    try {
+      await addDoc(collection(db, 'supplements'), {
+        uid: user.uid,
+        date: selectedDate,
+        name: newSupplement.name.trim(),
+        vitaminA: Number(newSupplement.vitaminA) || 0,
+        vitaminC: Number(newSupplement.vitaminC) || 0,
+        vitaminD: Number(newSupplement.vitaminD) || 0,
+        vitaminB6: Number(newSupplement.vitaminB6) || 0,
+        vitaminB12: Number(newSupplement.vitaminB12) || 0,
+        notes: newSupplement.notes.trim() || '',
+        createdAt: new Date().toISOString()
+      });
+      setNewSupplement({
+        name: '',
+        vitaminA: 0,
+        vitaminC: 0,
+        vitaminD: 0,
+        vitaminB6: 0,
+        vitaminB12: 0,
+        notes: ''
+      });
+      setShowAddSupplement(false);
+    } catch (e) {
+      console.error("Erro ao adicionar suplemento:", e);
+    }
+  };
+
+  const handleDeleteSupplement = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, 'supplements', id));
+    } catch (e) {
+      console.error("Erro ao deletar suplemento:", e);
+    }
+  };
 
   // Sync settings state when profile loads, but only if the modal is currently closed
   // to prevent overwriting user edits in real-time.
@@ -657,22 +723,34 @@ export default function DietSection({ user, profile }: DietSectionProps) {
     acc + d.meals.reduce((mAcc: number, m: any) => mAcc + (m.iron || 0), 0), 0
   );
 
-  // Vitamin totals for the selected date
+  // Vitamin totals for the selected date (combining diet and tablet supplements)
+  const selectedDateSupplements = supplements.filter(s => s.date === selectedDate);
+
+  const selectedSupplementVitA = selectedDateSupplements.reduce((acc, s) => acc + (s.vitaminA || 0), 0);
+  const selectedSupplementVitC = selectedDateSupplements.reduce((acc, s) => acc + (s.vitaminC || 0), 0);
+  const selectedSupplementVitD = selectedDateSupplements.reduce((acc, s) => acc + (s.vitaminD || 0), 0);
+  const selectedSupplementVitB6 = selectedDateSupplements.reduce((acc, s) => acc + (s.vitaminB6 || 0), 0);
+  const selectedSupplementVitB12 = selectedDateSupplements.reduce((acc, s) => acc + (s.vitaminB12 || 0), 0);
+
   const selectedTotalVitA = selectedDateDiets.reduce((acc, d) => 
     acc + d.meals.reduce((mAcc: number, m: any) => mAcc + (m.vitaminA || 0), 0), 0
-  );
+  ) + selectedSupplementVitA;
+
   const selectedTotalVitC = selectedDateDiets.reduce((acc, d) => 
     acc + d.meals.reduce((mAcc: number, m: any) => mAcc + (m.vitaminC || 0), 0), 0
-  );
+  ) + selectedSupplementVitC;
+
   const selectedTotalVitD = selectedDateDiets.reduce((acc, d) => 
     acc + d.meals.reduce((mAcc: number, m: any) => mAcc + (m.vitaminD || 0), 0), 0
-  );
+  ) + selectedSupplementVitD;
+
   const selectedTotalVitB6 = selectedDateDiets.reduce((acc, d) => 
     acc + d.meals.reduce((mAcc: number, m: any) => mAcc + (m.vitaminB6 || 0), 0), 0
-  );
+  ) + selectedSupplementVitB6;
+
   const selectedTotalVitB12 = selectedDateDiets.reduce((acc, d) => 
     acc + d.meals.reduce((mAcc: number, m: any) => mAcc + (m.vitaminB12 || 0), 0), 0
-  );
+  ) + selectedSupplementVitB12;
 
   // Get active weight and age for RDAs
   const activeAge = profile?.age || 25;
@@ -773,6 +851,11 @@ export default function DietSection({ user, profile }: DietSectionProps) {
   diets.forEach((d) => {
     if (d.date) {
       datesWithLogs.add(d.date);
+    }
+  });
+  supplements.forEach((s) => {
+    if (s.date) {
+      datesWithLogs.add(s.date);
     }
   });
 
@@ -1027,9 +1110,18 @@ export default function DietSection({ user, profile }: DietSectionProps) {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
             {/* Vitamina A */}
-            <div className="space-y-1.5 p-3 rounded-2xl bg-amber-50/15 border border-amber-100/30">
+            <div className="space-y-1.5 p-3 rounded-2xl bg-amber-50/15 border border-amber-100/30 relative">
               <div className="flex items-center justify-between text-xs">
-                <span className="font-extrabold text-zinc-700">Vitamina A <span className="text-[10px] text-zinc-400 font-normal">(Visão e Imunidade)</span></span>
+                <span className="font-extrabold text-zinc-700 flex items-center gap-1">
+                  Vitamina A <span className="text-[10px] text-zinc-400 font-normal">(Visão e Imunidade)</span>
+                  <button
+                    onClick={() => setActiveVitaminTip(activeVitaminTip === 'vitaminA' ? null : 'vitaminA')}
+                    className="w-4 h-4 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-[9px] hover:bg-amber-200 active:scale-90 transition-all border-0 cursor-pointer shadow-sm"
+                    title="Alimentos sugeridos para bater a meta"
+                  >
+                    💡
+                  </button>
+                </span>
                 <span className="font-mono font-black text-amber-600">{selectedTotalVitA.toFixed(1)} / {rdaTargets.vitaminA} mcg</span>
               </div>
               <div className="relative w-full h-2 bg-zinc-100 rounded-full overflow-hidden">
@@ -1046,12 +1138,49 @@ export default function DietSection({ user, profile }: DietSectionProps) {
                   <span>Falta {(rdaTargets.vitaminA - selectedTotalVitA).toFixed(0)} mcg</span>
                 )}
               </div>
+
+              <AnimatePresence>
+                {activeVitaminTip === 'vitaminA' && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95, y: -5 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: -5 }}
+                    className="absolute z-20 left-2 right-2 top-full mt-1 p-3 rounded-xl bg-amber-50 border border-amber-200 shadow-lg text-[10px] text-amber-900 space-y-1.5"
+                  >
+                    <div className="font-black uppercase tracking-wider flex items-center justify-between text-amber-800 border-b border-amber-200/50 pb-1">
+                      <span>🥕 Alimentos ricos em Vitamina A:</span>
+                      <button 
+                        onClick={() => setActiveVitaminTip(null)}
+                        className="text-amber-500 hover:text-amber-700 font-bold border-0 bg-transparent cursor-pointer p-0 text-xs"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-1 gap-1 font-semibold">
+                      <div className="flex justify-between"><span>• Cenoura Cozida (100g)</span> <span className="font-mono font-black text-amber-700">833 mcg</span></div>
+                      <div className="flex justify-between"><span>• Batata-Doce Assada (100g)</span> <span className="font-mono font-black text-amber-700">961 mcg</span></div>
+                      <div className="flex justify-between"><span>• Espinafre Cozido (100g)</span> <span className="font-mono font-black text-amber-700">469 mcg</span></div>
+                      <div className="flex justify-between"><span>• Manga (1 unidade)</span> <span className="font-mono font-black text-amber-700">180 mcg</span></div>
+                      <div className="flex justify-between border-t border-amber-100 pt-1"><span>• Fígado de Boi (100g)</span> <span className="font-mono font-black text-amber-700">7700 mcg</span></div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             {/* Vitamina C */}
-            <div className="space-y-1.5 p-3 rounded-2xl bg-pink-50/15 border border-pink-100/30">
+            <div className="space-y-1.5 p-3 rounded-2xl bg-pink-50/15 border border-pink-100/30 relative">
               <div className="flex items-center justify-between text-xs">
-                <span className="font-extrabold text-zinc-700">Vitamina C <span className="text-[10px] text-zinc-400 font-normal">(Antioxidante e Colágeno)</span></span>
+                <span className="font-extrabold text-zinc-700 flex items-center gap-1">
+                  Vitamina C <span className="text-[10px] text-zinc-400 font-normal">(Antioxidante e Colágeno)</span>
+                  <button
+                    onClick={() => setActiveVitaminTip(activeVitaminTip === 'vitaminC' ? null : 'vitaminC')}
+                    className="w-4 h-4 rounded-full bg-pink-100 text-pink-700 flex items-center justify-center text-[9px] hover:bg-pink-200 active:scale-90 transition-all border-0 cursor-pointer shadow-sm"
+                    title="Alimentos sugeridos para bater a meta"
+                  >
+                    💡
+                  </button>
+                </span>
                 <span className="font-mono font-black text-pink-600">{selectedTotalVitC.toFixed(1)} / {rdaTargets.vitaminC} mg</span>
               </div>
               <div className="relative w-full h-2 bg-zinc-100 rounded-full overflow-hidden">
@@ -1068,12 +1197,49 @@ export default function DietSection({ user, profile }: DietSectionProps) {
                   <span>Falta {(rdaTargets.vitaminC - selectedTotalVitC).toFixed(0)} mg</span>
                 )}
               </div>
+
+              <AnimatePresence>
+                {activeVitaminTip === 'vitaminC' && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95, y: -5 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: -5 }}
+                    className="absolute z-20 left-2 right-2 top-full mt-1 p-3 rounded-xl bg-pink-50 border border-pink-200 shadow-lg text-[10px] text-pink-900 space-y-1.5"
+                  >
+                    <div className="font-black uppercase tracking-wider flex items-center justify-between text-pink-800 border-b border-pink-200/50 pb-1">
+                      <span>🍊 Alimentos ricos em Vitamina C:</span>
+                      <button 
+                        onClick={() => setActiveVitaminTip(null)}
+                        className="text-pink-500 hover:text-pink-700 font-bold border-0 bg-transparent cursor-pointer p-0 text-xs"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-1 gap-1 font-semibold">
+                      <div className="flex justify-between"><span>• Acerola (100g)</span> <span className="font-mono font-black text-pink-700">1677 mg</span></div>
+                      <div className="flex justify-between"><span>• Pimentão Amarelo (100g)</span> <span className="font-mono font-black text-pink-700">183 mg</span></div>
+                      <div className="flex justify-between"><span>• Laranja (1 unidade)</span> <span className="font-mono font-black text-pink-700">70 mg</span></div>
+                      <div className="flex justify-between"><span>• Kiwi (1 unidade)</span> <span className="font-mono font-black text-pink-700">64 mg</span></div>
+                      <div className="flex justify-between"><span>• Brócolis Cozido (100g)</span> <span className="font-mono font-black text-pink-700">64 mg</span></div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             {/* Vitamina D */}
-            <div className="space-y-1.5 p-3 rounded-2xl bg-sky-50/15 border border-sky-100/30">
+            <div className="space-y-1.5 p-3 rounded-2xl bg-sky-50/15 border border-sky-100/30 relative">
               <div className="flex items-center justify-between text-xs">
-                <span className="font-extrabold text-zinc-700">Vitamina D <span className="text-[10px] text-zinc-400 font-normal">(Ossos e Hormônios)</span></span>
+                <span className="font-extrabold text-zinc-700 flex items-center gap-1">
+                  Vitamina D <span className="text-[10px] text-zinc-400 font-normal">(Ossos e Hormônios)</span>
+                  <button
+                    onClick={() => setActiveVitaminTip(activeVitaminTip === 'vitaminD' ? null : 'vitaminD')}
+                    className="w-4 h-4 rounded-full bg-sky-100 text-sky-700 flex items-center justify-center text-[9px] hover:bg-sky-200 active:scale-90 transition-all border-0 cursor-pointer shadow-sm"
+                    title="Alimentos sugeridos para bater a meta"
+                  >
+                    💡
+                  </button>
+                </span>
                 <span className="font-mono font-black text-sky-600">{selectedTotalVitD.toFixed(1)} / {rdaTargets.vitaminD} mcg</span>
               </div>
               <div className="relative w-full h-2 bg-zinc-100 rounded-full overflow-hidden">
@@ -1090,12 +1256,49 @@ export default function DietSection({ user, profile }: DietSectionProps) {
                   <span>Falta {(rdaTargets.vitaminD - selectedTotalVitD).toFixed(0)} mcg</span>
                 )}
               </div>
+
+              <AnimatePresence>
+                {activeVitaminTip === 'vitaminD' && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95, y: -5 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: -5 }}
+                    className="absolute z-20 left-2 right-2 top-full mt-1 p-3 rounded-xl bg-sky-50 border border-sky-200 shadow-lg text-[10px] text-sky-900 space-y-1.5"
+                  >
+                    <div className="font-black uppercase tracking-wider flex items-center justify-between text-sky-800 border-b border-sky-200/50 pb-1">
+                      <span>☀️ Alimentos ricos em Vitamina D:</span>
+                      <button 
+                        onClick={() => setActiveVitaminTip(null)}
+                        className="text-sky-500 hover:text-sky-700 font-bold border-0 bg-transparent cursor-pointer p-0 text-xs"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-1 gap-1 font-semibold">
+                      <div className="flex justify-between"><span>• Salmão Grelhado (100g)</span> <span className="font-mono font-black text-sky-700">13 mcg</span></div>
+                      <div className="flex justify-between"><span>• Sardinha em Lata (100g)</span> <span className="font-mono font-black text-sky-700">5 mcg</span></div>
+                      <div className="flex justify-between"><span>• Atum em Lata (100g)</span> <span className="font-mono font-black text-sky-700">6.7 mcg</span></div>
+                      <div className="flex justify-between"><span>• Gema de Ovo (1 grande)</span> <span className="font-mono font-black text-sky-700">1.1 mcg</span></div>
+                      <div className="flex justify-between"><span>• Cogumelo Maitake (100g)</span> <span className="font-mono font-black text-sky-700">28 mcg</span></div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             {/* Vitamina B6 */}
-            <div className="space-y-1.5 p-3 rounded-2xl bg-indigo-50/15 border border-indigo-100/30">
+            <div className="space-y-1.5 p-3 rounded-2xl bg-indigo-50/15 border border-indigo-100/30 relative">
               <div className="flex items-center justify-between text-xs">
-                <span className="font-extrabold text-zinc-700">Vitamina B6 <span className="text-[10px] text-zinc-400 font-normal">(Foco e Energia)</span></span>
+                <span className="font-extrabold text-zinc-700 flex items-center gap-1">
+                  Vitamina B6 <span className="text-[10px] text-zinc-400 font-normal">(Foco e Energia)</span>
+                  <button
+                    onClick={() => setActiveVitaminTip(activeVitaminTip === 'vitaminB6' ? null : 'vitaminB6')}
+                    className="w-4 h-4 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-[9px] hover:bg-indigo-200 active:scale-90 transition-all border-0 cursor-pointer shadow-sm"
+                    title="Alimentos sugeridos para bater a meta"
+                  >
+                    💡
+                  </button>
+                </span>
                 <span className="font-mono font-black text-indigo-600">{selectedTotalVitB6.toFixed(2)} / {rdaTargets.vitaminB6} mg</span>
               </div>
               <div className="relative w-full h-2 bg-zinc-100 rounded-full overflow-hidden">
@@ -1112,12 +1315,49 @@ export default function DietSection({ user, profile }: DietSectionProps) {
                   <span>Falta {(rdaTargets.vitaminB6 - selectedTotalVitB6).toFixed(1)} mg</span>
                 )}
               </div>
+
+              <AnimatePresence>
+                {activeVitaminTip === 'vitaminB6' && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95, y: -5 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: -5 }}
+                    className="absolute z-20 left-2 right-2 top-full mt-1 p-3 rounded-xl bg-indigo-50 border border-indigo-200 shadow-lg text-[10px] text-indigo-900 space-y-1.5"
+                  >
+                    <div className="font-black uppercase tracking-wider flex items-center justify-between text-indigo-800 border-b border-indigo-200/50 pb-1">
+                      <span>🍌 Alimentos ricos em Vitamina B6:</span>
+                      <button 
+                        onClick={() => setActiveVitaminTip(null)}
+                        className="text-indigo-500 hover:text-indigo-700 font-bold border-0 bg-transparent cursor-pointer p-0 text-xs"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-1 gap-1 font-semibold">
+                      <div className="flex justify-between"><span>• Banana (1 média)</span> <span className="font-mono font-black text-indigo-700">0.4 mg</span></div>
+                      <div className="flex justify-between"><span>• Peito de Frango (100g)</span> <span className="font-mono font-black text-indigo-700">0.6 mg</span></div>
+                      <div className="flex justify-between"><span>• Abacate (1 médio)</span> <span className="font-mono font-black text-indigo-700">0.4 mg</span></div>
+                      <div className="flex justify-between"><span>• Salmão Cozido (100g)</span> <span className="font-mono font-black text-indigo-700">0.9 mg</span></div>
+                      <div className="flex justify-between"><span>• Sementes de Girassol (30g)</span> <span className="font-mono font-black text-indigo-700">0.4 mg</span></div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             {/* Vitamina B12 */}
-            <div className="space-y-1.5 p-3 rounded-2xl bg-emerald-50/15 border border-emerald-100/30 md:col-span-2">
+            <div className="space-y-1.5 p-3 rounded-2xl bg-emerald-50/15 border border-emerald-100/30 md:col-span-2 relative">
               <div className="flex items-center justify-between text-xs">
-                <span className="font-extrabold text-zinc-700">Vitamina B12 <span className="text-[10px] text-zinc-400 font-normal">(Células e Sistema Nervoso)</span></span>
+                <span className="font-extrabold text-zinc-700 flex items-center gap-1">
+                  Vitamina B12 <span className="text-[10px] text-zinc-400 font-normal">(Células e Sistema Nervoso)</span>
+                  <button
+                    onClick={() => setActiveVitaminTip(activeVitaminTip === 'vitaminB12' ? null : 'vitaminB12')}
+                    className="w-4 h-4 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-[9px] hover:bg-emerald-200 active:scale-90 transition-all border-0 cursor-pointer shadow-sm"
+                    title="Alimentos sugeridos para bater a meta"
+                  >
+                    💡
+                  </button>
+                </span>
                 <span className="font-mono font-black text-emerald-600">{selectedTotalVitB12.toFixed(2)} / {rdaTargets.vitaminB12} mcg</span>
               </div>
               <div className="relative w-full h-2 bg-zinc-100 rounded-full overflow-hidden">
@@ -1134,7 +1374,204 @@ export default function DietSection({ user, profile }: DietSectionProps) {
                   <span>Falta {(rdaTargets.vitaminB12 - selectedTotalVitB12).toFixed(1)} mcg</span>
                 )}
               </div>
+
+              <AnimatePresence>
+                {activeVitaminTip === 'vitaminB12' && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95, y: -5 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: -5 }}
+                    className="absolute z-20 left-2 right-2 top-full mt-1 p-3 rounded-xl bg-emerald-50 border border-emerald-200 shadow-lg text-[10px] text-emerald-900 space-y-1.5"
+                  >
+                    <div className="font-black uppercase tracking-wider flex items-center justify-between text-emerald-800 border-b border-emerald-200/50 pb-1">
+                      <span>🥩 Alimentos ricos em Vitamina B12:</span>
+                      <button 
+                        onClick={() => setActiveVitaminTip(null)}
+                        className="text-emerald-500 hover:text-emerald-700 font-bold border-0 bg-transparent cursor-pointer p-0 text-xs"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-1 gap-1 font-semibold">
+                      <div className="flex justify-between"><span>• Fígado de Boi (100g)</span> <span className="font-mono font-black text-emerald-700">83 mcg</span></div>
+                      <div className="flex justify-between"><span>• Carne Vermelha Grelhada (100g)</span> <span className="font-mono font-black text-emerald-700">2.5 mcg</span></div>
+                      <div className="flex justify-between"><span>• Salmão Grelhado (100g)</span> <span className="font-mono font-black text-emerald-700">4.8 mcg</span></div>
+                      <div className="flex justify-between"><span>• Ovo Cozido (1 grande)</span> <span className="font-mono font-black text-emerald-700">0.6 mcg</span></div>
+                      <div className="flex justify-between"><span>• Leite Integral (200ml)</span> <span className="font-mono font-black text-emerald-700">1.1 mcg</span></div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
+          </div>
+        </div>
+
+        {/* COMPRIMIDOS E SUPLEMENTOS DE VITAMINAS */}
+        <div className="bg-gradient-to-br from-white to-[#fafcff] p-6 rounded-[2rem] border border-blue-100 shadow-sm shadow-blue-100/5 space-y-4">
+          <div className="flex items-center justify-between border-b border-blue-50 pb-4">
+            <div className="flex items-start gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500 shrink-0">
+                <Pill size={18} />
+              </div>
+              <div>
+                <h4 className="text-sm font-black uppercase tracking-tight text-zinc-850">Comprimidos e Suplementos</h4>
+                <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider mt-0.5">
+                  Adicione comprimidos de vitaminas ou suplementos tomados nesta data
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowAddSupplement(!showAddSupplement)}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500 hover:bg-blue-600 hover:scale-102 active:scale-98 transition-all text-white text-[10px] font-black uppercase rounded-lg cursor-pointer shadow-sm border-0"
+            >
+              {showAddSupplement ? <X size={12} /> : <Plus size={12} />}
+              {showAddSupplement ? 'Fechar' : 'Adicionar'}
+            </button>
+          </div>
+
+          <AnimatePresence>
+            {showAddSupplement && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="overflow-hidden"
+              >
+                <div className="bg-blue-50/20 p-4 rounded-2xl border border-blue-100/50 space-y-3 mb-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-1 block">Nome do Comprimido / Suplemento</label>
+                      <input
+                        type="text"
+                        placeholder="Ex: Multivitamínico, Vitamina D3..."
+                        value={newSupplement.name}
+                        onChange={(e) => setNewSupplement({ ...newSupplement, name: e.target.value })}
+                        className="w-full px-3 py-2 bg-white border border-zinc-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-blue-400"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-1 block">Notas / Horário (Opcional)</label>
+                      <input
+                        type="text"
+                        placeholder="Ex: Tomado após o almoço"
+                        value={newSupplement.notes}
+                        onChange={(e) => setNewSupplement({ ...newSupplement, notes: e.target.value })}
+                        className="w-full px-3 py-2 bg-white border border-zinc-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-blue-400"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 pt-1">
+                    <div>
+                      <label className="text-[9px] text-amber-600 font-bold block mb-1 uppercase">Vit. A (mcg)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="any"
+                        placeholder="0"
+                        value={newSupplement.vitaminA || ''}
+                        onChange={(e) => setNewSupplement({ ...newSupplement, vitaminA: parseFloat(e.target.value) || 0 })}
+                        className="w-full px-2.5 py-1.5 bg-white border border-zinc-200 rounded-xl text-xs font-bold font-mono focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[9px] text-pink-600 font-bold block mb-1 uppercase">Vit. C (mg)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="any"
+                        placeholder="0"
+                        value={newSupplement.vitaminC || ''}
+                        onChange={(e) => setNewSupplement({ ...newSupplement, vitaminC: parseFloat(e.target.value) || 0 })}
+                        className="w-full px-2.5 py-1.5 bg-white border border-zinc-200 rounded-xl text-xs font-bold font-mono focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[9px] text-sky-600 font-bold block mb-1 uppercase">Vit. D (mcg)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="any"
+                        placeholder="0"
+                        value={newSupplement.vitaminD || ''}
+                        onChange={(e) => setNewSupplement({ ...newSupplement, vitaminD: parseFloat(e.target.value) || 0 })}
+                        className="w-full px-2.5 py-1.5 bg-white border border-zinc-200 rounded-xl text-xs font-bold font-mono focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[9px] text-indigo-600 font-bold block mb-1 uppercase">Vit. B6 (mg)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="any"
+                        placeholder="0"
+                        value={newSupplement.vitaminB6 || ''}
+                        onChange={(e) => setNewSupplement({ ...newSupplement, vitaminB6: parseFloat(e.target.value) || 0 })}
+                        className="w-full px-2.5 py-1.5 bg-white border border-zinc-200 rounded-xl text-xs font-bold font-mono focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[9px] text-emerald-600 font-bold block mb-1 uppercase">Vit. B12 (mcg)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="any"
+                        placeholder="0"
+                        value={newSupplement.vitaminB12 || ''}
+                        onChange={(e) => setNewSupplement({ ...newSupplement, vitaminB12: parseFloat(e.target.value) || 0 })}
+                        className="w-full px-2.5 py-1.5 bg-white border border-zinc-200 rounded-xl text-xs font-bold font-mono focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end pt-2">
+                    <button
+                      onClick={handleAddSupplement}
+                      disabled={!newSupplement.name.trim()}
+                      className="px-5 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-black uppercase text-[10px] rounded-xl hover:scale-102 active:scale-98 transition-all disabled:opacity-50 disabled:scale-100 cursor-pointer border-0"
+                    >
+                      Salvar Suplemento 💊
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <div className="space-y-2">
+            {selectedDateSupplements.length === 0 ? (
+              <p className="text-xs text-zinc-400 text-center py-4 bg-zinc-50/40 rounded-2xl border border-dashed border-zinc-100 font-medium">
+                Nenhum comprimido de vitamina registrado nesta data.
+              </p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {selectedDateSupplements.map((sup) => (
+                  <div key={sup.id} className="p-3 bg-white border border-blue-50 rounded-2xl flex items-start justify-between gap-2 shadow-sm shadow-blue-50/10">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-black text-zinc-750 uppercase">{sup.name}</span>
+                        {sup.notes && (
+                          <span className="text-[9px] px-2 py-0.5 bg-zinc-50 rounded text-zinc-400 font-bold">{sup.notes}</span>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap gap-x-2.5 gap-y-1 text-[10px] text-zinc-500 font-extrabold font-mono">
+                        {sup.vitaminA > 0 && <span className="text-amber-600">Vit A: {sup.vitaminA}mcg</span>}
+                        {sup.vitaminC > 0 && <span className="text-pink-600">Vit C: {sup.vitaminC}mg</span>}
+                        {sup.vitaminD > 0 && <span className="text-sky-600">Vit D: {sup.vitaminD}mcg</span>}
+                        {sup.vitaminB6 > 0 && <span className="text-indigo-600">Vit B6: {sup.vitaminB6}mg</span>}
+                        {sup.vitaminB12 > 0 && <span className="text-emerald-600">Vit B12: {sup.vitaminB12}mcg</span>}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleDeleteSupplement(sup.id)}
+                      className="p-1.5 text-zinc-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all border-0 cursor-pointer"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 

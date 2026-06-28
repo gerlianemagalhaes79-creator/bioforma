@@ -135,6 +135,23 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["uid", "date", "type", "duration", "intensity", "caloriesBurned"]
+    },
+    "Supplement": {
+      "title": "Supplement",
+      "description": "Daily vitamin and mineral pills or supplements",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "name": { "type": "string" },
+        "vitaminA": { "type": "number" },
+        "vitaminC": { "type": "number" },
+        "vitaminD": { "type": "number" },
+        "vitaminB6": { "type": "number" },
+        "vitaminB12": { "type": "number" },
+        "notes": { "type": "string" }
+      },
+      "required": ["uid", "date", "name"]
     }
   },
   "firestore": {
@@ -169,6 +186,10 @@
     "/aerobics/{aerobicsId}": {
       "schema": "AerobicLog",
       "description": "Aerobic activity logs"
+    },
+    "/supplements/{supplementId}": {
+      "schema": "Supplement",
+      "description": "Daily supplement/pill intake logs"
     }
   }
 }
