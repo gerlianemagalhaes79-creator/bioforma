@@ -39,6 +39,13 @@ export default function DietSection({ user, profile }: DietSectionProps) {
   const [activeVitaminTip, setActiveVitaminTip] = useState<string | null>(null);
   const [newSupplement, setNewSupplement] = useState({
     name: '',
+    capsulesCount: 1,
+    dosageA: 0,
+    dosageC: 0,
+    dosageD: 0,
+    dosageDUnit: 'mcg',
+    dosageB6: 0,
+    dosageB12: 0,
     vitaminA: 0,
     vitaminC: 0,
     vitaminD: 0,
@@ -131,20 +138,47 @@ export default function DietSection({ user, profile }: DietSectionProps) {
   const handleAddSupplement = async () => {
     if (!newSupplement.name.trim()) return;
     try {
+      const caps = Number(newSupplement.capsulesCount) || 1;
+      const vitA = (Number(newSupplement.dosageA) || 0) * caps;
+      const vitC = (Number(newSupplement.dosageC) || 0) * caps;
+      
+      let vitD = Number(newSupplement.dosageD) || 0;
+      if (newSupplement.dosageDUnit === 'UI') {
+        vitD = vitD / 40; // 1 mcg = 40 UI
+      }
+      vitD = vitD * caps;
+
+      const vitB6 = (Number(newSupplement.dosageB6) || 0) * caps;
+      const vitB12 = (Number(newSupplement.dosageB12) || 0) * caps;
+
       await addDoc(collection(db, 'supplements'), {
         uid: user.uid,
         date: selectedDate,
         name: newSupplement.name.trim(),
-        vitaminA: Number(newSupplement.vitaminA) || 0,
-        vitaminC: Number(newSupplement.vitaminC) || 0,
-        vitaminD: Number(newSupplement.vitaminD) || 0,
-        vitaminB6: Number(newSupplement.vitaminB6) || 0,
-        vitaminB12: Number(newSupplement.vitaminB12) || 0,
+        capsulesCount: caps,
+        dosageA: Number(newSupplement.dosageA) || 0,
+        dosageC: Number(newSupplement.dosageC) || 0,
+        dosageD: Number(newSupplement.dosageD) || 0,
+        dosageDUnit: newSupplement.dosageDUnit || 'mcg',
+        dosageB6: Number(newSupplement.dosageB6) || 0,
+        dosageB12: Number(newSupplement.dosageB12) || 0,
+        vitaminA: vitA,
+        vitaminC: vitC,
+        vitaminD: vitD,
+        vitaminB6: vitB6,
+        vitaminB12: vitB12,
         notes: newSupplement.notes.trim() || '',
         createdAt: new Date().toISOString()
       });
       setNewSupplement({
         name: '',
+        capsulesCount: 1,
+        dosageA: 0,
+        dosageC: 0,
+        dosageD: 0,
+        dosageDUnit: 'mcg',
+        dosageB6: 0,
+        dosageB12: 0,
         vitaminA: 0,
         vitaminC: 0,
         vitaminD: 0,
@@ -1437,98 +1471,219 @@ export default function DietSection({ user, profile }: DietSectionProps) {
                 exit={{ opacity: 0, height: 0 }}
                 className="overflow-hidden"
               >
-                <div className="bg-blue-50/20 p-4 rounded-2xl border border-blue-100/50 space-y-3 mb-2">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
+                <div className="bg-blue-50/20 p-5 rounded-3xl border border-blue-100/50 space-y-4 mb-3">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div className="md:col-span-2">
                       <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-1 block">Nome do Comprimido / Suplemento</label>
                       <input
                         type="text"
-                        placeholder="Ex: Multivitamínico, Vitamina D3..."
+                        placeholder="Ex: Multivitamínico, Vitamina D3, Complexo B..."
                         value={newSupplement.name}
                         onChange={(e) => setNewSupplement({ ...newSupplement, name: e.target.value })}
-                        className="w-full px-3 py-2 bg-white border border-zinc-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-blue-400"
+                        className="w-full px-3 py-2 bg-white border border-zinc-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all"
                       />
                     </div>
                     <div>
-                      <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-1 block">Notas / Horário (Opcional)</label>
-                      <input
-                        type="text"
-                        placeholder="Ex: Tomado após o almoço"
-                        value={newSupplement.notes}
-                        onChange={(e) => setNewSupplement({ ...newSupplement, notes: e.target.value })}
-                        className="w-full px-3 py-2 bg-white border border-zinc-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-blue-400"
-                      />
+                      <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-1 block">Qtd. Cápsulas / Comprimidos</label>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setNewSupplement(prev => ({ ...prev, capsulesCount: Math.max(1, prev.capsulesCount - 1) }))}
+                          className="w-8 h-8 rounded-xl bg-white border border-zinc-200 text-zinc-600 font-bold hover:bg-zinc-50 active:scale-95 transition-all text-sm flex items-center justify-center cursor-pointer shadow-sm"
+                        >
+                          -
+                        </button>
+                        <input
+                          type="number"
+                          min="1"
+                          value={newSupplement.capsulesCount}
+                          onChange={(e) => setNewSupplement({ ...newSupplement, capsulesCount: Math.max(1, parseInt(e.target.value) || 1) })}
+                          className="w-12 text-center py-1.5 bg-white border border-zinc-200 rounded-xl text-xs font-black focus:outline-none focus:border-blue-400"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setNewSupplement(prev => ({ ...prev, capsulesCount: prev.capsulesCount + 1 }))}
+                          className="w-8 h-8 rounded-xl bg-white border border-zinc-200 text-zinc-600 font-bold hover:bg-zinc-50 active:scale-95 transition-all text-sm flex items-center justify-center cursor-pointer shadow-sm"
+                        >
+                          +
+                        </button>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 pt-1">
-                    <div>
-                      <label className="text-[9px] text-amber-600 font-bold block mb-1 uppercase">Vit. A (mcg)</label>
-                      <input
-                        type="number"
-                        min="0"
-                        step="any"
-                        placeholder="0"
-                        value={newSupplement.vitaminA || ''}
-                        onChange={(e) => setNewSupplement({ ...newSupplement, vitaminA: parseFloat(e.target.value) || 0 })}
-                        className="w-full px-2.5 py-1.5 bg-white border border-zinc-200 rounded-xl text-xs font-bold font-mono focus:outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[9px] text-pink-600 font-bold block mb-1 uppercase">Vit. C (mg)</label>
-                      <input
-                        type="number"
-                        min="0"
-                        step="any"
-                        placeholder="0"
-                        value={newSupplement.vitaminC || ''}
-                        onChange={(e) => setNewSupplement({ ...newSupplement, vitaminC: parseFloat(e.target.value) || 0 })}
-                        className="w-full px-2.5 py-1.5 bg-white border border-zinc-200 rounded-xl text-xs font-bold font-mono focus:outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[9px] text-sky-600 font-bold block mb-1 uppercase">Vit. D (mcg)</label>
-                      <input
-                        type="number"
-                        min="0"
-                        step="any"
-                        placeholder="0"
-                        value={newSupplement.vitaminD || ''}
-                        onChange={(e) => setNewSupplement({ ...newSupplement, vitaminD: parseFloat(e.target.value) || 0 })}
-                        className="w-full px-2.5 py-1.5 bg-white border border-zinc-200 rounded-xl text-xs font-bold font-mono focus:outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[9px] text-indigo-600 font-bold block mb-1 uppercase">Vit. B6 (mg)</label>
-                      <input
-                        type="number"
-                        min="0"
-                        step="any"
-                        placeholder="0"
-                        value={newSupplement.vitaminB6 || ''}
-                        onChange={(e) => setNewSupplement({ ...newSupplement, vitaminB6: parseFloat(e.target.value) || 0 })}
-                        className="w-full px-2.5 py-1.5 bg-white border border-zinc-200 rounded-xl text-xs font-bold font-mono focus:outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[9px] text-emerald-600 font-bold block mb-1 uppercase">Vit. B12 (mcg)</label>
-                      <input
-                        type="number"
-                        min="0"
-                        step="any"
-                        placeholder="0"
-                        value={newSupplement.vitaminB12 || ''}
-                        onChange={(e) => setNewSupplement({ ...newSupplement, vitaminB12: parseFloat(e.target.value) || 0 })}
-                        className="w-full px-2.5 py-1.5 bg-white border border-zinc-200 rounded-xl text-xs font-bold font-mono focus:outline-none"
-                      />
+                  <div>
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-1 block">Notas / Horário (Opcional)</label>
+                    <input
+                      type="text"
+                      placeholder="Ex: Tomado pela manhã em jejum"
+                      value={newSupplement.notes}
+                      onChange={(e) => setNewSupplement({ ...newSupplement, notes: e.target.value })}
+                      className="w-full px-3 py-2 bg-white border border-zinc-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all"
+                    />
+                  </div>
+
+                  <div className="border-t border-blue-50/50 pt-3">
+                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-zinc-400 block mb-2">Dosagem por Cápsula / Comprimido</span>
+                    
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                      {/* Vitamina A */}
+                      <div className="bg-white p-3 rounded-2xl border border-zinc-100 shadow-sm space-y-1.5">
+                        <label className="text-[10px] text-amber-600 font-extrabold block uppercase tracking-wider">Vit. A</label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            min="0"
+                            step="any"
+                            placeholder="0"
+                            value={newSupplement.dosageA || ''}
+                            onChange={(e) => setNewSupplement({ ...newSupplement, dosageA: parseFloat(e.target.value) || 0 })}
+                            className="w-full pr-7 pl-2 py-1.5 bg-zinc-50/50 border border-zinc-200 rounded-xl text-xs font-bold font-mono focus:outline-none focus:bg-white focus:border-amber-400"
+                          />
+                          <span className="absolute right-2 top-2 text-[9px] font-bold text-zinc-400 uppercase">mcg</span>
+                        </div>
+                        {newSupplement.dosageA > 0 && (
+                          <div className="text-[8.5px] font-semibold text-amber-600 leading-tight">
+                            Total: <span className="font-bold">{(newSupplement.dosageA * newSupplement.capsulesCount).toFixed(0)} mcg</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Vitamina C */}
+                      <div className="bg-white p-3 rounded-2xl border border-zinc-100 shadow-sm space-y-1.5">
+                        <label className="text-[10px] text-pink-600 font-extrabold block uppercase tracking-wider">Vit. C</label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            min="0"
+                            step="any"
+                            placeholder="0"
+                            value={newSupplement.dosageC || ''}
+                            onChange={(e) => setNewSupplement({ ...newSupplement, dosageC: parseFloat(e.target.value) || 0 })}
+                            className="w-full pr-6 pl-2 py-1.5 bg-zinc-50/50 border border-zinc-200 rounded-xl text-xs font-bold font-mono focus:outline-none focus:bg-white focus:border-pink-400"
+                          />
+                          <span className="absolute right-2 top-2 text-[9px] font-bold text-zinc-400 uppercase">mg</span>
+                        </div>
+                        {newSupplement.dosageC > 0 && (
+                          <div className="text-[8.5px] font-semibold text-pink-600 leading-tight">
+                            Total: <span className="font-bold">{(newSupplement.dosageC * newSupplement.capsulesCount).toFixed(0)} mg</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Vitamina D */}
+                      <div className="bg-white p-3 rounded-2xl border border-zinc-100 shadow-sm space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <label className="text-[10px] text-sky-600 font-extrabold block uppercase tracking-wider">Vit. D</label>
+                          <div className="flex rounded-md bg-zinc-100 p-0.5 text-[8px] font-black uppercase">
+                            <button
+                              type="button"
+                              onClick={() => setNewSupplement(prev => ({ ...prev, dosageDUnit: 'mcg' }))}
+                              className={`px-1 py-0.5 rounded-sm transition-all border-0 cursor-pointer ${newSupplement.dosageDUnit === 'mcg' ? 'bg-sky-500 text-white' : 'text-zinc-400 bg-transparent'}`}
+                            >
+                              mcg
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setNewSupplement(prev => ({ ...prev, dosageDUnit: 'UI' }))}
+                              className={`px-1 py-0.5 rounded-sm transition-all border-0 cursor-pointer ${newSupplement.dosageDUnit === 'UI' ? 'bg-sky-500 text-white' : 'text-zinc-400 bg-transparent'}`}
+                            >
+                              UI
+                            </button>
+                          </div>
+                        </div>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            min="0"
+                            step="any"
+                            placeholder="0"
+                            value={newSupplement.dosageD || ''}
+                            onChange={(e) => setNewSupplement({ ...newSupplement, dosageD: parseFloat(e.target.value) || 0 })}
+                            className="w-full pr-8 pl-2 py-1.5 bg-zinc-50/50 border border-zinc-200 rounded-xl text-xs font-bold font-mono focus:outline-none focus:bg-white focus:border-sky-400"
+                          />
+                          <span className="absolute right-2 top-2 text-[9px] font-bold text-sky-500 uppercase">
+                            {newSupplement.dosageDUnit}
+                          </span>
+                        </div>
+                        {newSupplement.dosageD > 0 && (
+                          <div className="text-[8.5px] font-semibold text-sky-600 leading-tight space-y-0.5">
+                            <div>
+                              Total:{' '}
+                              <span className="font-bold">
+                                {newSupplement.dosageDUnit === 'UI' 
+                                  ? `${((newSupplement.dosageD / 40) * newSupplement.capsulesCount).toFixed(1)} mcg`
+                                  : `${(newSupplement.dosageD * newSupplement.capsulesCount).toFixed(1)} mcg`
+                                }
+                              </span>
+                            </div>
+                            {newSupplement.dosageDUnit === 'UI' && (
+                              <div className="text-[8px] text-sky-400">
+                                ({(newSupplement.dosageD * newSupplement.capsulesCount).toFixed(0)} UI total)
+                              </div>
+                            )}
+                            {newSupplement.dosageDUnit === 'mcg' && (
+                              <div className="text-[8px] text-sky-400">
+                                (~{(newSupplement.dosageD * newSupplement.capsulesCount * 40).toFixed(0)} UI total)
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Vitamina B6 */}
+                      <div className="bg-white p-3 rounded-2xl border border-zinc-100 shadow-sm space-y-1.5">
+                        <label className="text-[10px] text-indigo-600 font-extrabold block uppercase tracking-wider">Vit. B6</label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            min="0"
+                            step="any"
+                            placeholder="0"
+                            value={newSupplement.dosageB6 || ''}
+                            onChange={(e) => setNewSupplement({ ...newSupplement, dosageB6: parseFloat(e.target.value) || 0 })}
+                            className="w-full pr-6 pl-2 py-1.5 bg-zinc-50/50 border border-zinc-200 rounded-xl text-xs font-bold font-mono focus:outline-none focus:bg-white focus:border-indigo-400"
+                          />
+                          <span className="absolute right-2 top-2 text-[9px] font-bold text-zinc-400 uppercase">mg</span>
+                        </div>
+                        {newSupplement.dosageB6 > 0 && (
+                          <div className="text-[8.5px] font-semibold text-indigo-600 leading-tight">
+                            Total: <span className="font-bold">{(newSupplement.dosageB6 * newSupplement.capsulesCount).toFixed(2)} mg</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Vitamina B12 */}
+                      <div className="bg-white p-3 rounded-2xl border border-zinc-100 shadow-sm space-y-1.5">
+                        <label className="text-[10px] text-emerald-600 font-extrabold block uppercase tracking-wider">Vit. B12</label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            min="0"
+                            step="any"
+                            placeholder="0"
+                            value={newSupplement.dosageB12 || ''}
+                            onChange={(e) => setNewSupplement({ ...newSupplement, dosageB12: parseFloat(e.target.value) || 0 })}
+                            className="w-full pr-7 pl-2 py-1.5 bg-zinc-50/50 border border-zinc-200 rounded-xl text-xs font-bold font-mono focus:outline-none focus:bg-white focus:border-emerald-400"
+                          />
+                          <span className="absolute right-2 top-2 text-[9px] font-bold text-zinc-400 uppercase">mcg</span>
+                        </div>
+                        {newSupplement.dosageB12 > 0 && (
+                          <div className="text-[8.5px] font-semibold text-emerald-600 leading-tight">
+                            Total: <span className="font-bold">{(newSupplement.dosageB12 * newSupplement.capsulesCount).toFixed(2)} mcg</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
 
-                  <div className="flex justify-end pt-2">
+                  <div className="flex justify-between items-center pt-2 border-t border-blue-50/50">
+                    <p className="text-[9px] text-zinc-400 font-semibold max-w-[60%] leading-relaxed">
+                      💡 A dose total consumida na data será calculada automaticamente multiplicando a dosagem de cada cápsula pela quantidade consumida.
+                    </p>
                     <button
                       onClick={handleAddSupplement}
                       disabled={!newSupplement.name.trim()}
-                      className="px-5 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-black uppercase text-[10px] rounded-xl hover:scale-102 active:scale-98 transition-all disabled:opacity-50 disabled:scale-100 cursor-pointer border-0"
+                      className="px-5 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-black uppercase text-[10px] rounded-xl hover:scale-102 active:scale-98 transition-all disabled:opacity-50 disabled:scale-100 cursor-pointer border-0 shadow-sm"
                     >
                       Salvar Suplemento 💊
                     </button>
@@ -1546,20 +1701,45 @@ export default function DietSection({ user, profile }: DietSectionProps) {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {selectedDateSupplements.map((sup) => (
-                  <div key={sup.id} className="p-3 bg-white border border-blue-50 rounded-2xl flex items-start justify-between gap-2 shadow-sm shadow-blue-50/10">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-1.5">
+                  <div key={sup.id} className="p-3 bg-white border border-blue-50 rounded-2xl flex items-start justify-between gap-2 shadow-sm shadow-blue-50/10 hover:border-blue-100 transition-all duration-300">
+                    <div className="space-y-1.5">
+                      <div className="flex flex-wrap items-center gap-1.5">
                         <span className="text-xs font-black text-zinc-750 uppercase">{sup.name}</span>
+                        {sup.capsulesCount && sup.capsulesCount > 0 && (
+                          <span className="text-[9px] px-2 py-0.5 bg-blue-50 text-blue-700 rounded font-black uppercase tracking-wider">
+                            {sup.capsulesCount} {sup.capsulesCount === 1 ? 'Cápsula' : 'Cápsulas'}
+                          </span>
+                        )}
                         {sup.notes && (
                           <span className="text-[9px] px-2 py-0.5 bg-zinc-50 rounded text-zinc-400 font-bold">{sup.notes}</span>
                         )}
                       </div>
-                      <div className="flex flex-wrap gap-x-2.5 gap-y-1 text-[10px] text-zinc-500 font-extrabold font-mono">
-                        {sup.vitaminA > 0 && <span className="text-amber-600">Vit A: {sup.vitaminA}mcg</span>}
-                        {sup.vitaminC > 0 && <span className="text-pink-600">Vit C: {sup.vitaminC}mg</span>}
-                        {sup.vitaminD > 0 && <span className="text-sky-600">Vit D: {sup.vitaminD}mcg</span>}
-                        {sup.vitaminB6 > 0 && <span className="text-indigo-600">Vit B6: {sup.vitaminB6}mg</span>}
-                        {sup.vitaminB12 > 0 && <span className="text-emerald-600">Vit B12: {sup.vitaminB12}mcg</span>}
+                      <div className="flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-zinc-500 font-extrabold font-mono">
+                        {sup.vitaminA > 0 && (
+                          <span className="text-amber-600">
+                            Vit A: {sup.vitaminA.toFixed(0)}mcg {sup.capsulesCount > 1 && `(${sup.dosageA || (sup.vitaminA / sup.capsulesCount).toFixed(0)}/cap)`}
+                          </span>
+                        )}
+                        {sup.vitaminC > 0 && (
+                          <span className="text-pink-600">
+                            Vit C: {sup.vitaminC.toFixed(0)}mg {sup.capsulesCount > 1 && `(${sup.dosageC || (sup.vitaminC / sup.capsulesCount).toFixed(0)}/cap)`}
+                          </span>
+                        )}
+                        {sup.vitaminD > 0 && (
+                          <span className="text-sky-600">
+                            Vit D: {sup.vitaminD.toFixed(1)}mcg {sup.capsulesCount > 1 && `(${sup.dosageDUnit === 'UI' ? `${sup.dosageD || (sup.vitaminD * 40 / sup.capsulesCount).toFixed(0)} UI` : `${sup.dosageD || (sup.vitaminD / sup.capsulesCount).toFixed(0)} mcg`}/cap)`}
+                          </span>
+                        )}
+                        {sup.vitaminB6 > 0 && (
+                          <span className="text-indigo-600">
+                            Vit B6: {sup.vitaminB6.toFixed(2)}mg {sup.capsulesCount > 1 && `(${sup.dosageB6 || (sup.vitaminB6 / sup.capsulesCount).toFixed(1)}/cap)`}
+                          </span>
+                        )}
+                        {sup.vitaminB12 > 0 && (
+                          <span className="text-emerald-600">
+                            Vit B12: {sup.vitaminB12.toFixed(2)}mcg {sup.capsulesCount > 1 && `(${sup.dosageB12 || (sup.vitaminB12 / sup.capsulesCount).toFixed(1)}/cap)`}
+                          </span>
+                        )}
                       </div>
                     </div>
                     <button

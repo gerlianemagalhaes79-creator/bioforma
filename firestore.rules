@@ -203,6 +203,13 @@ service cloud.firestore {
              (!('vitaminD' in data) || data.vitaminD is number) &&
              (!('vitaminB6' in data) || data.vitaminB6 is number) &&
              (!('vitaminB12' in data) || data.vitaminB12 is number) &&
+             (!('capsulesCount' in data) || data.capsulesCount is number) &&
+             (!('dosageA' in data) || data.dosageA is number) &&
+             (!('dosageC' in data) || data.dosageC is number) &&
+             (!('dosageD' in data) || data.dosageD is number) &&
+             (!('dosageDUnit' in data) || data.dosageDUnit is string) &&
+             (!('dosageB6' in data) || data.dosageB6 is number) &&
+             (!('dosageB12' in data) || data.dosageB12 is number) &&
              (!('notes' in data) || (data.notes is string && data.notes.size() <= 1000));
     }
 

@@ -149,6 +149,13 @@
         "vitaminD": { "type": "number" },
         "vitaminB6": { "type": "number" },
         "vitaminB12": { "type": "number" },
+        "capsulesCount": { "type": "number" },
+        "dosageA": { "type": "number" },
+        "dosageC": { "type": "number" },
+        "dosageD": { "type": "number" },
+        "dosageDUnit": { "type": "string" },
+        "dosageB6": { "type": "number" },
+        "dosageB12": { "type": "number" },
         "notes": { "type": "string" }
       },
       "required": ["uid", "date", "name"]
