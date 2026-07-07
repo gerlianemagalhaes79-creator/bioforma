@@ -36,7 +36,7 @@ import {
 import { 
   TrendingUp, Droplets, Target, Activity, Check, Plus, AlertCircle, Dumbbell, 
   FileText, Camera, Calendar, Info, Scale, Trash2, ChevronLeft, ChevronRight,
-  Sparkles, Sliders, Image as ImageIcon, Heart
+  Sparkles, Sliders, Image as ImageIcon, Heart, BookOpen
 } from 'lucide-react';
 
 interface ProgressTrackerProps {
@@ -254,6 +254,28 @@ export default function ProgressTracker({ user, profile }: ProgressTrackerProps)
       }
     } catch (e) {
       console.error('Error toggling checkin', e);
+    }
+  };
+
+  const handleUpdateStudyQuestions = async (dateStr: string, newVal: number) => {
+    try {
+      const existing = checkins.find(c => c.date === dateStr);
+      if (existing) {
+        await updateDoc(doc(db, 'checkins', existing.id), {
+          studyQuestions: newVal
+        });
+      } else {
+        await addDoc(collection(db, 'checkins'), {
+          uid: user.uid,
+          date: dateStr,
+          studyQuestions: newVal,
+          workoutDone: false,
+          dietOnTrack: false,
+          waterGoalMet: false
+        });
+      }
+    } catch (e) {
+      console.error('Error updating study questions in tracker', e);
     }
   };
 
@@ -684,6 +706,58 @@ export default function ProgressTracker({ user, profile }: ProgressTrackerProps)
                     </span>
                   </div>
                 </button>
+              </div>
+
+              {/* Study Questions */}
+              <div className="bg-violet-50/10 p-3 rounded-2xl border border-violet-100/40 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-violet-100 text-violet-600 flex items-center justify-center">
+                    <BookOpen size={16} />
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-black uppercase text-violet-750 block leading-tight">Questões Estudadas</span>
+                    <span className="text-[8px] font-bold text-zinc-400 block uppercase">Mínimo 10 por dia</span>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1">
+                    <input
+                      type="number"
+                      min="0"
+                      value={currentCheckin?.studyQuestions ?? ''}
+                      placeholder="0"
+                      onChange={(e) => {
+                        const val = Math.max(0, parseInt(e.target.value) || 0);
+                        handleUpdateStudyQuestions(selectedDate, val);
+                      }}
+                      className="w-10 text-center bg-transparent border-b border-dashed border-zinc-300 focus:border-violet-400 focus:outline-none text-base font-black italic text-zinc-800 p-0"
+                    />
+                    <span className="text-[10px] font-bold text-zinc-450">/ 10 Qs</span>
+                  </div>
+                  <div className="flex items-center gap-0.5 bg-white border border-zinc-150 p-0.5 rounded-lg">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const currentVal = currentCheckin?.studyQuestions || 0;
+                        handleUpdateStudyQuestions(selectedDate, Math.max(0, currentVal - 1));
+                      }}
+                      className="w-5 h-5 rounded bg-zinc-50 border border-zinc-100 hover:bg-zinc-100 text-zinc-650 font-bold active:scale-95 transition-all text-[10px] flex items-center justify-center cursor-pointer shadow-sm"
+                    >
+                      -
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const currentVal = currentCheckin?.studyQuestions || 0;
+                        handleUpdateStudyQuestions(selectedDate, currentVal + 1);
+                      }}
+                      className="w-5 h-5 rounded bg-[#fffbfc] border border-zinc-100 hover:bg-zinc-100 text-zinc-650 font-bold active:scale-95 transition-all text-[10px] flex items-center justify-center cursor-pointer shadow-sm"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
               </div>
 
               {/* Sparkle Feedback */}

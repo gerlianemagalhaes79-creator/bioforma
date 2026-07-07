@@ -1527,89 +1527,135 @@ export default function DietSection({ user, profile }: DietSectionProps) {
                     
                     <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                       {/* Vitamina A */}
-                      <div className="bg-white p-3 rounded-2xl border border-zinc-100 shadow-sm space-y-1.5">
-                        <label className="text-[10px] text-amber-600 font-extrabold block uppercase tracking-wider">Vit. A</label>
-                        <div className="relative">
+                      <div className="bg-zinc-50/50 p-3 rounded-2xl border border-zinc-150 shadow-xs space-y-1.5 hover:bg-white transition-all duration-200">
+                        <div className="flex items-center justify-between">
+                          <label className="text-[10px] text-amber-600 font-extrabold block uppercase tracking-wider">Vit. A</label>
+                          <span className="text-[9px] font-bold text-zinc-400 uppercase">mcg</span>
+                        </div>
+                        <div className="flex items-center justify-between gap-1 bg-white border border-zinc-200 p-1 rounded-xl shadow-2xs focus-within:ring-2 focus-within:ring-amber-100 focus-within:border-amber-400 transition-all">
+                          <button
+                            type="button"
+                            onClick={() => setNewSupplement(prev => ({ ...prev, dosageA: Math.max(0, (prev.dosageA || 0) - 100) }))}
+                            className="w-6 h-6 rounded-lg bg-zinc-50 border border-zinc-150 hover:bg-zinc-100 text-zinc-600 font-bold active:scale-95 transition-all text-xs flex items-center justify-center cursor-pointer"
+                          >
+                            -
+                          </button>
                           <input
                             type="number"
                             min="0"
-                            step="any"
                             placeholder="0"
                             value={newSupplement.dosageA || ''}
-                            onChange={(e) => setNewSupplement({ ...newSupplement, dosageA: parseFloat(e.target.value) || 0 })}
-                            className="w-full pr-7 pl-2 py-1.5 bg-zinc-50/50 border border-zinc-200 rounded-xl text-xs font-bold font-mono focus:outline-none focus:bg-white focus:border-amber-400"
+                            onChange={(e) => setNewSupplement({ ...newSupplement, dosageA: Math.max(0, parseFloat(e.target.value) || 0) })}
+                            className="w-full text-center bg-transparent border-0 focus:outline-none text-xs font-black font-mono p-0"
                           />
-                          <span className="absolute right-2 top-2 text-[9px] font-bold text-zinc-400 uppercase">mcg</span>
+                          <button
+                            type="button"
+                            onClick={() => setNewSupplement(prev => ({ ...prev, dosageA: (prev.dosageA || 0) + 100 }))}
+                            className="w-6 h-6 rounded-lg bg-zinc-50 border border-zinc-150 hover:bg-zinc-100 text-zinc-600 font-bold active:scale-95 transition-all text-xs flex items-center justify-center cursor-pointer"
+                          >
+                            +
+                          </button>
                         </div>
                         {newSupplement.dosageA > 0 && (
-                          <div className="text-[8.5px] font-semibold text-amber-600 leading-tight">
-                            Total: <span className="font-bold">{(newSupplement.dosageA * newSupplement.capsulesCount).toFixed(0)} mcg</span>
+                          <div className="text-[9px] font-bold text-amber-600 leading-tight text-center bg-amber-50/30 py-0.5 rounded-md">
+                            Total: {(newSupplement.dosageA * newSupplement.capsulesCount).toFixed(0)} mcg
                           </div>
                         )}
                       </div>
 
                       {/* Vitamina C */}
-                      <div className="bg-white p-3 rounded-2xl border border-zinc-100 shadow-sm space-y-1.5">
-                        <label className="text-[10px] text-pink-600 font-extrabold block uppercase tracking-wider">Vit. C</label>
-                        <div className="relative">
+                      <div className="bg-zinc-50/50 p-3 rounded-2xl border border-zinc-150 shadow-xs space-y-1.5 hover:bg-white transition-all duration-200">
+                        <div className="flex items-center justify-between">
+                          <label className="text-[10px] text-pink-600 font-extrabold block uppercase tracking-wider">Vit. C</label>
+                          <span className="text-[9px] font-bold text-zinc-400 uppercase">mg</span>
+                        </div>
+                        <div className="flex items-center justify-between gap-1 bg-white border border-zinc-200 p-1 rounded-xl shadow-2xs focus-within:ring-2 focus-within:ring-pink-100 focus-within:border-pink-400 transition-all">
+                          <button
+                            type="button"
+                            onClick={() => setNewSupplement(prev => ({ ...prev, dosageC: Math.max(0, (prev.dosageC || 0) - 100) }))}
+                            className="w-6 h-6 rounded-lg bg-zinc-50 border border-zinc-150 hover:bg-zinc-100 text-zinc-600 font-bold active:scale-95 transition-all text-xs flex items-center justify-center cursor-pointer"
+                          >
+                            -
+                          </button>
                           <input
                             type="number"
                             min="0"
-                            step="any"
                             placeholder="0"
                             value={newSupplement.dosageC || ''}
-                            onChange={(e) => setNewSupplement({ ...newSupplement, dosageC: parseFloat(e.target.value) || 0 })}
-                            className="w-full pr-6 pl-2 py-1.5 bg-zinc-50/50 border border-zinc-200 rounded-xl text-xs font-bold font-mono focus:outline-none focus:bg-white focus:border-pink-400"
+                            onChange={(e) => setNewSupplement({ ...newSupplement, dosageC: Math.max(0, parseFloat(e.target.value) || 0) })}
+                            className="w-full text-center bg-transparent border-0 focus:outline-none text-xs font-black font-mono p-0"
                           />
-                          <span className="absolute right-2 top-2 text-[9px] font-bold text-zinc-400 uppercase">mg</span>
+                          <button
+                            type="button"
+                            onClick={() => setNewSupplement(prev => ({ ...prev, dosageC: (prev.dosageC || 0) + 100 }))}
+                            className="w-6 h-6 rounded-lg bg-zinc-50 border border-zinc-150 hover:bg-zinc-100 text-zinc-600 font-bold active:scale-95 transition-all text-xs flex items-center justify-center cursor-pointer"
+                          >
+                            +
+                          </button>
                         </div>
                         {newSupplement.dosageC > 0 && (
-                          <div className="text-[8.5px] font-semibold text-pink-600 leading-tight">
-                            Total: <span className="font-bold">{(newSupplement.dosageC * newSupplement.capsulesCount).toFixed(0)} mg</span>
+                          <div className="text-[9px] font-bold text-pink-600 leading-tight text-center bg-pink-50/30 py-0.5 rounded-md">
+                            Total: {(newSupplement.dosageC * newSupplement.capsulesCount).toFixed(0)} mg
                           </div>
                         )}
                       </div>
 
                       {/* Vitamina D */}
-                      <div className="bg-white p-3 rounded-2xl border border-zinc-100 shadow-sm space-y-1.5">
-                        <div className="flex items-center justify-between">
+                      <div className="bg-zinc-50/50 p-3 rounded-2xl border border-zinc-150 shadow-xs space-y-1.5 hover:bg-white transition-all duration-200">
+                        <div className="flex items-center justify-between gap-1">
                           <label className="text-[10px] text-sky-600 font-extrabold block uppercase tracking-wider">Vit. D</label>
-                          <div className="flex rounded-md bg-zinc-100 p-0.5 text-[8px] font-black uppercase">
+                          <div className="flex rounded-lg bg-zinc-200 p-0.5 text-[8.5px] font-black uppercase">
                             <button
                               type="button"
                               onClick={() => setNewSupplement(prev => ({ ...prev, dosageDUnit: 'mcg' }))}
-                              className={`px-1 py-0.5 rounded-sm transition-all border-0 cursor-pointer ${newSupplement.dosageDUnit === 'mcg' ? 'bg-sky-500 text-white' : 'text-zinc-400 bg-transparent'}`}
+                              className={`px-1.5 py-0.5 rounded-md transition-all border-0 cursor-pointer ${newSupplement.dosageDUnit === 'mcg' ? 'bg-sky-500 text-white shadow-xs' : 'text-zinc-500 hover:text-zinc-800 bg-transparent'}`}
                             >
                               mcg
                             </button>
                             <button
                               type="button"
                               onClick={() => setNewSupplement(prev => ({ ...prev, dosageDUnit: 'UI' }))}
-                              className={`px-1 py-0.5 rounded-sm transition-all border-0 cursor-pointer ${newSupplement.dosageDUnit === 'UI' ? 'bg-sky-500 text-white' : 'text-zinc-400 bg-transparent'}`}
+                              className={`px-1.5 py-0.5 rounded-md transition-all border-0 cursor-pointer ${newSupplement.dosageDUnit === 'UI' ? 'bg-sky-500 text-white shadow-xs' : 'text-zinc-500 hover:text-zinc-800 bg-transparent'}`}
                             >
                               UI
                             </button>
                           </div>
                         </div>
-                        <div className="relative">
+                        <div className="flex items-center justify-between gap-1 bg-white border border-zinc-200 p-1 rounded-xl shadow-2xs focus-within:ring-2 focus-within:ring-sky-100 focus-within:border-sky-400 transition-all">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const step = newSupplement.dosageDUnit === 'UI' ? 500 : 5;
+                              setNewSupplement(prev => ({ ...prev, dosageD: Math.max(0, (prev.dosageD || 0) - step) }));
+                            }}
+                            className="w-6 h-6 rounded-lg bg-zinc-50 border border-zinc-150 hover:bg-zinc-100 text-zinc-600 font-bold active:scale-95 transition-all text-xs flex items-center justify-center cursor-pointer"
+                          >
+                            -
+                          </button>
                           <input
                             type="number"
                             min="0"
-                            step="any"
                             placeholder="0"
                             value={newSupplement.dosageD || ''}
-                            onChange={(e) => setNewSupplement({ ...newSupplement, dosageD: parseFloat(e.target.value) || 0 })}
-                            className="w-full pr-8 pl-2 py-1.5 bg-zinc-50/50 border border-zinc-200 rounded-xl text-xs font-bold font-mono focus:outline-none focus:bg-white focus:border-sky-400"
+                            onChange={(e) => setNewSupplement({ ...newSupplement, dosageD: Math.max(0, parseFloat(e.target.value) || 0) })}
+                            className="w-full text-center bg-transparent border-0 focus:outline-none text-xs font-black font-mono p-0"
                           />
-                          <span className="absolute right-2 top-2 text-[9px] font-bold text-sky-500 uppercase">
-                            {newSupplement.dosageDUnit}
-                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const step = newSupplement.dosageDUnit === 'UI' ? 500 : 5;
+                              setNewSupplement(prev => ({ ...prev, dosageD: (prev.dosageD || 0) + step }));
+                            }}
+                            className="w-6 h-6 rounded-lg bg-zinc-50 border border-zinc-150 hover:bg-zinc-100 text-zinc-600 font-bold active:scale-95 transition-all text-xs flex items-center justify-center cursor-pointer"
+                          >
+                            +
+                          </button>
                         </div>
                         {newSupplement.dosageD > 0 && (
-                          <div className="text-[8.5px] font-semibold text-sky-600 leading-tight space-y-0.5">
+                          <div className="text-[8.5px] font-bold text-sky-600 leading-tight space-y-0.5 text-center bg-sky-50/30 py-0.5 rounded-md">
                             <div>
                               Total:{' '}
-                              <span className="font-bold">
+                              <span>
                                 {newSupplement.dosageDUnit === 'UI' 
                                   ? `${((newSupplement.dosageD / 40) * newSupplement.capsulesCount).toFixed(1)} mcg`
                                   : `${(newSupplement.dosageD * newSupplement.capsulesCount).toFixed(1)} mcg`
@@ -1617,12 +1663,12 @@ export default function DietSection({ user, profile }: DietSectionProps) {
                               </span>
                             </div>
                             {newSupplement.dosageDUnit === 'UI' && (
-                              <div className="text-[8px] text-sky-400">
+                              <div className="text-[8px] text-sky-450 font-semibold">
                                 ({(newSupplement.dosageD * newSupplement.capsulesCount).toFixed(0)} UI total)
                               </div>
                             )}
                             {newSupplement.dosageDUnit === 'mcg' && (
-                              <div className="text-[8px] text-sky-400">
+                              <div className="text-[8px] text-sky-450 font-semibold">
                                 (~{(newSupplement.dosageD * newSupplement.capsulesCount * 40).toFixed(0)} UI total)
                               </div>
                             )}
@@ -1631,45 +1677,75 @@ export default function DietSection({ user, profile }: DietSectionProps) {
                       </div>
 
                       {/* Vitamina B6 */}
-                      <div className="bg-white p-3 rounded-2xl border border-zinc-100 shadow-sm space-y-1.5">
-                        <label className="text-[10px] text-indigo-600 font-extrabold block uppercase tracking-wider">Vit. B6</label>
-                        <div className="relative">
+                      <div className="bg-zinc-50/50 p-3 rounded-2xl border border-zinc-150 shadow-xs space-y-1.5 hover:bg-white transition-all duration-200">
+                        <div className="flex items-center justify-between">
+                          <label className="text-[10px] text-indigo-600 font-extrabold block uppercase tracking-wider">Vit. B6</label>
+                          <span className="text-[9px] font-bold text-zinc-400 uppercase">mg</span>
+                        </div>
+                        <div className="flex items-center justify-between gap-1 bg-white border border-zinc-200 p-1 rounded-xl shadow-2xs focus-within:ring-2 focus-within:ring-indigo-100 focus-within:border-indigo-400 transition-all">
+                          <button
+                            type="button"
+                            onClick={() => setNewSupplement(prev => ({ ...prev, dosageB6: Math.max(0, (prev.dosageB6 || 0) - 1) }))}
+                            className="w-6 h-6 rounded-lg bg-zinc-50 border border-zinc-150 hover:bg-zinc-100 text-zinc-600 font-bold active:scale-95 transition-all text-xs flex items-center justify-center cursor-pointer"
+                          >
+                            -
+                          </button>
                           <input
                             type="number"
                             min="0"
-                            step="any"
                             placeholder="0"
                             value={newSupplement.dosageB6 || ''}
-                            onChange={(e) => setNewSupplement({ ...newSupplement, dosageB6: parseFloat(e.target.value) || 0 })}
-                            className="w-full pr-6 pl-2 py-1.5 bg-zinc-50/50 border border-zinc-200 rounded-xl text-xs font-bold font-mono focus:outline-none focus:bg-white focus:border-indigo-400"
+                            onChange={(e) => setNewSupplement({ ...newSupplement, dosageB6: Math.max(0, parseFloat(e.target.value) || 0) })}
+                            className="w-full text-center bg-transparent border-0 focus:outline-none text-xs font-black font-mono p-0"
                           />
-                          <span className="absolute right-2 top-2 text-[9px] font-bold text-zinc-400 uppercase">mg</span>
+                          <button
+                            type="button"
+                            onClick={() => setNewSupplement(prev => ({ ...prev, dosageB6: (prev.dosageB6 || 0) + 1 }))}
+                            className="w-6 h-6 rounded-lg bg-zinc-50 border border-zinc-150 hover:bg-zinc-100 text-zinc-600 font-bold active:scale-95 transition-all text-xs flex items-center justify-center cursor-pointer"
+                          >
+                            +
+                          </button>
                         </div>
                         {newSupplement.dosageB6 > 0 && (
-                          <div className="text-[8.5px] font-semibold text-indigo-600 leading-tight">
-                            Total: <span className="font-bold">{(newSupplement.dosageB6 * newSupplement.capsulesCount).toFixed(2)} mg</span>
+                          <div className="text-[9px] font-bold text-indigo-600 leading-tight text-center bg-indigo-50/30 py-0.5 rounded-md">
+                            Total: {(newSupplement.dosageB6 * newSupplement.capsulesCount).toFixed(1)} mg
                           </div>
                         )}
                       </div>
 
                       {/* Vitamina B12 */}
-                      <div className="bg-white p-3 rounded-2xl border border-zinc-100 shadow-sm space-y-1.5">
-                        <label className="text-[10px] text-emerald-600 font-extrabold block uppercase tracking-wider">Vit. B12</label>
-                        <div className="relative">
+                      <div className="bg-zinc-50/50 p-3 rounded-2xl border border-zinc-150 shadow-xs space-y-1.5 hover:bg-white transition-all duration-200">
+                        <div className="flex items-center justify-between">
+                          <label className="text-[10px] text-emerald-600 font-extrabold block uppercase tracking-wider">Vit. B12</label>
+                          <span className="text-[9px] font-bold text-zinc-400 uppercase">mcg</span>
+                        </div>
+                        <div className="flex items-center justify-between gap-1 bg-white border border-zinc-200 p-1 rounded-xl shadow-2xs focus-within:ring-2 focus-within:ring-emerald-100 focus-within:border-emerald-400 transition-all">
+                          <button
+                            type="button"
+                            onClick={() => setNewSupplement(prev => ({ ...prev, dosageB12: Math.max(0, (prev.dosageB12 || 0) - 10) }))}
+                            className="w-6 h-6 rounded-lg bg-zinc-50 border border-zinc-150 hover:bg-zinc-100 text-zinc-600 font-bold active:scale-95 transition-all text-xs flex items-center justify-center cursor-pointer"
+                          >
+                            -
+                          </button>
                           <input
                             type="number"
                             min="0"
-                            step="any"
                             placeholder="0"
                             value={newSupplement.dosageB12 || ''}
-                            onChange={(e) => setNewSupplement({ ...newSupplement, dosageB12: parseFloat(e.target.value) || 0 })}
-                            className="w-full pr-7 pl-2 py-1.5 bg-zinc-50/50 border border-zinc-200 rounded-xl text-xs font-bold font-mono focus:outline-none focus:bg-white focus:border-emerald-400"
+                            onChange={(e) => setNewSupplement({ ...newSupplement, dosageB12: Math.max(0, parseFloat(e.target.value) || 0) })}
+                            className="w-full text-center bg-transparent border-0 focus:outline-none text-xs font-black font-mono p-0"
                           />
-                          <span className="absolute right-2 top-2 text-[9px] font-bold text-zinc-400 uppercase">mcg</span>
+                          <button
+                            type="button"
+                            onClick={() => setNewSupplement(prev => ({ ...prev, dosageB12: (prev.dosageB12 || 0) + 10 }))}
+                            className="w-6 h-6 rounded-lg bg-zinc-50 border border-zinc-150 hover:bg-zinc-100 text-zinc-600 font-bold active:scale-95 transition-all text-xs flex items-center justify-center cursor-pointer"
+                          >
+                            +
+                          </button>
                         </div>
                         {newSupplement.dosageB12 > 0 && (
-                          <div className="text-[8.5px] font-semibold text-emerald-600 leading-tight">
-                            Total: <span className="font-bold">{(newSupplement.dosageB12 * newSupplement.capsulesCount).toFixed(2)} mcg</span>
+                          <div className="text-[9px] font-bold text-emerald-600 leading-tight text-center bg-emerald-50/30 py-0.5 rounded-md">
+                            Total: {(newSupplement.dosageB12 * newSupplement.capsulesCount).toFixed(1)} mcg
                           </div>
                         )}
                       </div>
