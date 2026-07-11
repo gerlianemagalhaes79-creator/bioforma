@@ -182,8 +182,7 @@ service cloud.firestore {
              (!('workoutDone' in data) || data.workoutDone is bool) &&
              (!('dietOnTrack' in data) || data.dietOnTrack is bool) &&
              (!('waterGoalMet' in data) || data.waterGoalMet is bool) &&
-             (!('sleepQuality' in data) || (data.sleepQuality is number && data.sleepQuality >= 1 && data.sleepQuality <= 5)) &&
-             (!('studyQuestions' in data) || data.studyQuestions is number);
+             (!('sleepQuality' in data) || (data.sleepQuality is number && data.sleepQuality >= 1 && data.sleepQuality <= 5));
     }
 
     function isValidAerobics(data) {

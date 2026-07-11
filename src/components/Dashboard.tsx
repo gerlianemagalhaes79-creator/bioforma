@@ -3,7 +3,7 @@ import { db, collection, query, where, onSnapshot, User, orderBy, limit, addDoc,
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { motion, AnimatePresence } from 'motion/react';
-import { Activity, Apple, Droplets, Flame, TrendingUp, Plus, ChevronLeft, ChevronRight, Calendar, Dumbbell, Award, Sparkles, Trash2, X, BookOpen } from 'lucide-react';
+import { Activity, Apple, Droplets, Flame, TrendingUp, Plus, ChevronLeft, ChevronRight, Calendar, Dumbbell, Award, Sparkles, Trash2, X } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, BarChart, Bar, Cell } from 'recharts';
 
 interface DashboardProps {
@@ -181,33 +181,6 @@ export default function Dashboard({ user, profile }: DashboardProps) {
       }
     } catch (e) {
       console.error("Erro ao registrar água no início:", e);
-    }
-  };
-
-  const handleUpdateStudyQuestions = async (newVal: number) => {
-    try {
-      const checkinQuery = query(
-        collection(db, 'checkins'),
-        where('uid', '==', user.uid),
-        where('date', '==', selectedDate)
-      );
-      const checkinSnap = await getDocs(checkinQuery);
-      if (!checkinSnap.empty) {
-        await updateDoc(doc(db, 'checkins', checkinSnap.docs[0].id), {
-          studyQuestions: newVal
-        });
-      } else {
-        await addDoc(collection(db, 'checkins'), {
-          uid: user.uid,
-          date: selectedDate,
-          studyQuestions: newVal,
-          workoutDone: false,
-          dietOnTrack: false,
-          waterGoalMet: false
-        });
-      }
-    } catch (e) {
-      console.error("Erro ao atualizar questões estudadas:", e);
     }
   };
 
@@ -491,7 +464,7 @@ export default function Dashboard({ user, profile }: DashboardProps) {
       </section>
 
       {/* Stats Grid */}
-      <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <section className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="bg-white p-5 rounded-[2rem] border border-pink-100 shadow-sm shadow-pink-100/10 flex flex-col justify-between">
           <div>
             <div className="flex items-center gap-2 text-pink-500 mb-2">
@@ -510,69 +483,6 @@ export default function Dashboard({ user, profile }: DashboardProps) {
             <div className="text-2xl font-black italic text-zinc-800">{profile?.dailyWaterGoal || 2500} <span className="text-xs font-normal not-italic text-zinc-400">ml</span></div>
           </div>
         </div>
-
-        {/* Interactive Daily Study Card */}
-        <div className="bg-white p-5 rounded-[2rem] border border-pink-100 shadow-sm shadow-pink-100/10 flex flex-col justify-between">
-          <div className="flex items-center justify-between gap-2 mb-2">
-            <div className="flex items-center gap-2 text-violet-500">
-              <BookOpen size={18} />
-              <span className="text-[10px] font-bold uppercase tracking-wider">Estudo Diário</span>
-            </div>
-            <span className={`text-[8px] font-extrabold uppercase px-2 py-0.5 rounded transition-colors ${
-              (checkins.find(c => c.date === selectedDate)?.studyQuestions || 0) >= 10
-                ? 'bg-violet-100 text-violet-700'
-                : 'bg-zinc-100 text-zinc-500'
-            }`}>
-              {(checkins.find(c => c.date === selectedDate)?.studyQuestions || 0) >= 10 ? 'Meta Bateu ✓' : 'Faltam Qs'}
-            </span>
-          </div>
-          
-          <div className="flex items-center justify-between mt-1">
-            <div className="flex flex-col">
-              <div className="flex items-center gap-1">
-                <input
-                  type="number"
-                  min="0"
-                  value={checkins.find(c => c.date === selectedDate)?.studyQuestions ?? ''}
-                  placeholder="0"
-                  onChange={(e) => {
-                    const val = Math.max(0, parseInt(e.target.value) || 0);
-                    handleUpdateStudyQuestions(val);
-                  }}
-                  className="w-12 text-center bg-transparent border-b border-dashed border-zinc-300 focus:border-violet-400 focus:outline-none text-2xl font-black italic text-zinc-800 p-0"
-                />
-                <span className="text-xs font-normal not-italic text-zinc-400"> / 10 Qs</span>
-              </div>
-              <span className="text-[8.5px] text-zinc-450 font-bold uppercase tracking-wide mt-1.5 leading-none">
-                Questões Respondidas
-              </span>
-            </div>
-            
-            {/* Direct counter controls */}
-            <div className="flex items-center gap-1 bg-zinc-50 border border-zinc-100 p-1 rounded-xl">
-              <button
-                type="button"
-                onClick={() => {
-                  const currentVal = checkins.find(c => c.date === selectedDate)?.studyQuestions || 0;
-                  handleUpdateStudyQuestions(Math.max(0, currentVal - 1));
-                }}
-                className="w-7 h-7 rounded-lg bg-white border border-zinc-200 hover:bg-zinc-100 text-zinc-650 font-bold active:scale-95 transition-all text-xs flex items-center justify-center cursor-pointer shadow-sm"
-              >
-                -
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  const currentVal = checkins.find(c => c.date === selectedDate)?.studyQuestions || 0;
-                  handleUpdateStudyQuestions(currentVal + 1);
-                }}
-                className="w-7 h-7 rounded-lg bg-white border border-zinc-200 hover:bg-zinc-100 text-zinc-650 font-bold active:scale-95 transition-all text-xs flex items-center justify-center cursor-pointer shadow-sm"
-              >
-                +
-              </button>
-            </div>
-          </div>
-        </div>
       </section>
 
       {/* Check-in Grid */}
@@ -588,9 +498,6 @@ export default function Dashboard({ user, profile }: DashboardProps) {
             </div>
             <div className="flex items-center gap-1 text-[8px] uppercase font-black tracking-wider text-pink-500 bg-pink-50 px-2 py-1 rounded-full">
               <div className="w-2 h-2 rounded-full bg-pink-500"></div> Calorias
-            </div>
-            <div className="flex items-center gap-1 text-[8px] uppercase font-black tracking-wider text-violet-600 bg-violet-50 px-2 py-1 rounded-full">
-              <div className="w-2 h-2 rounded-full bg-violet-500"></div> Estudo (≥10 Qs)
             </div>
           </div>
         </div>
@@ -621,10 +528,6 @@ export default function Dashboard({ user, profile }: DashboardProps) {
             const dayNetCalories = Math.max(0, dayCalories - dayBurned);
             const isCalorieMet = dayCalories > 0 && dayNetCalories <= goalCalories;
             
-            // 4. Study met: 10 or more study questions answered
-            const dayStudyQuestions = checkin?.studyQuestions || 0;
-            const isStudyMet = dayStudyQuestions >= 10;
-            
             const isSelected = dayStr === selectedDate;
             
             return (
@@ -643,12 +546,11 @@ export default function Dashboard({ user, profile }: DashboardProps) {
                   className={`w-full aspect-square rounded-xl border flex flex-col p-1 gap-0.5 overflow-hidden transition-all ${
                     isToday ? 'border-[#ec4899] ring-2 ring-pink-100 bg-[#fffbfc]' : 'border-pink-100/80 bg-[#fffdfd]'
                   } ${isSelected ? 'border-[#ec4899] ring-1 ring-[#ec4899] shadow-sm' : ''}`}
-                  title={`Treino: ${isWorkoutMet ? 'Ok' : 'Não'}; Água: ${dayWater}/${targetWater}ml; Calorias: ${dayCalories} (gasto ${dayBurned}); Estudo: ${dayStudyQuestions}/10 Qs`}
+                  title={`Treino: ${isWorkoutMet ? 'Ok' : 'Não'}; Água: ${dayWater}/${targetWater}ml; Calorias: ${dayCalories} (gasto ${dayBurned})`}
                 >
                   <div className={`flex-1 rounded-sm transition-all ${isWorkoutMet ? 'bg-[#d4af37]' : 'bg-zinc-100/40'}`}></div>
                   <div className={`flex-1 rounded-sm transition-all ${isWaterMet ? 'bg-[#38bdf8]' : 'bg-zinc-100/40'}`}></div>
                   <div className={`flex-1 rounded-sm transition-all ${isCalorieMet ? 'bg-pink-500' : 'bg-zinc-100/40'}`}></div>
-                  <div className={`flex-1 rounded-sm transition-all ${isStudyMet ? 'bg-violet-500' : 'bg-zinc-100/40'}`}></div>
                 </div>
                 <span className="text-[8px] font-bold text-zinc-400">{format(day, 'd')}</span>
               </button>

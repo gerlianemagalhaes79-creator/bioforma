@@ -117,8 +117,7 @@
         "workoutDone": { "type": "boolean" },
         "dietOnTrack": { "type": "boolean" },
         "waterGoalMet": { "type": "boolean" },
-        "sleepQuality": { "type": "number", "description": "1-5" },
-        "studyQuestions": { "type": "number" }
+        "sleepQuality": { "type": "number", "description": "1-5" }
       },
       "required": ["uid", "date"]
     },
