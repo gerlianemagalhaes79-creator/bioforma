@@ -1,564 +1,239 @@
-import { useState, useEffect } from 'react';
-import { db, collection, query, where, onSnapshot, User, orderBy, limit, addDoc, updateDoc, doc, getDocs, deleteDoc } from '../firebase';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { motion, AnimatePresence } from 'motion/react';
-import { Activity, Apple, Droplets, Flame, TrendingUp, Plus, ChevronLeft, ChevronRight, Calendar, Dumbbell, Award, Sparkles, Trash2, X } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, BarChart, Bar, Cell } from 'recharts';
+import React, { useState, useEffect } from 'react';
+import { User } from '../firebase';
+import { UserProfile } from '../types';
+import { 
+  Target, 
+  CheckCircle2, 
+  Clock, 
+  Award, 
+  ArrowRight, 
+  BrainCircuit, 
+  Sparkles, 
+  BookOpen, 
+  PenTool, 
+  ChevronRight,
+  TrendingUp,
+  ShieldCheck,
+  Zap
+} from 'lucide-react';
+import { motion } from 'motion/react';
 
 interface DashboardProps {
   user: User;
-  profile: any;
+  profile: UserProfile | null;
+  setActiveTab: (tab: string) => void;
 }
 
-export default function Dashboard({ user, profile }: DashboardProps) {
-  const [checkins, setCheckins] = useState<any[]>([]);
-  const [metrics, setMetrics] = useState<any[]>([]);
-  const [workouts, setWorkouts] = useState<any[]>([]);
-  const [diets, setDiets] = useState<any[]>([]);
-  const [aerobics, setAerobics] = useState<any[]>([]);
-  const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+export default function Dashboard({ user, profile, setActiveTab }: DashboardProps) {
+  const userName = profile?.name || user.displayName || 'Professor(a)';
+  const targetSubject = profile?.targetSubject || 'Língua Portuguesa';
+  
+  // Calculate exam countdown (assuming estimated exam date October 2026)
+  const examDate = new Date('2026-10-18T08:00:00');
+  const [daysRemaining, setDaysRemaining] = useState(240);
 
   useEffect(() => {
-    const checkinsQuery = query(
-      collection(db, 'checkins'),
-      where('uid', '==', user.uid),
-      orderBy('date', 'desc'),
-      limit(30)
-    );
-    const unsubscribeCheckins = onSnapshot(checkinsQuery, (snapshot) => {
-      setCheckins(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    });
+    const now = new Date();
+    const diff = Math.max(0, Math.ceil((examDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+    setDaysRemaining(diff);
+  }, []);
 
-    const metricsQuery = query(
-      collection(db, 'metrics'),
-      where('uid', '==', user.uid),
-      orderBy('date', 'asc'),
-      limit(10)
-    );
-    const unsubscribeMetrics = onSnapshot(metricsQuery, (snapshot) => {
-      setMetrics(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    });
-
-    const workoutsAllQuery = query(
-      collection(db, 'workouts'),
-      where('uid', '==', user.uid)
-    );
-    const unsubscribeWorkoutsAll = onSnapshot(workoutsAllQuery, (snapshot) => {
-      setWorkouts(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    });
-
-    // Real-time subscription to user diets to compute home charts
-    const dietsQuery = query(
-      collection(db, 'diets'),
-      where('uid', '==', user.uid)
-    );
-    const unsubscribeDiets = onSnapshot(dietsQuery, (snapshot) => {
-      const loaded = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-        .sort((a: any, b: any) => b.date.localeCompare(a.date));
-      setDiets(loaded);
-    });
-
-    const aerobicsQuery = query(
-      collection(db, 'aerobics'),
-      where('uid', '==', user.uid)
-    );
-    const unsubscribeAerobics = onSnapshot(aerobicsQuery, (snapshot) => {
-      setAerobics(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    });
-
-    return () => {
-      unsubscribeCheckins();
-      unsubscribeMetrics();
-      unsubscribeWorkoutsAll();
-      unsubscribeDiets();
-      unsubscribeAerobics();
-    };
-  }, [user.uid]);
-
-  const daysInMonth = eachDayOfInterval({
-    start: startOfMonth(new Date()),
-    end: endOfMonth(new Date())
-  });
-
-  const getCheckinForDay = (day: Date) => {
-    return checkins.find(c => isSameDay(new Date(c.date + 'T00:00:00'), day));
-  };
-
-
-
-  // Find all unique dates in diets log
-  const uniqueDates = Array.from(new Set(diets.map(d => d.date)))
-    .sort()
-    .reverse();
-
-  // If today is missing from history, append it to visual selector so they can track current day
-  const todayStr = format(new Date(), 'yyyy-MM-dd');
-  if (!uniqueDates.includes(todayStr)) {
-    uniqueDates.unshift(todayStr);
-  }
-
-  const getSelectedDateLabel = () => {
-    const today = new Date();
-    const todayFormatted = format(today, 'yyyy-MM-dd');
-    
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayFormatted = format(yesterday, 'yyyy-MM-dd');
-
-    const selDate = new Date(selectedDate + 'T00:00:00');
-
-    if (selectedDate === todayFormatted) {
-      return `Hoje, ${format(selDate, "dd 'de' MMMM", { locale: ptBR })}`;
-    } else if (selectedDate === yesterdayFormatted) {
-      return `Ontem, ${format(selDate, "dd 'de' MMMM", { locale: ptBR })}`;
-    } else {
-      return format(selDate, "EEEE, dd 'de' MMMM", { locale: ptBR });
-    }
-  };
-
-  const handlePrevDay = () => {
-    const current = new Date(selectedDate + 'T00:00:00');
-    current.setDate(current.getDate() - 1);
-    setSelectedDate(format(current, 'yyyy-MM-dd'));
-  };
-
-  const handleNextDay = () => {
-    const current = new Date(selectedDate + 'T00:00:00');
-    current.setDate(current.getDate() + 1);
-    setSelectedDate(format(current, 'yyyy-MM-dd'));
-  };
-
-
-
-  // Filter diets by selected date and sum macros
-  const selectedDateDiets = diets.filter(d => d.date === selectedDate);
-  const selectedTotalWater = selectedDateDiets.reduce((acc, d) => acc + (d.waterIntake || 0), 0);
-  const todayDiets = diets.filter(d => d.date === todayStr);
-  const todayWater = todayDiets.reduce((acc, d) => acc + (d.waterIntake || 0), 0);
-
-  const handleQuickAddWaterStart = async () => {
-    try {
-      const targetWater = profile?.dailyWaterGoal || 2500;
-      const currentTotalWater = selectedDateDiets.reduce((acc, d) => acc + (d.waterIntake || 0), 0);
-      const newWaterTotal = currentTotalWater + 150;
-
-      const firstSelectedDiet = selectedDateDiets[0];
-
-      if (firstSelectedDiet) {
-        await updateDoc(doc(db, 'diets', firstSelectedDiet.id), {
-          waterIntake: (firstSelectedDiet.waterIntake || 0) + 150
-        });
-      } else {
-        await addDoc(collection(db, 'diets'), {
-          uid: user.uid,
-          date: selectedDate,
-          meals: [],
-          waterIntake: 150,
-          notes: 'Registrado pela via rápida do início'
-        });
-      }
-
-      // Sync with checkins Collection
-      const checkinQuery = query(
-        collection(db, 'checkins'),
-        where('uid', '==', user.uid),
-        where('date', '==', selectedDate)
-      );
-      const checkinSnap = await getDocs(checkinQuery);
-      if (!checkinSnap.empty) {
-        await updateDoc(doc(db, 'checkins', checkinSnap.docs[0].id), {
-          waterGoalMet: newWaterTotal >= targetWater
-        });
-      } else {
-        await addDoc(collection(db, 'checkins'), {
-          uid: user.uid,
-          date: selectedDate,
-          waterGoalMet: newWaterTotal >= targetWater,
-          workoutDone: false,
-          dietOnTrack: true
-        });
-      }
-    } catch (e) {
-      console.error("Erro ao registrar água no início:", e);
-    }
-  };
-
-  // Compute actual ingested macros by summing all meals from all diet entries of the selected date
-  const consumedCalories = selectedDateDiets.reduce((acc, d) => 
-    acc + (d.meals?.reduce((mAcc: number, m: any) => mAcc + (m.calories || 0), 0) || 0), 0
-  );
-  const consumedProtein = selectedDateDiets.reduce((acc, d) => 
-    acc + (d.meals?.reduce((mAcc: number, m: any) => mAcc + (m.protein || 0), 0) || 0), 0
-  );
-  const consumedFat = selectedDateDiets.reduce((acc, d) => 
-    acc + (d.meals?.reduce((mAcc: number, m: any) => mAcc + (m.fat || 0), 0) || 0), 0
-  );
-  const consumedFiber = selectedDateDiets.reduce((acc, d) => 
-    acc + (d.meals?.reduce((mAcc: number, m: any) => mAcc + (m.fiber || 0), 0) || 0), 0
-  );
-
-  // Subtract aerobic activity calories burned
-  const activeDateAerobics = aerobics.filter(a => a.date === selectedDate);
-  const caloriesBurned = activeDateAerobics.reduce((acc: number, a: any) => acc + (a.caloriesBurned || 0), 0);
-  const netCalories = Math.max(0, consumedCalories - caloriesBurned);
-
-  const goalCalories = profile?.dailyCalorieGoal || 2000;
-  const goalProtein = profile?.proteinGoal || 130;
-  const goalFat = profile?.fatGoal || 60;
-  const goalFiber = profile?.fiberGoal || 25; // Default safe fiber intake target
-
-  const caloriePercent = Math.min((netCalories / goalCalories) * 105, 100) || 0;
-  const calorieExceeded = netCalories > goalCalories;
-
-  const macroData = [
-    { name: 'Proteína', Consumido: Number(consumedProtein.toFixed(1)), Meta: goalProtein, color: '#d4af37' },
-    { name: 'Gordura', Consumido: Number(consumedFat.toFixed(1)), Meta: goalFat, color: '#ec4899' },
-    { name: 'Fibras', Consumido: Number(consumedFiber.toFixed(1)), Meta: goalFiber, color: '#10b981' },
-  ];
+  const readinessScore = Math.min(96, Math.max(45, (profile?.completedTopicsCount || 6) * 4 + 35));
 
   return (
-    <div className="space-y-8 animate-fade-in">
-      {/* Welcome Section */}
-      <section className="flex justify-between items-start">
-        <div>
-          <h2 className="text-xs font-bold uppercase tracking-widest text-[#d4af37] mb-1">Bem-vinda de volta</h2>
-          <p className="text-4xl font-extrabold tracking-tight uppercase italic leading-none text-zinc-800">
-            {profile?.name?.split(' ')[0]} <span className="text-pink-500">Pronta?</span>
-          </p>
-        </div>
-
-        {/* Discreet Water Droplet Button */}
-        <button
-          onClick={handleQuickAddWaterStart}
-          className="p-2.5 bg-sky-50/80 hover:bg-sky-100 border border-sky-200/50 rounded-2xl transition-all cursor-pointer flex flex-col items-center justify-center shadow-sm hover:shadow active:scale-95 relative group"
-          title={`Adicionar +150ml (Nesta data: ${selectedTotalWater}ml)`}
-        >
-          <span className="text-xl leading-none">💧</span>
-          <span className="text-[8px] font-black uppercase text-sky-600 mt-0.5 tracking-tighter">
-            {selectedTotalWater} ml
-          </span>
-          <span className="absolute right-0 top-full mt-2.5 bg-zinc-800 text-white text-[9px] font-extrabold uppercase px-2.5 py-1.5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-md">
-            +150ml ({selectedDate === todayStr ? 'Hoje' : format(new Date(selectedDate + 'T00:00:00'), 'dd/MM')})
-          </span>
-        </button>
-      </section>
-
-      {/* Date Navigation and Selection Bar */}
-      <section className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-3xl border border-pink-100/50 shadow-sm shadow-pink-100/5">
-        <div className="flex items-center gap-1.5">
-          <Calendar size={15} className="text-pink-500" />
-          <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Visualizar ou Registrar Retroativo</span>
-        </div>
-
-        <div className="flex items-center gap-3 w-full sm:w-auto justify-center">
-          <div className="relative flex items-center bg-pink-50/10 hover:bg-pink-50/30 border border-pink-100 rounded-2xl px-3 py-2 shadow-sm gap-3 max-w-sm transition-all">
-            <button 
-              type="button"
-              onClick={handlePrevDay}
-              className="p-1 hover:bg-white rounded-lg text-pink-500 cursor-pointer transition-colors border-0 flex items-center justify-center"
-              title="Dia Anterior"
-            >
-              <ChevronLeft size={16} strokeWidth={3} />
-            </button>
-            
-            <div className="text-center relative cursor-pointer px-1 flex-1">
-              <span className="text-xs font-black uppercase text-zinc-700 block whitespace-nowrap tracking-tight">
-                {getSelectedDateLabel()}
-              </span>
-              <input 
-                type="date"
-                className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                value={selectedDate}
-                onChange={(e) => {
-                  if (e.target.value) {
-                    setSelectedDate(e.target.value);
-                  }
-                }}
-              />
-            </div>
-
-            <button 
-              type="button"
-              onClick={handleNextDay}
-              className="p-1 hover:bg-white rounded-lg text-pink-500 cursor-pointer transition-colors border-0 flex items-center justify-center"
-              title="Próximo Dia"
-            >
-              <ChevronRight size={16} strokeWidth={3} />
-            </button>
-          </div>
-
-          {selectedDate !== todayStr && (
-            <button
-              type="button"
-              onClick={() => setSelectedDate(todayStr)}
-              className="px-3 py-2 bg-pink-50 hover:bg-pink-100 active:scale-95 text-pink-600 font-extrabold uppercase text-[9px] rounded-2xl tracking-wider transition-all cursor-pointer border border-pink-100/60"
-            >
-              Hoje ↩
-            </button>
-          )}
-        </div>
-      </section>
-
-      {/* Painel de Nutrição Diária com Gráficos */}
-      <section className="bg-gradient-to-br from-white to-[#fffafc] p-6 rounded-[2rem] border border-pink-100 shadow-sm shadow-pink-100/15 space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="space-y-5">
+      {/* Welcome Banner */}
+      <motion.div 
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-gradient-to-br from-emerald-900 via-teal-900 to-emerald-950 text-white rounded-3xl p-5 shadow-xl border border-emerald-800/60 relative overflow-hidden"
+      >
+        <div className="absolute -right-8 -bottom-8 w-40 h-40 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
+        
+        <div className="flex items-start justify-between gap-3 relative z-10">
           <div>
-            <h3 className="text-xs font-black uppercase tracking-widest text-[#d4af37] flex items-center gap-1.5 leading-none">
-              <Apple size={14} className="text-pink-500" /> Painel Nutricional Diário
-            </h3>
-            <p className="text-2xl font-black text-zinc-800 tracking-tight uppercase italic mt-1 leading-none">
-              Resumo de <span className="text-pink-500">Consumo</span>
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-extrabold uppercase tracking-wider border border-emerald-500/30 mb-2">
+              <Zap size={12} className="text-amber-400" /> Rumo à Posse 2026
+            </div>
+            <h2 className="text-xl font-black text-white tracking-tight">
+              Olá, Prof. {userName}!
+            </h2>
+            <p className="text-xs text-emerald-200/90 mt-1 leading-relaxed max-w-sm">
+              Sua disciplina-alvo é <span className="font-bold text-emerald-300">{targetSubject}</span>. O edital da SEDUC CE exige constância e domínio pedagógico.
             </p>
           </div>
-        </div>
-
-        {/* Nutritional Interactive Graphs */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
           
-          {/* Circular Progress Ring for Calories (4 columns) */}
-          <div className="md:col-span-5 flex flex-col items-center justify-center p-5 bg-white rounded-3xl border border-pink-50/60 shadow-sm shadow-pink-100/5">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-4">Metabolização</span>
-            
-            <div className="relative w-40 h-40 flex items-center justify-center">
-              {/* SVG circular frame */}
-              <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="40"
-                  className="stroke-pink-50/70"
-                  strokeWidth="8"
-                  fill="transparent"
-                />
-                <motion.circle
-                  cx="50"
-                  cy="50"
-                  r="40"
-                  className="stroke-pink-500"
-                  strokeWidth="8"
-                  fill="transparent"
-                  strokeDasharray="251.2"
-                  initial={{ strokeDashoffset: 251.2 }}
-                  animate={{ strokeDashoffset: 251.2 - (251.2 * Math.min(caloriePercent, 100)) / 100 }}
-                  transition={{ duration: 1.2, ease: "easeOut" }}
-                  strokeLinecap="round"
-                />
-              </svg>
+          <div className="bg-emerald-800/80 backdrop-blur-sm border border-emerald-700/60 p-3 rounded-2xl text-center shrink-0 min-w-[85px]">
+            <p className="text-[9px] uppercase font-bold text-emerald-300 tracking-wider">Faltam</p>
+            <p className="text-2xl font-black text-amber-300 leading-none my-1">{daysRemaining}</p>
+            <p className="text-[9px] font-bold text-emerald-200 uppercase">Dias</p>
+          </div>
+        </div>
 
-              <div className="absolute text-center">
-                <div className="text-3xl font-black italic tracking-tighter text-zinc-900 leading-none">
-                  {netCalories}
-                </div>
-                <div className="text-[8px] text-[#d4af37] font-black uppercase tracking-wider mt-1">
-                  de {goalCalories} kcal
-                </div>
-                <div className="text-[9px] text-pink-500 font-extrabold mt-1">
-                  {Math.round((netCalories / goalCalories) * 100)}% líquido
-                </div>
-              </div>
+        {/* Readiness Bar */}
+        <div className="mt-4 pt-3.5 border-t border-emerald-800/80 relative z-10">
+          <div className="flex justify-between items-center text-xs mb-1.5">
+            <span className="font-bold text-emerald-200 text-[11px] flex items-center gap-1">
+              <BrainCircuit size={14} className="text-emerald-400" /> Prontidão de Aprovação IA:
+            </span>
+            <span className="font-black text-amber-300">{readinessScore}%</span>
+          </div>
+          <div className="w-full bg-emerald-950/80 rounded-full h-2.5 p-0.5 border border-emerald-800">
+            <motion.div 
+              initial={{ width: 0 }}
+              animate={{ width: `${readinessScore}%` }}
+              transition={{ duration: 1, ease: 'easeOut' }}
+              className="bg-gradient-to-r from-emerald-400 via-teal-300 to-amber-300 h-1.5 rounded-full"
+            />
+          </div>
+        </div>
+      </motion.div>
+
+      {/* KPI Cards Row */}
+      <div className="grid grid-cols-3 gap-2.5">
+        <div className="bg-white rounded-2xl p-3.5 border border-emerald-100 shadow-xs text-center">
+          <p className="text-[10px] font-extrabold text-zinc-400 uppercase tracking-wider">Edital Visto</p>
+          <p className="text-xl font-black text-emerald-800 mt-0.5">
+            {profile?.completedTopicsCount || 6}<span className="text-xs font-semibold text-zinc-400">/23</span>
+          </p>
+          <p className="text-[9px] font-bold text-emerald-600 mt-1">Tópicos</p>
+        </div>
+
+        <div className="bg-white rounded-2xl p-3.5 border border-emerald-100 shadow-xs text-center">
+          <p className="text-[10px] font-extrabold text-zinc-400 uppercase tracking-wider">Simulados</p>
+          <p className="text-xl font-black text-teal-800 mt-0.5">
+            {profile?.totalQuestionsDone || 18}
+          </p>
+          <p className="text-[9px] font-bold text-teal-600 mt-1">Questões</p>
+        </div>
+
+        <div className="bg-white rounded-2xl p-3.5 border border-emerald-100 shadow-xs text-center">
+          <p className="text-[10px] font-extrabold text-zinc-400 uppercase tracking-wider">Acertos</p>
+          <p className="text-xl font-black text-amber-600 mt-0.5">
+            {Math.round(((profile?.correctAnswersCount || 14) / Math.max(1, profile?.totalQuestionsDone || 18)) * 100)}%
+          </p>
+          <p className="text-[9px] font-bold text-amber-600 mt-1">Aproveitamento</p>
+        </div>
+      </div>
+
+      {/* Today's Study Roadmap */}
+      <div className="bg-white rounded-3xl p-5 border border-emerald-100/90 shadow-xs space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="p-2 rounded-xl bg-emerald-100 text-emerald-800">
+              <Target size={18} />
             </div>
+            <div>
+              <h3 className="font-extrabold text-zinc-900 text-sm">Trilha de Estudos de Hoje</h3>
+              <p className="text-[11px] text-zinc-500">3 prioridades sugeridas pela IA para o seu edital</p>
+            </div>
+          </div>
+          <button 
+            onClick={() => setActiveTab('edital')}
+            className="text-xs font-bold text-emerald-700 hover:text-emerald-800 flex items-center gap-1 border-0 bg-transparent cursor-pointer"
+          >
+            Ver Edital Completo <ChevronRight size={14} />
+          </button>
+        </div>
 
-            {/* Indicator of limits */}
-            <div className="mt-4 text-center space-y-2">
+        <div className="space-y-2.5 pt-1">
+          <div className="p-3 bg-emerald-50/60 border border-emerald-100 rounded-2xl flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-7 h-7 rounded-full bg-emerald-600 text-white flex items-center justify-center font-black text-xs shrink-0">
+                1
+              </div>
               <div>
-                {calorieExceeded ? (
-                  <span className="text-[9px] font-black uppercase text-rose-600 bg-rose-50 border border-rose-100 px-3 py-1.5 rounded-full inline-block">
-                    Cota Excedida em {netCalories - goalCalories} kcal ⚠️
-                  </span>
-                ) : (
-                  <span className="text-[9px] font-black uppercase text-emerald-600 bg-emerald-50 border border-emerald-100 px-3 py-1.5 rounded-full inline-block">
-                    Mais {goalCalories - netCalories} kcal para a meta 🎯
-                  </span>
-                )}
-              </div>
-              <div className="text-[9px] font-bold text-zinc-400 bg-zinc-50 py-1.5 px-3 rounded-2xl border border-zinc-100/50 inline-block">
-                Comida: <span className="text-zinc-650">{consumedCalories} kcal</span>
-                {caloriesBurned > 0 && (
-                  <>
-                    {' '}• Gasto Aeróbico: <span className="text-pink-500">-{caloriesBurned} kcal</span>
-                  </>
-                )}
+                <p className="text-xs font-bold text-emerald-950">LDB (Art. 21 ao 36-D) – Ensino Médio</p>
+                <p className="text-[10px] text-emerald-700 font-medium">Didática e Legislação • Alta relevância na banca IDECAN</p>
               </div>
             </div>
+            <button 
+              onClick={() => setActiveTab('tutor')}
+              className="px-2.5 py-1 bg-emerald-700 hover:bg-emerald-800 text-white text-[10px] font-extrabold rounded-xl border-0 cursor-pointer shadow-xs"
+            >
+              Estudar
+            </button>
           </div>
 
-          {/* Recharts Bar Chart & Progress (7 columns) */}
-          <div className="md:col-span-7 space-y-4">
-            <div className="bg-white p-4 rounded-3xl border border-pink-50/60 shadow-sm">
-              <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 block mb-3">
-                Gráfico de Consumo vs Metas (g)
-              </span>
-
-              <div className="h-44 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={macroData} barGap={6}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#fdf4f8" vertical={false} />
-                    <XAxis 
-                      dataKey="name" 
-                      tickLine={false} 
-                      axisLine={false}
-                      tick={{ fill: '#4b5563', fontSize: 10, fontWeight: '700' }}
-                    />
-                    <YAxis 
-                      tickLine={false} 
-                      axisLine={false}
-                      tick={{ fill: '#9ca3af', fontSize: 9 }}
-                    />
-                    <Tooltip 
-                      cursor={{ fill: 'rgba(236,72,153,0.02)' }}
-                      contentStyle={{ backgroundColor: '#fff', border: '1px solid #fbcfe8', borderRadius: '16px', fontSize: '11px', color: '#1f2937' }}
-                      formatter={(value: any, name: any) => [`${value}g`, name]}
-                    />
-                    <Bar 
-                      dataKey="Consumido" 
-                      radius={[4, 4, 0, 0]}
-                    >
-                      {macroData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Bar>
-                    <Bar 
-                      dataKey="Meta" 
-                      fill="#e4e4e7" 
-                      radius={[4, 4, 0, 0]} 
-                      opacity={0.65}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
+          <div className="p-3 bg-zinc-50 border border-zinc-100 rounded-2xl flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-7 h-7 rounded-full bg-teal-600 text-white flex items-center justify-center font-black text-xs shrink-0">
+                2
+              </div>
+              <div>
+                <p className="text-xs font-bold text-zinc-800">Regência Verbal e Crase em Questões</p>
+                <p className="text-[10px] text-zinc-500 font-medium">Língua Portuguesa • Treino Prático</p>
               </div>
             </div>
+            <button 
+              onClick={() => setActiveTab('simulados')}
+              className="px-2.5 py-1 bg-teal-700 hover:bg-teal-800 text-white text-[10px] font-extrabold rounded-xl border-0 cursor-pointer shadow-xs"
+            >
+              Resolver
+            </button>
+          </div>
 
-            {/* Quick Summary Cards Row */}
-            <div className="grid grid-cols-3 gap-2">
-              <div className="bg-amber-50/20 p-3 rounded-2xl border border-amber-100/50 flex flex-col justify-between">
-                <div>
-                  <span className="text-[8px] font-black uppercase tracking-wider text-[#9b7e1c] block">Proteína</span>
-                  <span className="text-base font-black italic text-zinc-800">{consumedProtein.toFixed(1)}g</span>
-                </div>
-                <span className="text-[8px] text-zinc-400 font-bold mt-1 block">Meta: {goalProtein}g</span>
+          <div className="p-3 bg-zinc-50 border border-zinc-100 rounded-2xl flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-7 h-7 rounded-full bg-amber-500 text-white flex items-center justify-center font-black text-xs shrink-0">
+                3
               </div>
-              <div className="bg-pink-50/20 p-3 rounded-2xl border border-pink-100/50 flex flex-col justify-between">
-                <div>
-                  <span className="text-[8px] font-black uppercase tracking-wider text-pink-500 block">Gordura</span>
-                  <span className="text-base font-black italic text-zinc-800">{consumedFat.toFixed(1)}g</span>
-                </div>
-                <span className="text-[8px] text-zinc-400 font-bold mt-1 block">Meta: {goalFat}g</span>
-              </div>
-              <div className="bg-emerald-50/20 p-3 rounded-2xl border border-emerald-100/50 flex flex-col justify-between">
-                <div>
-                  <span className="text-[8px] font-black uppercase tracking-wider text-emerald-600 block flex items-center gap-0.5">Fibras</span>
-                  <span className="text-base font-black italic text-zinc-800">{consumedFiber.toFixed(1)}g</span>
-                </div>
-                <span className="text-[8px] text-zinc-400 font-bold mt-1 block">Meta: {goalFiber}g</span>
+              <div>
+                <p className="text-xs font-bold text-zinc-800">Estudo de Caso: Gestão Democrática</p>
+                <p className="text-[10px] text-zinc-500 font-medium">Questão Discursiva da SEDUC CE</p>
               </div>
             </div>
-            
-            {selectedDateDiets.length === 0 && (
-              <div className="text-[10px] bg-pink-50/30 p-2 text-pink-650 rounded-xl border border-pink-100/60 text-center font-bold">
-                Nenhum log para este dia. Adicione refeições na aba "Dieta"!
-              </div>
-            )}
+            <button 
+              onClick={() => setActiveTab('redacao')}
+              className="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white text-[10px] font-extrabold rounded-xl border-0 cursor-pointer shadow-xs"
+            >
+              Escrever
+            </button>
           </div>
         </div>
-      </section>
+      </div>
 
-      {/* Stats Grid */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="bg-white p-5 rounded-[2rem] border border-pink-100 shadow-sm shadow-pink-100/10 flex flex-col justify-between">
+      {/* Quick Action Grid */}
+      <div className="grid grid-cols-2 gap-3">
+        <button 
+          onClick={() => setActiveTab('simulados')}
+          className="p-4 bg-gradient-to-br from-emerald-600 to-teal-700 text-white rounded-3xl text-left shadow-md hover:shadow-lg transition-all border-0 cursor-pointer flex flex-col justify-between h-32 group"
+        >
+          <div className="w-9 h-9 rounded-2xl bg-white/15 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <BookOpen size={20} />
+          </div>
           <div>
-            <div className="flex items-center gap-2 text-pink-500 mb-2">
-              <Flame size={18} />
-              <span className="text-[10px] font-bold uppercase tracking-wider">Meta Calórica</span>
-            </div>
-            <div className="text-2xl font-black italic text-zinc-800">{profile?.dailyCalorieGoal || 2000} <span className="text-xs font-normal not-italic text-zinc-400">kcal</span></div>
+            <p className="text-xs font-black uppercase tracking-wider text-emerald-200">Simulados</p>
+            <p className="text-sm font-black text-white mt-0.5">Banco de Questões</p>
           </div>
-        </div>
-        <div className="bg-white p-5 rounded-[2rem] border border-pink-100 shadow-sm shadow-pink-100/10 flex flex-col justify-between">
+        </button>
+
+        <button 
+          onClick={() => setActiveTab('tutor')}
+          className="p-4 bg-gradient-to-br from-zinc-900 to-emerald-950 text-white rounded-3xl text-left shadow-md hover:shadow-lg transition-all border-0 cursor-pointer flex flex-col justify-between h-32 group"
+        >
+          <div className="w-9 h-9 rounded-2xl bg-emerald-500/20 text-emerald-300 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <BrainCircuit size={20} />
+          </div>
           <div>
-            <div className="flex items-center gap-2 text-pink-400 mb-2">
-              <Droplets size={18} className="text-[#d4af37]" />
-              <span className="text-[10px] font-bold uppercase tracking-wider text-pink-500">Meta de Água</span>
-            </div>
-            <div className="text-2xl font-black italic text-zinc-800">{profile?.dailyWaterGoal || 2500} <span className="text-xs font-normal not-italic text-zinc-400">ml</span></div>
+            <p className="text-xs font-black uppercase tracking-wider text-emerald-400">Inteligência IA</p>
+            <p className="text-sm font-black text-white mt-0.5">Tutor Pedagogia SEDUC</p>
           </div>
+        </button>
+      </div>
+
+      {/* Strategic Advice Card */}
+      <div className="bg-amber-50/80 border border-amber-200/90 rounded-3xl p-4 flex items-start gap-3.5">
+        <div className="p-2 bg-amber-100 text-amber-800 rounded-2xl shrink-0 mt-0.5">
+          <ShieldCheck size={20} />
         </div>
-      </section>
-
-      {/* Check-in Grid */}
-      <section className="bg-white p-6 rounded-[2rem] border border-pink-100 shadow-sm shadow-pink-100/15">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
-          <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-500">Check-in Mensal</h3>
-          <div className="flex flex-wrap gap-2">
-            <div className="flex items-center gap-1 text-[8px] uppercase font-black tracking-wider text-[#d4af37] bg-yellow-50 px-2 py-1 rounded-full">
-              <div className="w-2 h-2 rounded-full bg-[#d4af37]"></div> Treino
-            </div>
-            <div className="flex items-center gap-1 text-[8px] uppercase font-black tracking-wider text-sky-500 bg-sky-50 px-2 py-1 rounded-full">
-              <div className="w-2 h-2 rounded-full bg-sky-400"></div> Água
-            </div>
-            <div className="flex items-center gap-1 text-[8px] uppercase font-black tracking-wider text-pink-500 bg-pink-50 px-2 py-1 rounded-full">
-              <div className="w-2 h-2 rounded-full bg-pink-500"></div> Calorias
-            </div>
-          </div>
+        <div>
+          <h4 className="font-extrabold text-amber-950 text-xs uppercase tracking-wider">Estratégia de Prova SEDUC CE 2026</h4>
+          <p className="text-xs text-amber-900/90 mt-1 leading-relaxed">
+            As bancas organizadoras do Ceará costumam atribuir alto peso à **Didática e Legislação Educacional**. Um excelente desempenho em LDB e BNCC garante vaga nas primeiras colocações!
+          </p>
         </div>
-        
-        <div className="grid grid-cols-7 gap-2">
-          {daysInMonth.map((day, i) => {
-            const checkin = getCheckinForDay(day);
-            const isToday = isSameDay(day, new Date());
-            const dayStr = format(day, 'yyyy-MM-dd');
-
-            // 1. Workout met (checked via explicit check-in flag OR presence of logged strength/aerobic activities on this day)
-            const dayWorkoutLogs = workouts.filter((w: any) => w.date === dayStr);
-            const dayAerobicsLogs = aerobics.filter((a: any) => a.date === dayStr);
-            const isWorkoutMet = checkin?.workoutDone || dayWorkoutLogs.length > 0 || dayAerobicsLogs.length > 0;
-
-            // 2. Water met
-            const dayDietsList = diets.filter(d => d.date === dayStr);
-            const dayWater = dayDietsList.reduce((acc, d) => acc + (d.waterIntake || 0), 0);
-            const targetWater = profile?.dailyWaterGoal || 2500;
-            const isWaterMet = dayWater >= targetWater;
-
-            // 3. Calories met: Ingested minus Aerobics Burned is <= Daily Goal (min 1 calorie logged)
-            const dayCalories = dayDietsList.reduce((acc, d) => 
-              acc + (d.meals?.reduce((mAcc: number, m: any) => mAcc + (m.calories || 0), 0) || 0), 0
-            );
-            const dayAerobics = aerobics.filter((a: any) => a.date === dayStr);
-            const dayBurned = dayAerobics.reduce((acc: number, a: any) => acc + (a.caloriesBurned || 0), 0);
-            const dayNetCalories = Math.max(0, dayCalories - dayBurned);
-            const isCalorieMet = dayCalories > 0 && dayNetCalories <= goalCalories;
-            
-            const isSelected = dayStr === selectedDate;
-            
-            return (
-              <button 
-                key={i} 
-                type="button"
-                onClick={() => setSelectedDate(dayStr)}
-                className={`flex flex-col items-center gap-1 p-1 rounded-2xl transition-all cursor-pointer border-0 w-full hover:bg-pink-50/40 relative active:scale-95 ${
-                  isSelected ? 'bg-pink-50 ring-1 ring-pink-200' : ''
-                }`}
-              >
-                <span className={`text-[8px] font-bold uppercase ${isToday ? 'text-pink-500' : 'text-zinc-400'}`}>
-                  {format(day, 'EEE', { locale: ptBR })}
-                </span>
-                <div 
-                  className={`w-full aspect-square rounded-xl border flex flex-col p-1 gap-0.5 overflow-hidden transition-all ${
-                    isToday ? 'border-[#ec4899] ring-2 ring-pink-100 bg-[#fffbfc]' : 'border-pink-100/80 bg-[#fffdfd]'
-                  } ${isSelected ? 'border-[#ec4899] ring-1 ring-[#ec4899] shadow-sm' : ''}`}
-                  title={`Treino: ${isWorkoutMet ? 'Ok' : 'Não'}; Água: ${dayWater}/${targetWater}ml; Calorias: ${dayCalories} (gasto ${dayBurned})`}
-                >
-                  <div className={`flex-1 rounded-sm transition-all ${isWorkoutMet ? 'bg-[#d4af37]' : 'bg-zinc-100/40'}`}></div>
-                  <div className={`flex-1 rounded-sm transition-all ${isWaterMet ? 'bg-[#38bdf8]' : 'bg-zinc-100/40'}`}></div>
-                  <div className={`flex-1 rounded-sm transition-all ${isCalorieMet ? 'bg-pink-500' : 'bg-zinc-100/40'}`}></div>
-                </div>
-                <span className="text-[8px] font-bold text-zinc-400">{format(day, 'd')}</span>
-              </button>
-            );
-          })}
-        </div>
-      </section>
-
+      </div>
     </div>
   );
 }
