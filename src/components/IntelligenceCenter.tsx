@@ -322,7 +322,7 @@ export default function IntelligenceCenter({ user, profile, setActiveTab, onOpen
   return (
     <div className="space-y-5 animate-fade-in pb-12">
       {/* ========================================================= */}
-      {/* TOP HEADER: ULTRA-COMPACT CENTRAL DE INTELIGÊNCIA           */}
+      {/* TOP HEADER: ULTRA-COMPACT CENTRAL DE APROVEITAMENTO        */}
       {/* ========================================================= */}
       <div className="bg-white rounded-2xl p-3.5 sm:p-4 border border-emerald-200/80 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         {/* Left: Clean Titles & Quick Stats */}
@@ -332,7 +332,7 @@ export default function IntelligenceCenter({ user, profile, setActiveTab, onOpen
               <BrainCircuit size={16} className="text-emerald-700" />
             </div>
             <h1 className="text-base font-black text-zinc-900 tracking-tight flex items-center gap-2">
-              Central de Inteligência
+              Central de Aproveitamento
               <span className="text-xs font-semibold text-zinc-500 font-normal">| Banca FUNECE</span>
             </h1>
           </div>
@@ -372,61 +372,6 @@ export default function IntelligenceCenter({ user, profile, setActiveTab, onOpen
               <span>Ger: <strong className="text-emerald-900">{aprovaçãoIndex.generalAvg}%</strong></span>
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* ========================================================= */}
-      {/* 10. RECOMENDAÇÃO AUTOMÁTICA DE ESTUDO (HOJE)             */}
-      {/* ========================================================= */}
-      <div className="bg-white rounded-2xl p-5 border border-emerald-100 shadow-xs space-y-4">
-        <div className="flex items-center justify-between pb-3 border-b border-zinc-100">
-          <div className="flex items-center gap-2">
-            <div className="p-2 bg-amber-100 text-amber-900 rounded-xl">
-              <Zap size={18} />
-            </div>
-            <div>
-              <h3 className="text-sm font-black text-zinc-900">Prioridades de Estudo Recomendadas Hoje</h3>
-              <p className="text-[11px] text-zinc-500">Mapeadas com base nas suas menores pontuações na FUNECE</p>
-            </div>
-          </div>
-
-          <button
-            onClick={() => setActiveTab('simulados')}
-            className="text-xs font-extrabold text-emerald-800 hover:text-emerald-950 flex items-center gap-1 cursor-pointer"
-          >
-            <span>Gerar Simulado Desses Tópicos</span>
-            <ChevronRight size={14} />
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {priorityRecommendations.map((priority, idx) => (
-            <div 
-              key={idx}
-              className="p-3.5 bg-zinc-50/80 rounded-xl border border-zinc-200 flex flex-col justify-between space-y-3 hover:border-emerald-300 transition"
-            >
-              <div className="space-y-1">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-extrabold px-2 py-0.5 bg-rose-100 text-rose-800 rounded-md">
-                    Prioridade {priority.priorityLevel}
-                  </span>
-                  <span className="text-xs font-black text-rose-700 bg-white px-2 py-0.5 rounded-lg border border-rose-200">
-                    {priority.pct}% acerto
-                  </span>
-                </div>
-                <h4 className="text-xs font-black text-zinc-900 line-clamp-2 pt-1">{priority.name}</h4>
-                <p className="text-[11px] text-zinc-500 font-medium">{priority.discipline}</p>
-              </div>
-
-              <button
-                onClick={() => setActiveTab('simulados')}
-                className="w-full py-1.5 bg-white hover:bg-emerald-50 text-emerald-900 border border-emerald-200 rounded-lg text-xs font-extrabold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
-              >
-                <BookOpen size={13} className="text-emerald-700" />
-                <span>Treinar Agora</span>
-              </button>
-            </div>
-          ))}
         </div>
       </div>
 

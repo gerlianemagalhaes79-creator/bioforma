@@ -41,8 +41,10 @@ export default function App() {
   const [profileModalTab, setProfileModalTab] = useState<'profile' | 'admin_users' | 'add_user'>('admin_users');
   const [showOnboardingModal, setShowOnboardingModal] = useState(false);
 
-  const handleOpenProfile = (tab: 'profile' | 'admin_users' | 'add_user' = 'admin_users') => {
-    setProfileModalTab(tab);
+  const handleOpenProfile = (tab?: 'profile' | 'admin_users' | 'add_user') => {
+    const isSuperAdmin = (user?.email || userProfile?.email || '').toLowerCase().trim() === 'gerlianemagalhaes79@gmail.com';
+    const targetTab = isSuperAdmin ? (tab || 'admin_users') : 'profile';
+    setProfileModalTab(targetTab);
     setShowProfileModal(true);
   };
 
@@ -115,12 +117,13 @@ export default function App() {
             }
           } else {
             // Create fresh profile
+            const isSuperAdmin = cleanEmail === 'gerlianemagalhaes79@gmail.com';
             const newProfile: UserProfile = {
               uid: currentUser.uid,
               name: currentUser.displayName || 'Professor(a)',
               email: cleanEmail,
-              role: 'admin',
-              isAdmin: true,
+              role: isSuperAdmin ? 'admin' : 'professor',
+              isAdmin: isSuperAdmin,
               targetSubject: 'Língua Portuguesa',
               degree: 'Licenciatura em Língua Portuguesa / Letras',
               dailyGoalMinutes: 180,
@@ -135,10 +138,13 @@ export default function App() {
             await setDoc(userRef, newProfile);
           }
         } else {
-          // If existing profile without role, ensure role is set
+          // Ensure role is set accurately
           const existingData = userSnap.data();
-          if (!existingData.role) {
+          const isSuperAdmin = cleanEmail === 'gerlianemagalhaes79@gmail.com';
+          if (isSuperAdmin && (!existingData.role || existingData.role !== 'admin')) {
             await setDoc(userRef, { role: 'admin', isAdmin: true }, { merge: true });
+          } else if (!isSuperAdmin && existingData.role === 'admin') {
+            await setDoc(userRef, { role: 'professor', isAdmin: false }, { merge: true });
           }
         }
 
@@ -270,7 +276,7 @@ export default function App() {
       user={user}
       logout={logout}
       streakDays={userProfile?.streakDays || 7}
-      onOpenProfile={() => handleOpenProfile('admin_users')}
+      onOpenProfile={() => handleOpenProfile()}
     >
       {/* Profile Modal */}
       {showProfileModal && (

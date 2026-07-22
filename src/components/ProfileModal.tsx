@@ -32,7 +32,10 @@ interface ProfileModalProps {
 }
 
 export default function ProfileModal({ user, profile, initialTab = 'admin_users', onClose, onRecadastrar }: ProfileModalProps) {
-  const [activeSubTab, setActiveSubTab] = useState<'profile' | 'admin_users' | 'add_user'>(initialTab);
+  const isSuperAdmin = (user?.email || profile?.email || '').toLowerCase().trim() === 'gerlianemagalhaes79@gmail.com';
+  const [activeSubTab, setActiveSubTab] = useState<'profile' | 'admin_users' | 'add_user'>(
+    isSuperAdmin ? initialTab : 'profile'
+  );
   
   // State for registering a new user (Admin mode)
   const [newUserName, setNewUserName] = useState('');
@@ -51,6 +54,7 @@ export default function ProfileModal({ user, profile, initialTab = 'admin_users'
 
   // Fetch users list from Firestore
   const fetchRegisteredUsers = async () => {
+    if (!isSuperAdmin) return;
     setLoadingUsers(true);
     try {
       const snap = await getDocs(collection(db, 'users'));
@@ -67,12 +71,18 @@ export default function ProfileModal({ user, profile, initialTab = 'admin_users'
   };
 
   useEffect(() => {
-    fetchRegisteredUsers();
-  }, []);
+    if (isSuperAdmin) {
+      fetchRegisteredUsers();
+    }
+  }, [isSuperAdmin]);
 
   // Handle Admin creating a new professor/user account
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isSuperAdmin) {
+      alert('Apenas o usuário gerlianemagalhaes79@gmail.com tem permissão para cadastrar novos professores.');
+      return;
+    }
     if (!newUserName.trim() || !newUserEmail.trim() || savingUser) return;
 
     setSavingUser(true);
@@ -169,15 +179,21 @@ export default function ProfileModal({ user, profile, initialTab = 'admin_users'
             />
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="px-2.5 py-0.5 rounded-full bg-amber-400 text-amber-950 text-[10px] font-black uppercase tracking-wider shadow-sm flex items-center gap-1">
-                  <ShieldCheck size={12} /> Perfil Administrador
-                </span>
+                {isSuperAdmin ? (
+                  <span className="px-2.5 py-0.5 rounded-full bg-amber-400 text-amber-950 text-[10px] font-black uppercase tracking-wider shadow-sm flex items-center gap-1">
+                    <ShieldCheck size={12} /> Perfil Administrador
+                  </span>
+                ) : (
+                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-500 text-white text-[10px] font-black uppercase tracking-wider shadow-sm flex items-center gap-1">
+                    <UserIcon size={12} /> Perfil do Professor
+                  </span>
+                )}
                 <span className="text-[10px] text-emerald-300 font-bold bg-emerald-500/20 border border-emerald-500/30 px-2 py-0.5 rounded-full">
-                  Gestão SEDUC CE 2026
+                  SEDUC CE 2026
                 </span>
               </div>
               <h2 className="text-lg sm:text-xl font-black text-white tracking-tight mt-1 truncate">
-                Prof. {profile?.name || user.displayName || 'Administrador'}
+                Prof. {profile?.name || user.displayName || 'Professor(a)'}
               </h2>
               <p className="text-xs text-emerald-200/90 flex items-center gap-1 mt-0.5 truncate">
                 <Mail size={12} /> {profile?.email || user.email}
@@ -186,41 +202,45 @@ export default function ProfileModal({ user, profile, initialTab = 'admin_users'
           </div>
 
           {/* Sub Navigation Tabs */}
-          <div className="flex items-center gap-1 mt-4 border-t border-emerald-800/80 pt-3 text-xs">
-            <button
-              onClick={() => setActiveSubTab('admin_users')}
-              className={`px-3.5 py-1.5 rounded-xl font-extrabold flex items-center gap-1.5 transition cursor-pointer ${
-                activeSubTab === 'admin_users'
-                  ? 'bg-amber-400 text-amber-950 shadow-sm'
-                  : 'text-emerald-200 hover:text-white hover:bg-white/10'
-              }`}
-            >
-              <Users size={15} />
-              <span>Professores Cadastrados ({registeredUsers.length})</span>
-            </button>
+          <div className="flex items-center gap-1 mt-4 border-t border-emerald-800/80 pt-3 text-xs overflow-x-auto">
+            {isSuperAdmin && (
+              <>
+                <button
+                  onClick={() => setActiveSubTab('admin_users')}
+                  className={`px-3.5 py-1.5 rounded-xl font-extrabold flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap ${
+                    activeSubTab === 'admin_users'
+                      ? 'bg-amber-400 text-amber-950 shadow-sm'
+                      : 'text-emerald-200 hover:text-white hover:bg-white/10'
+                  }`}
+                >
+                  <Users size={15} />
+                  <span>Professores Cadastrados ({registeredUsers.length})</span>
+                </button>
 
-            <button
-              onClick={() => setActiveSubTab('add_user')}
-              className={`px-3.5 py-1.5 rounded-xl font-extrabold flex items-center gap-1.5 transition cursor-pointer ${
-                activeSubTab === 'add_user'
-                  ? 'bg-amber-400 text-amber-950 shadow-sm'
-                  : 'text-emerald-200 hover:text-white hover:bg-white/10'
-              }`}
-            >
-              <UserPlus size={15} />
-              <span>Cadastrar Novo Professor</span>
-            </button>
+                <button
+                  onClick={() => setActiveSubTab('add_user')}
+                  className={`px-3.5 py-1.5 rounded-xl font-extrabold flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap ${
+                    activeSubTab === 'add_user'
+                      ? 'bg-amber-400 text-amber-950 shadow-sm'
+                      : 'text-emerald-200 hover:text-white hover:bg-white/10'
+                  }`}
+                >
+                  <UserPlus size={15} />
+                  <span>Cadastrar Novo Professor</span>
+                </button>
+              </>
+            )}
 
             <button
               onClick={() => setActiveSubTab('profile')}
-              className={`px-3.5 py-1.5 rounded-xl font-extrabold flex items-center gap-1.5 transition cursor-pointer ${
+              className={`px-3.5 py-1.5 rounded-xl font-extrabold flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap ${
                 activeSubTab === 'profile'
                   ? 'bg-white/20 text-white shadow-sm'
                   : 'text-emerald-200 hover:text-white hover:bg-white/10'
               }`}
             >
               <UserIcon size={15} />
-              <span>Meus Dados Admin</span>
+              <span>{isSuperAdmin ? 'Meus Dados Admin' : 'Meus Dados'}</span>
             </button>
           </div>
         </div>
@@ -228,7 +248,7 @@ export default function ProfileModal({ user, profile, initialTab = 'admin_users'
         {/* Modal Scrollable Body */}
         <div className="p-5 overflow-y-auto space-y-5 flex-1">
           {/* TAB 1: Lista de Professores Cadastrados pelo Admin */}
-          {activeSubTab === 'admin_users' && (
+          {isSuperAdmin && activeSubTab === 'admin_users' && (
             <div className="space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
@@ -329,7 +349,7 @@ export default function ProfileModal({ user, profile, initialTab = 'admin_users'
           )}
 
           {/* TAB 2: Form para Cadastrar Novo Professor */}
-          {activeSubTab === 'add_user' && (
+          {isSuperAdmin && activeSubTab === 'add_user' && (
             <form onSubmit={handleCreateUser} className="space-y-4">
               <div className="p-3 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-2.5 text-xs text-amber-900">
                 <Sparkles size={18} className="text-amber-600 shrink-0 mt-0.5" />
@@ -446,12 +466,12 @@ export default function ProfileModal({ user, profile, initialTab = 'admin_users'
             </form>
           )}
 
-          {/* TAB 3: Meus Dados de Administrador */}
-          {activeSubTab === 'profile' && (
+          {/* TAB 3: Meus Dados do Perfil */}
+          {(!isSuperAdmin || activeSubTab === 'profile') && (
             <div className="space-y-4">
               <div className="space-y-3">
                 <h3 className="text-xs font-black uppercase tracking-wider text-emerald-800 flex items-center gap-1.5">
-                  <ShieldCheck size={16} /> Seus Dados de Administrador
+                  <ShieldCheck size={16} /> {isSuperAdmin ? 'Seus Dados de Administrador' : 'Seus Dados do Perfil'}
                 </h3>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">

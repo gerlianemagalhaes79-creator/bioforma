@@ -322,11 +322,26 @@ ${topicPaths}
 A(s) questão(ões) deve(m) tratar APENAS desses conteúdos específicos.
 NÃO misture matérias não solicitadas. Se o assunto for extremamente específico (ex: "Fundamentos da Hereditariedade - Gene"), permaneça estritamente no conceito de Gene, Código Genético ou 1ª Lei de Mendel sem subir de nível nem ir para Ecologia ou Citologia.
 
-## BANCA EXAMINADORA: "${banca}"
-- Reproduza fielmente a linguagem, tamanho de enunciado e estrutura de cobrança da banca "${banca}".
-- Nível de dificuldade exigido: ${difficulty}.
-- Estilo do tipo de questão: ${questionType}.
-- Distratores plausíveis (troca de conceitos, troca de datas, troca de artigos da lei, generalizações, conceitos parcialmente verdadeiros, afirmações corretas fora do contexto).
+## BANCA EXAMINADORA: "${banca}" (ESTILO EXATO CEV/UECE - FUNECE)
+Você deve seguir estritamente o padrão da banca FUNECE (CEV-UECE), conforme demonstrado em suas provas oficiais para Professor da SEDUC-CE:
+
+1. **4 ALTERNATIVAS EXATAS (A, B, C, D)**: Todas as questões possuem exatamente 4 opções.
+2. **FORMATOS TÍPICOS DE QUESTÕES DA FUNECE**:
+   - **Afirmações Romanas**: "Atente para as seguintes afirmações: I. ... II. ... III. ... IV. ... Está correto o que se afirma em:" com opções como "A) I, II e III apenas.", "B) I e III apenas.", "C) II e IV apenas.", "D) I, II, III e IV.".
+   - **Verdadeiro ou Falso (V ou F)**: "Escreva V ou F conforme seja verdadeiro ou falso o que se afirma a seguir: ( ) ... ( ) ... ( ) ... A sequência correta, de cima para baixo, é:".
+   - **Associação de Colunas**: "Relacione a Coluna I com a Coluna II: Coluna I (1. X, 2. Y, 3. Z) - Coluna II ( ) ... ( ) ... A sequência correta, de cima para baixo, é:".
+   - **Excertos Citação / Texto-Base**: Trechos curtos de autores renomados, LDB, leis estaduais do Ceará ou reportagens, com fonte bibliográfica em linha separada, seguidos por "O excerto acima refere-se a:" ou "Com base no texto, é correto inferir que:".
+   - **Questões Diretas e Objetivas**: Sem enrolação. Comece direto no conceito ou caso prático ("Sobre X, é correto afirmar que", "À luz das normas da LDB nº 9.394/96, incumbe ao Estado do Ceará").
+3. **NÍVEL DE DIFICULDADE**: ${difficulty}.
+4. **ESTILO DO TIPO DE QUESTÃO**: ${questionType}.
+5. **DISTRATORES TIPICAMENTE FUNECE**:
+   - Troca sutil de prazos ou idades da lei (ex: "3 anos", "2 anos", "7 anos de idade").
+   - Uso de palavras restritivas ("exclusivamente", "independe do PPP", "único").
+   - Inversão de conceitos pares (ex: nicho realizado vs fundamental, complemento nominal vs adjunto adnominal, taxa bruta vs líquida).
+
+## REGRA DE FORMATO DO ENUNCIADO (SEM INTRODUÇÃO METATEXTUAL)
+- É STRICTAMENTE PROIBIDO incluir introduções metatextuais no enunciado da questão (ex: NUNCA comece com "Na prova de Conhecimentos Específicos...", "Para o concurso da SEDUC CE...", "Em provas da FUNECE...", "No bloco de...", etc.).
+- Comece o enunciado DIRETO com a pergunta, excerto, caso prático ou afirmação a ser julgada.
 
 ## ESTRUTURA OBRIGATÓRIA DO JSON
 Retorne um objeto JSON contendo a chave "questions" com um array de ${requestedCount} questões:

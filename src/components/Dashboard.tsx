@@ -98,16 +98,18 @@ export default function Dashboard({ user, profile, setActiveTab, onOpenProfile }
             {profile?.degree && <span className="text-xs text-emerald-200/80 block sm:inline sm:ml-1 font-medium">({profile.degree})</span>}
           </p>
 
-          <button
-            onClick={() => onOpenProfile && onOpenProfile('add_user')}
-            className="px-3 py-1.5 bg-amber-400 hover:bg-amber-300 text-amber-950 font-black rounded-xl text-xs transition flex items-center gap-1.5 shrink-0 shadow-sm cursor-pointer self-start sm:self-auto"
-          >
-            <span>+ Cadastrar Novo Professor</span>
-          </button>
+          {((user?.email || profile?.email || '').toLowerCase().trim() === 'gerlianemagalhaes79@gmail.com') && (
+            <button
+              onClick={() => onOpenProfile && onOpenProfile('add_user')}
+              className="px-3 py-1.5 bg-amber-400 hover:bg-amber-300 text-amber-950 font-black rounded-xl text-xs transition flex items-center gap-1.5 shrink-0 shadow-sm cursor-pointer self-start sm:self-auto"
+            >
+              <span>+ Cadastrar Novo Professor</span>
+            </button>
+          )}
         </div>
       </motion.div>
 
-      {/* Central de Inteligência do Candidato */}
+      {/* Central de Aproveitamento do Candidato */}
       <IntelligenceCenter 
         user={user} 
         profile={profile} 

@@ -428,41 +428,36 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
   return (
     <div className="space-y-5">
       {/* Top Header Banner */}
-      <div className="bg-white rounded-3xl p-5 border border-emerald-100 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="p-3 bg-gradient-to-br from-teal-700 to-emerald-800 text-white rounded-2xl shadow-xs">
-            <BrainCircuit size={24} />
+      <div className="bg-white rounded-2xl p-3.5 sm:p-4 border border-emerald-200/80 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5">
+          <div className="p-2 bg-emerald-100 text-emerald-900 rounded-xl">
+            <BrainCircuit size={18} className="text-emerald-700" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-base sm:text-lg font-black text-zinc-900">Motor de Simulados Inteligente</h2>
-              <span className="bg-emerald-100 text-emerald-800 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-                Padrão QConcursos
-              </span>
-            </div>
-            <p className="text-xs text-zinc-500">Geração de questões com isolamento estrito de assunto e profundidade do edital</p>
+            <h2 className="text-base font-black text-zinc-900 tracking-tight">Motor de Simulados</h2>
+            <p className="text-xs text-zinc-500">Questões por assunto calibradas no edital SEDUC-CE (Banca FUNECE)</p>
           </div>
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex items-center p-1 bg-zinc-100 rounded-2xl self-start md:self-auto">
+        <div className="flex items-center p-1 bg-zinc-100 rounded-xl self-start sm:self-auto shrink-0 border border-zinc-200/80">
           <button
             onClick={() => { setActiveTab('generator'); setActiveQuizQuestions(null); }}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-black transition cursor-pointer ${
-              activeTab === 'generator' ? 'bg-emerald-800 text-white shadow-xs' : 'text-zinc-600 hover:text-zinc-900'
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-extrabold transition cursor-pointer ${
+              activeTab === 'generator' ? 'bg-emerald-800 text-white shadow-2xs' : 'text-zinc-600 hover:text-zinc-900'
             }`}
           >
-            <Sparkles size={14} />
+            <Sparkles size={13} />
             Gerador por Assunto
           </button>
           <button
             onClick={() => { setActiveTab('bank'); setActiveQuizQuestions(null); }}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-black transition cursor-pointer ${
-              activeTab === 'bank' ? 'bg-emerald-800 text-white shadow-xs' : 'text-zinc-600 hover:text-zinc-900'
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-extrabold transition cursor-pointer ${
+              activeTab === 'bank' ? 'bg-emerald-800 text-white shadow-2xs' : 'text-zinc-600 hover:text-zinc-900'
             }`}
           >
-            <BookOpen size={14} />
-            Banco FUNECE
+            <BookOpen size={13} />
+            Banco de Questões
           </button>
         </div>
       </div>

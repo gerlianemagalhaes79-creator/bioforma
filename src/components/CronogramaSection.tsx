@@ -378,7 +378,7 @@ export default function CronogramaSection({ user, profile, setActiveTab }: Crono
           </div>
           <div class="dossier-item">
             <span class="dossier-label">Método Aplicado</span>
-            <span class="dossier-value">Interleaving + Curva Espaçada</span>
+            <span class="dossier-value">Interleaving (Estudo Intercalado)</span>
           </div>
           <div class="dossier-item">
             <span class="dossier-label">Estratégia de Prova</span>
@@ -422,12 +422,6 @@ export default function CronogramaSection({ user, profile, setActiveTab }: Crono
                   `).join('')}
                 </div>
               `).join('')}
-
-              ${day.reviewsDueToday && day.reviewsDueToday.length > 0 ? `
-                <div class="review-box">
-                  <strong>⚡ Revisão Espaçada Agendada:</strong> ${day.reviewsDueToday.map(r => `${r.type} (${r.parentTopicName})`).join(', ')}
-                </div>
-              ` : ''}
 
               <!-- Daily Execution Log Box -->
               <div class="day-tracker">
@@ -527,20 +521,11 @@ export default function CronogramaSection({ user, profile, setActiveTab }: Crono
               </span>
             </div>
             <p className="text-emerald-100/90 text-xs max-w-3xl font-medium leading-snug">
-              Consumo da <strong>Fila Única</strong>: 60-70% Específica • 20-30% Geral • 10-20% Revisão Espaçada + Questões dirigidas.
+              Consumo da <strong>Fila Única</strong>: 65% Conhecimentos Específicos • 35% Conhecimentos Gerais + Resolução de Questões dirigidas.
             </p>
           </div>
 
           <div className="flex items-center gap-2 no-print shrink-0">
-            <button
-              onClick={() => setShowQueueModal(!showQueueModal)}
-              className="bg-emerald-800 hover:bg-emerald-700 text-white font-extrabold px-3 py-1.5 rounded-lg text-xs flex items-center gap-1.5 border border-emerald-600 cursor-pointer shadow-xs transition"
-            >
-              <Layers size={14} className="text-amber-300" />
-              <span>Ver Fila Única ({interleavedQueue.length} Lotes)</span>
-              {showQueueModal ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-            </button>
-
             <button
               onClick={handlePrint}
               className="bg-white hover:bg-emerald-50 text-emerald-950 font-extrabold px-3 py-1.5 rounded-lg text-xs flex items-center gap-1.5 shadow-xs transition cursor-pointer"
@@ -551,61 +536,6 @@ export default function CronogramaSection({ user, profile, setActiveTab }: Crono
           </div>
         </div>
       </motion.div>
-
-      {/* PAINEL DA FILA ÚNICA DE ESTUDOS (COLLAPSIBLE / EXPANDABLE) */}
-      {showQueueModal && (
-        <motion.div
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: 'auto' }}
-          exit={{ opacity: 0, height: 0 }}
-          className="bg-zinc-900 text-white rounded-3xl p-6 border border-zinc-800 space-y-4 no-print shadow-xl"
-        >
-          <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
-            <div className="flex items-center gap-2">
-              <Layers className="text-amber-400" size={22} />
-              <div>
-                <h3 className="text-base font-black text-white">Fila Única de Estudos (Seqüência do Edital)</h3>
-                <p className="text-xs text-zinc-400">
-                  O sistema gerou uma fila sequencial sem repetir tópicos inteiros. O cronograma apenas consome esta fila diariamente.
-                </p>
-              </div>
-            </div>
-            <span className="text-xs font-bold text-amber-300 bg-amber-400/10 px-3 py-1 rounded-xl border border-amber-400/20">
-              Proporção 2 Específicos : 1 Geral
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 max-h-96 overflow-y-auto pr-2">
-            {interleavedQueue.map((item, idx) => (
-              <div 
-                key={item.id}
-                className={`p-3 rounded-2xl border text-xs space-y-1.5 ${
-                  item.type === 'especifico' 
-                    ? 'bg-teal-950/80 border-teal-800/80 text-teal-100' 
-                    : 'bg-emerald-950/80 border-emerald-800/80 text-emerald-100'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-md ${
-                    item.type === 'especifico' ? 'bg-teal-800 text-white' : 'bg-emerald-800 text-white'
-                  }`}>
-                    #{idx + 1} {item.type === 'especifico' ? 'Específica' : 'Geral'}
-                  </span>
-                  <span className="text-[10px] font-bold text-zinc-400 truncate max-w-[120px]">
-                    {item.subject}
-                  </span>
-                </div>
-                <p className="font-extrabold text-white leading-tight">
-                  {item.parentTopicName}
-                </p>
-                <p className="text-[10px] text-zinc-300 line-clamp-2 font-medium">
-                  Subtópicos: {item.subtopicNames.join(', ')}
-                </p>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-      )}
 
       {/* Main Schedule Container */}
       <div className="space-y-5" id="printable-cronograma-page">
@@ -625,11 +555,11 @@ export default function CronogramaSection({ user, profile, setActiveTab }: Crono
           </div>
         </div>
 
-        {/* Interleaving Triad Breakdown Card */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 no-print">
+        {/* Interleaving Breakdown Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 no-print">
           <div className="p-3.5 bg-teal-900 text-white rounded-xl space-y-0.5">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] uppercase font-black text-teal-300 tracking-wider">60% – 70% do Dia</span>
+              <span className="text-[10px] uppercase font-black text-teal-300 tracking-wider">65% do Tempo Diário</span>
               <span className="text-[11px] bg-teal-800 px-2 py-0.5 rounded-md font-extrabold">Específica</span>
             </div>
             <h4 className="font-extrabold text-xs text-white">Conteúdo Específico</h4>
@@ -640,23 +570,12 @@ export default function CronogramaSection({ user, profile, setActiveTab }: Crono
 
           <div className="p-3.5 bg-emerald-900 text-white rounded-xl space-y-0.5">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] uppercase font-black text-emerald-300 tracking-wider">20% – 30% do Dia</span>
+              <span className="text-[10px] uppercase font-black text-emerald-300 tracking-wider">35% do Tempo Diário</span>
               <span className="text-[11px] bg-emerald-800 px-2 py-0.5 rounded-md font-extrabold">Geral</span>
             </div>
             <h4 className="font-extrabold text-xs text-white">Conteúdo Geral (Intercalado)</h4>
             <p className="text-[11px] text-emerald-200/90 leading-snug">
               Português (FUNECE), Didática e Legislação CE.
-            </p>
-          </div>
-
-          <div className="p-3.5 bg-amber-950 text-white rounded-xl space-y-0.5 border border-amber-800/60">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] uppercase font-black text-amber-300 tracking-wider">10% – 20% do Dia</span>
-              <span className="text-[11px] bg-amber-900 text-amber-200 px-2 py-0.5 rounded-md font-extrabold">Revisão</span>
-            </div>
-            <h4 className="font-extrabold text-xs text-amber-200">Revisão Espaçada</h4>
-            <p className="text-[11px] text-amber-100/90 leading-snug">
-              Ciclos de 24h, 7d e 30d com metas de questões.
             </p>
           </div>
         </div>
@@ -669,7 +588,7 @@ export default function CronogramaSection({ user, profile, setActiveTab }: Crono
               Cronograma Diário de Aprendizagem Intercalada
             </h3>
             <span className="text-xs font-semibold text-zinc-500 italic">
-              Dias balanceados com Específica + Geral + Revisão
+              Dias balanceados com Específica + Geral
             </span>
           </div>
 
@@ -764,29 +683,6 @@ export default function CronogramaSection({ user, profile, setActiveTab }: Crono
                       </div>
                     ))}
                   </div>
-
-                  {/* SEÇÃO DE REVISÃO */}
-                  {day.reviewsDueToday && day.reviewsDueToday.length > 0 && (
-                    <div className="pt-1.5 border-t border-zinc-100 space-y-1">
-                      <p className="text-[10px] font-black uppercase text-amber-900 tracking-wider flex items-center gap-1">
-                        <RotateCcw size={11} className="text-amber-700" />
-                        Revisão Espaçada:
-                      </p>
-
-                      <div className="space-y-1">
-                        {day.reviewsDueToday.map((rev, rIdx) => (
-                          <div key={rIdx} className="bg-amber-50/80 border border-amber-200/80 rounded-lg p-1.5 text-[11px] text-amber-950 flex items-center justify-between gap-2">
-                            <span className="font-extrabold text-[9px] uppercase bg-amber-200 text-amber-950 px-1.5 py-0.5 rounded-md shrink-0">
-                              {rev.type} (Dia {rev.fromDayNumber})
-                            </span>
-                            <span className="font-bold text-amber-900 truncate">
-                              {rev.parentTopicName}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
             ))}

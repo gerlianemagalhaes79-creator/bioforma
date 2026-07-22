@@ -449,7 +449,7 @@ export const SEDUC_QUESTIONS: Question[] = [
     subject: 'Conhecimentos Específicos',
     topic: 'Metodologias e Didática Específica',
     banca: 'FUNECE',
-    questionText: 'Na prova de Conhecimentos Específicos (responsável por 50 das 80 questões do concurso SEDUC CE), a CEV/UECE exige que a componente curricular dialogue com os itinerários formativos do Ensino Médio. Em relação ao planejamento de ensino por competências e habilidades, assinale a opção correta:',
+    questionText: 'A CEV/UECE exige que a componente curricular dialogue com os itinerários formativos do Ensino Médio. Em relação ao planejamento de ensino por competências e habilidades, assinale a opção correta:',
     options: [
       { letter: 'A', text: 'O ensino por competências elimina a necessidade de conteúdos conceituais na área de conhecimento.' },
       { letter: 'B', text: 'A avaliação específica deve integrar saberes científicos com a resolução de problemas do cotidiano do estudante cearense.' },
@@ -469,7 +469,7 @@ export const SEDUC_QUESTIONS: Question[] = [
     subject: 'Educação Brasileira: Temas Educacionais e Pedagógicos',
     topic: 'LDB nº 9.394/96',
     banca: 'FUNECE',
-    questionText: 'Em provas elaboradas pela FUNECE para o magistério estadual do Ceará (seção de Temas Educacionais e Pedagógicos), cobra-se com rigor a LDB nº 9.394/96. Segundo o Artigo 13 da LDB, assinale a alternativa que NÃO constitui uma incumbência legal atribuída diretamente aos docentes:',
+    questionText: 'Segundo o Artigo 13 da LDB nº 9.394/96, assinale a alternativa que NÃO constitui uma incumbência legal atribuída diretamente aos docentes:',
     options: [
       { letter: 'A', text: 'Elaborar e cumprir plano de trabalho, segundo a proposta pedagógica do estabelecimento de ensino.' },
       { letter: 'B', text: 'Zelar pela aprendizagem dos alunos e estabelecer estratégias de recuperação para os de menor rendimento.' },
@@ -489,7 +489,7 @@ export const SEDUC_QUESTIONS: Question[] = [
     subject: 'Língua Portuguesa',
     topic: 'Sintaxe e Crase',
     banca: 'FUNECE',
-    questionText: 'Na tradição de provas da FUNECE / CEV-UECE (seção de Língua Portuguesa), a regência e o uso do sinal indicativo de crase são recorrentes. Examine: "A diretora da EEMTI dirigiu-se ___ comunidade para apresentar ___ diretrizes pedagógicas e dar suporte ___ famílias." Qual opção preenche corretamente as lacunas?',
+    questionText: 'Examine: "A diretora da EEMTI dirigiu-se ___ comunidade para apresentar ___ diretrizes pedagógicas e dar suporte ___ famílias." Qual opção preenche corretamente as lacunas quanto à regência e ao uso do sinal indicativo de crase?',
     options: [
       { letter: 'A', text: 'à – as – às' },
       { letter: 'B', text: 'a – às – as' },
@@ -509,7 +509,7 @@ export const SEDUC_QUESTIONS: Question[] = [
     subject: 'Leitura e Interpretação de Dados e Indicadores Educacionais',
     topic: 'SPAECE e Indicadores da SEDUC',
     banca: 'FUNECE',
-    questionText: 'No bloco de "Leitura e Interpretação de Dados e Indicadores Educacionais" (8 questões na prova SEDUC CE), a FUNECE avalia a capacidade do professor de analisar os resultados do SPAECE (Sistema de Avaliação da Educação Básica do Ceará). Um gráfico do SPAECE revela que 75% dos alunos de uma escola de Ensino Médio atingiram o nível "Adequado" em proficiência. Com base nesse dado estatístico, é correto inferir:',
+    questionText: 'Um relatório do SPAECE (Sistema de Avaliação da Educação Básica do Ceará) revela que 75% dos alunos de uma escola de Ensino Médio atingiram o nível "Adequado" em proficiência. Com base nesse dado estatístico, é correto inferir:',
     options: [
       { letter: 'A', text: 'Todos os alunos da escola dominam 100% dos descritores da matriz de referência do SPAECE.' },
       { letter: 'B', text: 'A maioria absoluta (três quartos) dos estudantes avaliados demonstrou as competências consolidadas esperadas para a etapa.' },
@@ -529,7 +529,7 @@ export const SEDUC_QUESTIONS: Question[] = [
     subject: 'Administração Pública',
     topic: 'Estatuto do Magistério do CE',
     banca: 'CEV/UECE',
-    questionText: 'Na disciplina de Administração Pública (6 questões no concurso da SEDUC CE), destaca-se a legislação do servidor público cearense. Conforme a Lei Estadual nº 10.884/84 (Estatuto do Magistério do Ceará) e a CF/88, sobre o estágio probatório do professor estadual, assinale a opção correta:',
+    questionText: 'Conforme a Lei Estadual nº 10.884/84 (Estatuto do Magistério do Ceará) e a CF/88, sobre o estágio probatório do professor estadual, assinale a opção correta:',
     options: [
       { letter: 'A', text: 'O estágio probatório possui prazo de 2 (dois) anos, dispensando comissão de avaliação.' },
       { letter: 'B', text: 'O estágio probatório cumpre-se em 3 (três) anos de efetivo exercício, condicionado à avaliação especial de desempenho.' },
@@ -885,58 +885,13 @@ export function generateStudySchedule(
 
     historyByDay[dayNum] = dayStudiedSessions;
 
-    // --- REVISÃO ESPAÇADA ---
-    const reviewsDueToday: {
-      type: 'Revisão 24h' | 'Revisão 7d' | 'Revisão 30d';
-      fromDayNumber: number;
-      subtopics: string[];
-      parentTopicName: string;
-      blockName: string;
-    }[] = [];
-
-    if (dayNum > 1 && historyByDay[dayNum - 1]) {
-      historyByDay[dayNum - 1].forEach(prev => {
-        reviewsDueToday.push({
-          type: 'Revisão 24h',
-          fromDayNumber: dayNum - 1,
-          subtopics: prev.subtopics,
-          parentTopicName: prev.parentTopicName,
-          blockName: prev.blockName
-        });
-      });
-    }
-
-    if (dayNum > 7 && historyByDay[dayNum - 7]) {
-      historyByDay[dayNum - 7].forEach(prev => {
-        reviewsDueToday.push({
-          type: 'Revisão 7d',
-          fromDayNumber: dayNum - 7,
-          subtopics: prev.subtopics,
-          parentTopicName: prev.parentTopicName,
-          blockName: prev.blockName
-        });
-      });
-    }
-
-    if (dayNum > 30 && historyByDay[dayNum - 30]) {
-      historyByDay[dayNum - 30].forEach(prev => {
-        reviewsDueToday.push({
-          type: 'Revisão 30d',
-          fromDayNumber: dayNum - 30,
-          subtopics: prev.subtopics,
-          parentTopicName: prev.parentTopicName,
-          blockName: prev.blockName
-        });
-      });
-    }
-
     scheduleDays.push({
       dateStr,
       displayDate: dayFormatted,
       dayNumber: dayNum,
       timeSlotFormatted: `${hours}h/dia`,
       topics: dayTopicsList,
-      reviewsDueToday
+      reviewsDueToday: []
     });
   }
 
