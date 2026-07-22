@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { User, db, doc, setDoc } from '../firebase';
+import React, { useState, useEffect } from 'react';
+import { User, db, doc, setDoc, collection, query, where, getDocs } from '../firebase';
 import { UserProfile, EditalBlock, EditalTopicItem, EditalSubtopic, TopicStatus, GeneralCategoryKey } from '../types';
 import { OFFICIAL_EDITAL_TREE, getBlocksForDegree } from '../data/seducData';
 import { 
@@ -16,7 +16,11 @@ import {
   FileText,
   Layers,
   Search,
-  Award
+  Award,
+  Highlighter,
+  CheckSquare,
+  Square,
+  BarChart2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -35,7 +39,7 @@ export default function EditalSection({ user, profile, setActiveTab }: EditalSec
     'Educação Brasileira: Temas Educacionais e Pedagógicos'
   );
 
-  // Estados de Expansão de Blocos e Tópicos
+  // Estados de Expansão de Blocos e Tópicos (Tópicos começam FECHADOS por padrão)
   const [expandedBlocks, setExpandedBlocks] = useState<Record<string, boolean>>({});
   const [expandedTopics, setExpandedTopics] = useState<Record<string, boolean>>({});
 
@@ -44,6 +48,32 @@ export default function EditalSection({ user, profile, setActiveTab }: EditalSec
   const [searchTerm, setSearchTerm] = useState('');
 
   const userDegree = profile?.degree || profile?.targetSubject || 'Licenciatura em Língua Portuguesa / Letras';
+
+  // Carregar progresso salvo do Firestore / LocalStorage no carregamento
+  useEffect(() => {
+    const loadProgress = async () => {
+      if (!user?.uid) return;
+      try {
+        const q = query(collection(db, 'studyProgress'), where('uid', '==', user.uid));
+        const querySnapshot = await getDocs(q);
+        const newStatusMap: Record<string, TopicStatus> = {};
+        querySnapshot.forEach((docSnap) => {
+          const data = docSnap.data();
+          if (data.itemId && data.status) {
+            newStatusMap[data.itemId] = data.status as TopicStatus;
+          }
+        });
+        setStatusMap(newStatusMap);
+      } catch (err) {
+        console.warn('Erro ao carregar progresso:', err);
+        try {
+          const local = localStorage.getItem(`studyProgress_${user.uid}`);
+          if (local) setStatusMap(JSON.parse(local));
+        } catch (_) {}
+      }
+    };
+    loadProgress();
+  }, [user?.uid]);
 
   const toggleBlock = (blockId: string) => {
     setExpandedBlocks(prev => ({ ...prev, [blockId]: !prev[blockId] }));
@@ -54,7 +84,16 @@ export default function EditalSection({ user, profile, setActiveTab }: EditalSec
   };
 
   const handleStatusUpdate = async (id: string, newStatus: TopicStatus) => {
-    setStatusMap(prev => ({ ...prev, [id]: newStatus }));
+    setStatusMap(prev => {
+      const updated = { ...prev, [id]: newStatus };
+      try {
+        if (user?.uid) {
+          localStorage.setItem(`studyProgress_${user.uid}`, JSON.stringify(updated));
+        }
+      } catch (_) {}
+      return updated;
+    });
+
     try {
       const userProgressRef = doc(db, 'studyProgress', `${user.uid}_${id}`);
       await setDoc(userProgressRef, {
@@ -72,6 +111,28 @@ export default function EditalSection({ user, profile, setActiveTab }: EditalSec
     return statusMap[id] || defaultStatus;
   };
 
+  const handleToggleGrifarSubtopic = (id: string, currentStatus: TopicStatus) => {
+    const isGrifado = currentStatus === 'mastered' || currentStatus === 'reviewed' || currentStatus === 'in_progress';
+    const nextStatus: TopicStatus = isGrifado ? 'not_started' : 'mastered';
+    handleStatusUpdate(id, nextStatus);
+  };
+
+  const handleToggleGrifarTopicAll = (topic: EditalTopicItem) => {
+    const subList = topic.subtopics.length > 0 
+      ? topic.subtopics 
+      : [{ id: topic.id, name: topic.name, status: topic.status || 'not_started' }];
+
+    const allGrifado = subList.every(s => ['mastered', 'reviewed'].includes(getItemStatus(s.id, s.status)));
+    const targetStatus: TopicStatus = allGrifado ? 'not_started' : 'mastered';
+
+    subList.forEach(s => {
+      handleStatusUpdate(s.id, targetStatus);
+    });
+    if (topic.subtopics.length > 0) {
+      handleStatusUpdate(topic.id, targetStatus);
+    }
+  };
+
   const handlePrintEdital = () => {
     window.print();
   };
@@ -87,32 +148,111 @@ export default function EditalSection({ user, profile, setActiveTab }: EditalSec
 
   const currentBlocks = getCurrentBlocks();
 
-  // estatísticas
-  let totalSubtopicsCount = 0;
-  let masteredSubtopicsCount = 0;
+  // Função auxiliar para calcular peso de um status
+  const getStatusWeight = (status: TopicStatus): number => {
+    if (status === 'mastered' || status === 'reviewed') return 1.0;
+    if (status === 'in_progress') return 0.5;
+    return 0;
+  };
 
-  const countSubtopics = (blocksList: EditalBlock[]) => {
-    blocksList.forEach(b => {
-      b.topics.forEach(t => {
-        t.subtopics.forEach(st => {
-          totalSubtopicsCount++;
-          const stStatus = getItemStatus(st.id, st.status);
-          if (stStatus === 'mastered' || stStatus === 'reviewed') {
-            masteredSubtopicsCount++;
-          }
+  // Cálculo de Porcentagem de Tópico
+  const getTopicStats = (topic: EditalTopicItem) => {
+    if (!topic.subtopics || topic.subtopics.length === 0) {
+      const st = getItemStatus(topic.id, topic.status || 'not_started');
+      const weight = getStatusWeight(st);
+      const isDone = st === 'mastered' || st === 'reviewed';
+      return { total: 1, completed: isDone ? 1 : 0, percentage: Math.round(weight * 100) };
+    }
+    const total = topic.subtopics.length;
+    let weightSum = 0;
+    let completedCount = 0;
+    topic.subtopics.forEach(s => {
+      const st = getItemStatus(s.id, s.status || 'not_started');
+      weightSum += getStatusWeight(st);
+      if (st === 'mastered' || st === 'reviewed') {
+        completedCount++;
+      }
+    });
+    const percentage = total > 0 ? Math.round((weightSum / total) * 100) : 0;
+    return { total, completed: completedCount, percentage };
+  };
+
+  // Cálculo de Porcentagem de Bloco
+  const getBlockStats = (block: EditalBlock) => {
+    let totalSubtopics = 0;
+    let weightSum = 0;
+    let completedCount = 0;
+
+    block.topics.forEach(t => {
+      if (!t.subtopics || t.subtopics.length === 0) {
+        totalSubtopics += 1;
+        const st = getItemStatus(t.id, t.status || 'not_started');
+        weightSum += getStatusWeight(st);
+        if (st === 'mastered' || st === 'reviewed') completedCount++;
+      } else {
+        totalSubtopics += t.subtopics.length;
+        t.subtopics.forEach(s => {
+          const st = getItemStatus(s.id, s.status || 'not_started');
+          weightSum += getStatusWeight(st);
+          if (st === 'mastered' || st === 'reviewed') completedCount++;
         });
+      }
+    });
+
+    const percentage = totalSubtopics > 0 ? Math.round((weightSum / totalSubtopics) * 100) : 0;
+    return { total: totalSubtopics, completed: completedCount, percentage };
+  };
+
+  // Cálculo do Progresso Geral do Edital e da Área Ativa
+  let globalTotalSubtopics = 0;
+  let globalWeightSum = 0;
+  let globalCompleted = 0;
+
+  const accumBlocksStats = (blocksList: EditalBlock[]) => {
+    blocksList.forEach(b => {
+      const stats = getBlockStats(b);
+      globalTotalSubtopics += stats.total;
+      globalCompleted += stats.completed;
+      b.topics.forEach(t => {
+        if (!t.subtopics || t.subtopics.length === 0) {
+          globalWeightSum += getStatusWeight(getItemStatus(t.id, t.status));
+        } else {
+          t.subtopics.forEach(s => {
+            globalWeightSum += getStatusWeight(getItemStatus(s.id, s.status));
+          });
+        }
       });
     });
   };
 
-  countSubtopics(getBlocksForDegree(userDegree));
+  accumBlocksStats(getBlocksForDegree(userDegree));
   (Object.keys(OFFICIAL_EDITAL_TREE.geral) as GeneralCategoryKey[]).forEach(key => {
-    countSubtopics(OFFICIAL_EDITAL_TREE.geral[key]);
+    accumBlocksStats(OFFICIAL_EDITAL_TREE.geral[key]);
   });
 
-  const overallProgress = totalSubtopicsCount > 0 
-    ? Math.round((masteredSubtopicsCount / totalSubtopicsCount) * 100) 
+  const overallProgress = globalTotalSubtopics > 0 
+    ? Math.round((globalWeightSum / globalTotalSubtopics) * 100) 
     : 0;
+
+  // Porcentagem da Área Atual
+  let areaTotal = 0;
+  let areaWeightSum = 0;
+  let areaCompleted = 0;
+  currentBlocks.forEach(b => {
+    const bStats = getBlockStats(b);
+    areaTotal += bStats.total;
+    areaCompleted += bStats.completed;
+    b.topics.forEach(t => {
+      if (!t.subtopics || t.subtopics.length === 0) {
+        areaWeightSum += getStatusWeight(getItemStatus(t.id, t.status));
+      } else {
+        t.subtopics.forEach(s => {
+          areaWeightSum += getStatusWeight(getItemStatus(s.id, s.status));
+        });
+      }
+    });
+  });
+  const currentAreaProgress = areaTotal > 0 ? Math.round((areaWeightSum / areaTotal) * 100) : 0;
 
   const getStatusBadge = (status: TopicStatus) => {
     switch (status) {
@@ -137,7 +277,7 @@ export default function EditalSection({ user, profile, setActiveTab }: EditalSec
   return (
     <div className="space-y-4 print:space-y-2">
       {/* Edital Banner */}
-      <div className="bg-white rounded-3xl p-5 border border-emerald-100 shadow-xs space-y-3 print:border-none print:shadow-none print:p-0">
+      <div className="bg-white rounded-3xl p-5 border border-emerald-100 shadow-xs space-y-4 print:border-none print:shadow-none print:p-0">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-emerald-700 text-white rounded-2xl shadow-xs print:hidden">
@@ -151,34 +291,65 @@ export default function EditalSection({ user, profile, setActiveTab }: EditalSec
                 <span className="text-[10px] font-bold text-zinc-500">100% Oficial</span>
               </div>
               <h2 className="text-base font-black text-zinc-900">Conteúdo Programático do Edital</h2>
-              <p className="text-xs text-zinc-500">Hierarquia Obrigatória: Área → Bloco → Tópico → Subtópico</p>
+              <p className="text-xs text-zinc-500">Grife os tópicos para acompanhar sua porcentagem de conclusão</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 print:hidden">
+          <div className="flex items-center gap-4 print:hidden">
             <button
               onClick={handlePrintEdital}
               className="px-3 py-2 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border border-zinc-200 cursor-pointer"
               title="Imprimir ou Salvar Edital em PDF"
             >
               <Printer size={15} />
-              <span>Imprimir Documento</span>
+              <span>Imprimir</span>
             </button>
             <div className="text-right">
-              <p className="text-[10px] font-extrabold text-zinc-400 uppercase">Domínio Total</p>
+              <p className="text-[10px] font-extrabold text-zinc-400 uppercase">Edital Completo</p>
               <p className="text-xl font-black text-emerald-700">{overallProgress}%</p>
             </div>
           </div>
         </div>
 
-        {/* Global Progress Bar */}
-        <div className="w-full bg-zinc-100 rounded-full h-2.5 overflow-hidden p-0.5 border border-zinc-200 print:hidden">
-          <motion.div 
-            initial={{ width: 0 }}
-            animate={{ width: `${overallProgress}%` }}
-            transition={{ duration: 0.8 }}
-            className="bg-gradient-to-r from-emerald-600 via-teal-500 to-green-600 h-1.5 rounded-full"
-          />
+        {/* Dynamic Progress Bars */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 print:hidden">
+          {/* Active Area Progress */}
+          <div className="p-3 bg-emerald-50/70 border border-emerald-200/80 rounded-2xl space-y-1.5">
+            <div className="flex items-center justify-between text-xs font-bold text-emerald-950">
+              <span className="flex items-center gap-1.5">
+                <Highlighter size={14} className="text-emerald-700" />
+                <span>Área Ativa: {currentAreaProgress}% concluído</span>
+              </span>
+              <span className="text-[11px] font-extrabold text-emerald-800">{areaCompleted}/{areaTotal} tópicos</span>
+            </div>
+            <div className="w-full bg-emerald-200/60 rounded-full h-2 overflow-hidden">
+              <motion.div 
+                initial={{ width: 0 }}
+                animate={{ width: `${currentAreaProgress}%` }}
+                transition={{ duration: 0.6 }}
+                className="bg-emerald-700 h-2 rounded-full"
+              />
+            </div>
+          </div>
+
+          {/* Overall Progress */}
+          <div className="p-3 bg-zinc-50 border border-zinc-200 rounded-2xl space-y-1.5">
+            <div className="flex items-center justify-between text-xs font-bold text-zinc-800">
+              <span className="flex items-center gap-1.5">
+                <BarChart2 size={14} className="text-zinc-600" />
+                <span>Domínio Total do Edital: {overallProgress}%</span>
+              </span>
+              <span className="text-[11px] font-extrabold text-zinc-500">{globalCompleted}/{globalTotalSubtopics} tópicos</span>
+            </div>
+            <div className="w-full bg-zinc-200 rounded-full h-2 overflow-hidden">
+              <motion.div 
+                initial={{ width: 0 }}
+                animate={{ width: `${overallProgress}%` }}
+                transition={{ duration: 0.6 }}
+                className="bg-gradient-to-r from-teal-600 to-emerald-600 h-2 rounded-full"
+              />
+            </div>
+          </div>
         </div>
       </div>
 
@@ -197,7 +368,7 @@ export default function EditalSection({ user, profile, setActiveTab }: EditalSec
             <span className="uppercase tracking-wider">1. CONTEÚDO ESPECÍFICO</span>
           </div>
           <span className={`text-[10px] font-medium ${activeMainCategory === 'especifico' ? 'text-emerald-100' : 'text-zinc-500'}`}>
-            50 Questões • Peso 62,5% • {userDegree}
+            50 Questões • Peso 62,5% • Conhecimentos Específicos
           </span>
         </button>
 
@@ -221,26 +392,26 @@ export default function EditalSection({ user, profile, setActiveTab }: EditalSec
 
       {/* Se no MODO GERAL: Seleção das 4 Áreas Oficiais */}
       {activeMainCategory === 'geral' && (
-        <div className="bg-white rounded-2xl p-3 border border-emerald-100 shadow-xs space-y-2 print:hidden">
-          <p className="text-[10px] font-black uppercase text-zinc-400 tracking-wider">
-            Selecione a Área de Conhecimento Geral:
+        <div className="bg-white rounded-2xl p-4 border border-emerald-100 shadow-xs space-y-3 print:hidden">
+          <p className="text-xs font-black uppercase text-emerald-950 tracking-wider">
+            SELECIONE A ÁREA DE CONHECIMENTO GERAL:
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {generalAreaKeys.map((area) => {
               const isSelected = selectedGeneralArea === area;
               return (
                 <button
                   key={area}
                   onClick={() => setSelectedGeneralArea(area)}
-                  className={`p-2.5 rounded-xl text-left text-xs font-extrabold transition-all border cursor-pointer ${
+                  className={`p-3 rounded-xl text-left text-xs font-extrabold transition-all border cursor-pointer ${
                     isSelected 
-                      ? 'bg-emerald-50 text-emerald-900 border-emerald-300 shadow-2xs' 
-                      : 'bg-zinc-50/70 text-zinc-600 hover:bg-zinc-100 border-zinc-200'
+                      ? 'bg-emerald-800 text-white border-emerald-900 shadow-xs font-black' 
+                      : 'bg-zinc-50 text-zinc-700 hover:bg-emerald-50 hover:text-emerald-900 border-zinc-200'
                   }`}
                 >
-                  <div className="flex items-center justify-between">
-                    <span>{area}</span>
-                    {isSelected && <CheckCircle2 size={14} className="text-emerald-600 shrink-0" />}
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="leading-snug">{area}</span>
+                    {isSelected && <CheckCircle2 size={16} className="text-emerald-300 shrink-0" />}
                   </div>
                 </button>
               );
@@ -257,12 +428,12 @@ export default function EditalSection({ user, profile, setActiveTab }: EditalSec
             <BookOpen size={16} className="text-emerald-400" />
             <span className="text-xs font-black uppercase tracking-wider">
               {activeMainCategory === 'especifico' 
-                ? `Área: Conhecimentos Específicos (${userDegree})` 
+                ? 'Área: Conhecimentos Específicos' 
                 : `Área: ${selectedGeneralArea}`}
             </span>
           </div>
           <span className="text-[10px] font-extrabold text-emerald-300 bg-emerald-950 px-2 py-0.5 rounded-md border border-emerald-800">
-            {currentBlocks.length} Blocos
+            {currentBlocks.length} Blocos • {currentAreaProgress}% Grifado
           </span>
         </div>
 
@@ -280,8 +451,9 @@ export default function EditalSection({ user, profile, setActiveTab }: EditalSec
 
         {/* Renderização de Blocos */}
         {currentBlocks.map((block, blockIndex) => {
-          const isBlockOpen = expandedBlocks[block.id] !== false; // por padrão aberto
-          
+          const isBlockOpen = expandedBlocks[block.id] !== false; // blocos abertos por padrão
+          const blockStats = getBlockStats(block);
+
           return (
             <div 
               key={block.id}
@@ -300,9 +472,10 @@ export default function EditalSection({ user, profile, setActiveTab }: EditalSec
                     {block.name}
                   </h3>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md">
-                    {block.topics.length} Tópicos
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-[10px] font-black text-emerald-800 bg-emerald-100 px-2.5 py-1 rounded-lg border border-emerald-200">
+                    {blockStats.percentage}% Concluído ({blockStats.completed}/{blockStats.total})
                   </span>
                   {isBlockOpen ? <ChevronDown size={16} className="text-zinc-500" /> : <ChevronRight size={16} className="text-zinc-500" />}
                 </div>
@@ -314,57 +487,78 @@ export default function EditalSection({ user, profile, setActiveTab }: EditalSec
                   {block.topics
                     .filter(t => !searchTerm || t.name.toLowerCase().includes(searchTerm.toLowerCase()) || t.subtopics.some(s => s.name.toLowerCase().includes(searchTerm.toLowerCase())))
                     .map((topic, topicIndex) => {
-                      const isTopicOpen = expandedTopics[topic.id] !== false;
+                      // TÓPICOS FECHADOS POR PADRÃO: só abre se estiver explicitamente em expandedTopics
+                      const isTopicOpen = !!expandedTopics[topic.id];
+                      const topicStats = getTopicStats(topic);
                       const topicStatus = getItemStatus(topic.id, topic.status || 'not_started');
 
                       return (
                         <div key={topic.id} className="pt-2.5 first:pt-0 space-y-2">
-                          {/* TÓPICO HEADER */}
-                          <div className="flex items-start justify-between gap-2">
+                          {/* TÓPICO HEADER (Clique para expandir) */}
+                          <div className="flex items-start justify-between gap-2 bg-zinc-50/80 hover:bg-emerald-50/40 p-2.5 rounded-xl transition-colors">
                             <button
                               onClick={() => toggleTopic(topic.id)}
-                              className="text-left flex items-start gap-2 hover:text-emerald-700 transition-colors cursor-pointer group flex-1"
+                              className="text-left flex items-start gap-2 transition-colors cursor-pointer group flex-1 min-w-0"
                             >
-                              <span className="text-[11px] font-black text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded mt-0.5 shrink-0 border border-emerald-100">
+                              <span className="text-[11px] font-black text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-md shrink-0 border border-emerald-200 mt-0.5">
                                 {blockIndex + 1}.{topicIndex + 1}
                               </span>
-                              <div>
-                                <h4 className="font-extrabold text-xs text-zinc-900 group-hover:text-emerald-800 leading-snug">
+                              <div className="min-w-0 flex-1">
+                                <h4 className="font-extrabold text-xs text-zinc-900 group-hover:text-emerald-800 leading-normal break-words">
                                   {topic.name}
                                 </h4>
-                                <p className="text-[10px] text-zinc-500 font-medium">
-                                  {topic.subtopics.length} subtópicos mapeados
+                                <p className="text-[10px] text-zinc-500 font-medium mt-0.5">
+                                  {topic.subtopics.length} subtópicos • {topicStats.percentage}% concluído
                                 </p>
                               </div>
                             </button>
 
-                            <div className="flex items-center gap-1.5 shrink-0">
-                              {getStatusBadge(topicStatus)}
+                            <div className="flex items-center gap-2 shrink-0 mt-0.5">
                               <button
                                 onClick={() => toggleTopic(topic.id)}
-                                className="p-1 hover:bg-zinc-100 rounded cursor-pointer text-zinc-400"
+                                className="flex items-center gap-1 px-2.5 py-1 bg-zinc-100 hover:bg-zinc-200 rounded-lg text-[11px] font-bold text-zinc-600 cursor-pointer transition"
                               >
+                                <span>{isTopicOpen ? 'Ocultar subtópicos' : 'Ver subtópicos'}</span>
                                 {isTopicOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                               </button>
                             </div>
                           </div>
 
-                          {/* SUBTÓPICOS DO TÓPICO */}
+                          {/* SUBTÓPICOS DO TÓPICO (Visíveis apenas quando aberto) */}
                           {isTopicOpen && (
-                            <div className="pl-4 sm:pl-6 border-l-2 border-emerald-100 space-y-2 pt-1 pb-1">
+                            <div className="pl-3 sm:pl-5 border-l-2 border-emerald-200 space-y-2 pt-1 pb-1">
                               {topic.subtopics.map((subtopic) => {
                                 const stStatus = getItemStatus(subtopic.id, subtopic.status || 'not_started');
+                                const isGrifado = stStatus === 'mastered' || stStatus === 'reviewed' || stStatus === 'in_progress';
 
                                 return (
                                   <div 
                                     key={subtopic.id}
-                                    className="p-2.5 rounded-xl bg-zinc-50/80 border border-zinc-200/60 hover:border-emerald-200 transition-all space-y-2"
+                                    className={`p-2.5 rounded-xl border transition-all space-y-2 ${
+                                      isGrifado 
+                                        ? 'bg-emerald-50/90 border-emerald-300 ring-1 ring-emerald-400/20' 
+                                        : 'bg-zinc-50/80 border-zinc-200/60 hover:border-emerald-200'
+                                    }`}
                                   >
                                     <div className="flex items-start justify-between gap-2">
-                                      <p className="text-xs font-bold text-zinc-800 leading-snug">
-                                        • {subtopic.name}
-                                      </p>
-                                      <div className="shrink-0">
+                                      <div className="flex items-start gap-2 min-w-0">
+                                        <button
+                                          onClick={() => handleToggleGrifarSubtopic(subtopic.id, stStatus)}
+                                          className="mt-0.5 cursor-pointer shrink-0 text-emerald-700 hover:scale-110 transition-transform"
+                                          title={isGrifado ? 'Desmarcar tópico' : 'Grifar/Concluir tópico'}
+                                        >
+                                          {isGrifado ? (
+                                            <CheckSquare size={16} className="text-emerald-700 fill-emerald-100" />
+                                          ) : (
+                                            <Square size={16} className="text-zinc-400 hover:text-emerald-600" />
+                                          )}
+                                        </button>
+                                        <p className={`text-xs font-bold leading-snug ${isGrifado ? 'text-emerald-950 font-black' : 'text-zinc-800'}`}>
+                                          {subtopic.name}
+                                        </p>
+                                      </div>
+
+                                      <div className="shrink-0 flex items-center gap-1.5">
                                         {getStatusBadge(stStatus)}
                                       </div>
                                     </div>
@@ -434,3 +628,4 @@ export default function EditalSection({ user, profile, setActiveTab }: EditalSec
     </div>
   );
 }
+

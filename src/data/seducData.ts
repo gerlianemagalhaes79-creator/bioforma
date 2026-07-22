@@ -390,6 +390,8 @@ export function getBlocksForDegree(userDegree?: string): EditalBlock[] {
   return OFFICIAL_EDITAL_TREE.especifico['Licenciatura em Biologia / Ciências Biológicas'] || [];
 }
 
+export const getEspecificoTree = getBlocksForDegree;
+
 /**
  * Converte a Árvore do Edital em uma lista linear para ser consumida por
  * funcionalidades que necessitam de iteração sobre os tópicos (ex: Cronograma e Simulados).

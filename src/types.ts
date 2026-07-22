@@ -70,10 +70,11 @@ export interface EditalTopic {
 
 export interface Question {
   id: string;
-  category: SubjectCategory;
+  category: SubjectCategory | string;
   subject: string;
   topic: string;
-  banca: 'FUNECE' | 'CEV/UECE' | 'IDECAN' | 'CEBRASPE' | 'VUNESP' | 'Inédita PasseiSEDUC';
+  subtopic?: string;
+  banca: string;
   questionText: string;
   supportText?: string;
   options: {
@@ -83,7 +84,10 @@ export interface Question {
   correctAnswer: 'A' | 'B' | 'C' | 'D' | 'E';
   explanation: string;
   legalReference?: string;
-  difficulty: 'fácil' | 'médio' | 'difícil';
+  difficulty: string;
+  skills?: string[];
+  commonMistake?: string;
+  studyTip?: string;
 }
 
 export interface EssayTheme {
