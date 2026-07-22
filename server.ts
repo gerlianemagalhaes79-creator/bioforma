@@ -85,22 +85,23 @@ async function generateContentWithRetry(aiInstance: any, options: {
   throw new Error("Todos os modelos e tentativas do Gemini falharam.");
 }
 
+const app = express();
+
+// Custom CORS middleware to allow static hostings like Vercel to fetch results from the backend
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+  res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE");
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200);
+  }
+  next();
+});
+
+app.use(express.json());
+
 async function startServer() {
-  const app = express();
   const PORT = 3000;
-
-  // Custom CORS middleware to allow static hostings like Vercel to fetch results from the backend
-  app.use((req, res, next) => {
-    res.header("Access-Control-Allow-Origin", "*");
-    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
-    res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE");
-    if (req.method === "OPTIONS") {
-      return res.sendStatus(200);
-    }
-    next();
-  });
-
-  app.use(express.json());
 
   // ===============================================================
   // PASSEISEDUC - ENDPOINTS DE INTELIGÊNCIA ARTIFICIAL PARA CONCURSO
@@ -1329,14 +1330,14 @@ Atenção: retorne estritamente um JSON limpo e válido formatado de acordo com 
     }
   });
 
-  // Serve static files in production or delegate to Vite in development
+  // Serve static files in production or delegate to Vite in development (when running standalone Node server)
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
     });
     app.use(vite.middlewares);
-  } else {
+  } else if (!process.env.VERCEL) {
     const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));
     app.get('*', (req, res) => {
@@ -1344,9 +1345,16 @@ Atenção: retorne estritamente um JSON limpo e válido formatado de acordo com 
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`[FULL-STACK] Servidor rodando em http://localhost:${PORT}`);
-  });
+  if (!process.env.VERCEL) {
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(`[FULL-STACK] Servidor rodando em http://localhost:${PORT}`);
+    });
+  }
 }
 
-startServer();
+if (!process.env.VERCEL) {
+  startServer();
+}
+
+export { app };
+export default app;
