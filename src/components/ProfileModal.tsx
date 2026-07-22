@@ -26,12 +26,13 @@ import { motion } from 'motion/react';
 interface ProfileModalProps {
   user: User;
   profile: UserProfile | null;
+  initialTab?: 'profile' | 'admin_users' | 'add_user';
   onClose: () => void;
   onRecadastrar: () => void;
 }
 
-export default function ProfileModal({ user, profile, onClose, onRecadastrar }: ProfileModalProps) {
-  const [activeSubTab, setActiveSubTab] = useState<'profile' | 'admin_users' | 'add_user'>('admin_users');
+export default function ProfileModal({ user, profile, initialTab = 'admin_users', onClose, onRecadastrar }: ProfileModalProps) {
+  const [activeSubTab, setActiveSubTab] = useState<'profile' | 'admin_users' | 'add_user'>(initialTab);
   
   // State for registering a new user (Admin mode)
   const [newUserName, setNewUserName] = useState('');

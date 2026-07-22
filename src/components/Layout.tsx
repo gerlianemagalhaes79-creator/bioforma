@@ -27,7 +27,7 @@ export default function Layout({
     { id: 'edital', icon: BookOpen, label: 'Edital' },
     { id: 'simulados', icon: FileText, label: 'Simulados' },
     { id: 'redacao', icon: Sparkles, label: 'Discursiva' },
-    { id: 'tutor', icon: Bot, label: 'Tutor IA' },
+    { id: 'tutor', icon: Bot, label: 'Professor Mentor' },
   ];
 
   return (

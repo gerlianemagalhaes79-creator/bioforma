@@ -8,7 +8,12 @@ import {
   db, 
   doc, 
   getDoc, 
+  getDocs,
   setDoc, 
+  deleteDoc,
+  collection,
+  query,
+  where,
   Timestamp, 
   onSnapshot 
 } from './firebase';
@@ -33,7 +38,13 @@ export default function App() {
   const [signingIn, setSigningIn] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [profileModalTab, setProfileModalTab] = useState<'profile' | 'admin_users' | 'add_user'>('admin_users');
   const [showOnboardingModal, setShowOnboardingModal] = useState(false);
+
+  const handleOpenProfile = (tab: 'profile' | 'admin_users' | 'add_user' = 'admin_users') => {
+    setProfileModalTab(tab);
+    setShowProfileModal(true);
+  };
 
   const handleLogin = async () => {
     if (signingIn) return;
@@ -63,27 +74,68 @@ export default function App() {
     const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
       if (currentUser) {
-        // Ensure user profile exists
+        const cleanEmail = (currentUser.email || '').toLowerCase().trim();
         const userRef = doc(db, 'users', currentUser.uid);
         const userSnap = await getDoc(userRef);
+
         if (!userSnap.exists()) {
-          const newProfile: UserProfile = {
-            uid: currentUser.uid,
-            name: currentUser.displayName || 'Professor(a) Administrador(a)',
-            email: currentUser.email || '',
-            role: 'admin',
-            isAdmin: true,
-            targetSubject: 'Língua Portuguesa',
-            dailyGoalMinutes: 180,
-            streakDays: 7,
-            completedTopicsCount: 6,
-            totalQuestionsDone: 18,
-            correctAnswersCount: 14,
-            createdAt: Timestamp.now()
-          };
-          await setDoc(userRef, newProfile);
+          // Check if there is a pre-registered profile with this email
+          let preRegDocId: string | null = null;
+          let preRegProfile: any = null;
+
+          if (cleanEmail) {
+            try {
+              const q = query(collection(db, 'users'), where('email', '==', cleanEmail));
+              const preRegSnap = await getDocs(q);
+              if (!preRegSnap.empty) {
+                const docFound = preRegSnap.docs[0];
+                preRegDocId = docFound.id;
+                preRegProfile = docFound.data();
+              }
+            } catch (err) {
+              console.warn('Erro ao consultar pré-cadastro por e-mail:', err);
+            }
+          }
+
+          if (preRegProfile) {
+            // Migrate pre-registered profile to currentUser.uid
+            const mergedProfile: UserProfile = {
+              ...preRegProfile,
+              uid: currentUser.uid,
+              name: currentUser.displayName || preRegProfile.name || 'Professor(a)',
+              email: cleanEmail || preRegProfile.email,
+              onboardingCompleted: true,
+              createdAt: preRegProfile.createdAt || Timestamp.now()
+            };
+            await setDoc(userRef, mergedProfile);
+            if (preRegDocId && preRegDocId !== currentUser.uid) {
+              try {
+                await deleteDoc(doc(db, 'users', preRegDocId));
+              } catch (_) {}
+            }
+          } else {
+            // Create fresh profile
+            const newProfile: UserProfile = {
+              uid: currentUser.uid,
+              name: currentUser.displayName || 'Professor(a)',
+              email: cleanEmail,
+              role: 'admin',
+              isAdmin: true,
+              targetSubject: 'Língua Portuguesa',
+              degree: 'Licenciatura em Língua Portuguesa / Letras',
+              dailyGoalMinutes: 180,
+              hoursPerDay: 3,
+              streakDays: 7,
+              completedTopicsCount: 6,
+              totalQuestionsDone: 18,
+              correctAnswersCount: 14,
+              onboardingCompleted: true,
+              createdAt: Timestamp.now()
+            };
+            await setDoc(userRef, newProfile);
+          }
         } else {
-          // If existing profile without role, merge role: admin
+          // If existing profile without role, ensure role is set
           const existingData = userSnap.data();
           if (!existingData.role) {
             await setDoc(userRef, { role: 'admin', isAdmin: true }, { merge: true });
@@ -151,7 +203,7 @@ export default function App() {
               Passei<span className="text-emerald-600">SEDUC</span>
             </h1>
             <p className="text-zinc-600 text-sm mt-3 leading-relaxed">
-              Plataforma ultra inteligente de aprovação para professores no Concurso da SEDUC Ceará 2026. Edital verticalizado, cronograma interativo, simulados FUNECE, discursivas e Tutor IA.
+              Plataforma ultra inteligente de aprovação para professores no Concurso da SEDUC Ceará 2026. Edital verticalizado, cronograma interativo, simulados FUNECE, discursivas e Professor Mentor.
             </p>
           </div>
           
@@ -195,7 +247,7 @@ export default function App() {
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <Dashboard user={user} profile={userProfile} setActiveTab={setActiveTab} onOpenProfile={() => setShowProfileModal(true)} />;
+        return <Dashboard user={user} profile={userProfile} setActiveTab={setActiveTab} onOpenProfile={handleOpenProfile} />;
       case 'cronograma':
         return <CronogramaSection user={user} profile={userProfile} setActiveTab={setActiveTab} />;
       case 'edital':
@@ -207,7 +259,7 @@ export default function App() {
       case 'tutor':
         return <TutorIASection user={user} profile={userProfile} />;
       default:
-        return <Dashboard user={user} profile={userProfile} setActiveTab={setActiveTab} onOpenProfile={() => setShowProfileModal(true)} />;
+        return <Dashboard user={user} profile={userProfile} setActiveTab={setActiveTab} onOpenProfile={handleOpenProfile} />;
     }
   };
 
@@ -218,13 +270,14 @@ export default function App() {
       user={user}
       logout={logout}
       streakDays={userProfile?.streakDays || 7}
-      onOpenProfile={() => setShowProfileModal(true)}
+      onOpenProfile={() => handleOpenProfile('admin_users')}
     >
       {/* Profile Modal */}
       {showProfileModal && (
         <ProfileModal
           user={user}
           profile={userProfile}
+          initialTab={profileModalTab}
           onClose={() => setShowProfileModal(false)}
           onRecadastrar={() => setShowOnboardingModal(true)}
         />

@@ -20,46 +20,6 @@ interface IntelligenceCenterProps {
   onOpenTutorWithContext?: (promptText: string) => void;
 }
 
-// Default baseline data generator for realistic seeding when user opens app
-function getInitialBaselineLogs(userUid: string, targetSubject: string): QuestionAnswerLog[] {
-  const specDiscipline = targetSubject || 'Biologia';
-  const now = new Date();
-  
-  // Create 32 realistic logs over the last 14 days
-  return [
-    // Específica (Biologia)
-    { id: '1', uid: userUid, questionId: 'q1', discipline: specDiscipline, blockName: 'Identidade dos Seres Vivos', topicName: 'Aspectos Físicos e Químicos da Célula', subtopicName: 'Organelas e Membrana Plasma', banca: 'FUNECE / CEV-UECE', isCorrect: true, timeSpentSeconds: 85, userAnswer: 'A', correctAnswer: 'A', timestamp: new Date(now.getTime() - 1 * 86400000).toISOString() },
-    { id: '2', uid: userUid, questionId: 'q2', discipline: specDiscipline, blockName: 'Identidade dos Seres Vivos', topicName: 'Aspectos Físicos e Químicos da Célula', subtopicName: 'Organelas e Membrana Plasma', banca: 'FUNECE / CEV-UECE', isCorrect: true, timeSpentSeconds: 70, userAnswer: 'C', correctAnswer: 'C', timestamp: new Date(now.getTime() - 1 * 86400000).toISOString() },
-    { id: '3', uid: userUid, questionId: 'q3', discipline: specDiscipline, blockName: 'Genética', topicName: 'Primeira e Segunda Lei de Mendel', subtopicName: 'Primeira Lei de Mendel', banca: 'FUNECE / CEV-UECE', isCorrect: true, timeSpentSeconds: 95, userAnswer: 'B', correctAnswer: 'B', timestamp: new Date(now.getTime() - 2 * 86400000).toISOString() },
-    { id: '4', uid: userUid, questionId: 'q4', discipline: specDiscipline, blockName: 'Genética', topicName: 'Primeira e Segunda Lei de Mendel', subtopicName: 'Segunda Lei de Mendel', banca: 'FUNECE / CEV-UECE', isCorrect: false, timeSpentSeconds: 140, userAnswer: 'A', correctAnswer: 'D', timestamp: new Date(now.getTime() - 2 * 86400000).toISOString() },
-    { id: '5', uid: userUid, questionId: 'q5', discipline: specDiscipline, blockName: 'Genética', topicName: 'Primeira e Segunda Lei de Mendel', subtopicName: 'Segunda Lei de Mendel', banca: 'FUNECE / CEV-UECE', isCorrect: false, timeSpentSeconds: 165, userAnswer: 'C', correctAnswer: 'B', timestamp: new Date(now.getTime() - 3 * 86400000).toISOString() },
-    { id: '6', uid: userUid, questionId: 'q6', discipline: specDiscipline, blockName: 'Ecologia', topicName: 'Fluxo de Energia e Ciclos Biogeoquímicos', subtopicName: 'Cadeias e Teias Alimentares', banca: 'FUNECE / CEV-UECE', isCorrect: true, timeSpentSeconds: 60, userAnswer: 'D', correctAnswer: 'D', timestamp: new Date(now.getTime() - 3 * 86400000).toISOString() },
-    { id: '7', uid: userUid, questionId: 'q7', discipline: specDiscipline, blockName: 'Ecologia', topicName: 'Ecossistemas Brasileiros e Caatinga', subtopicName: 'Adaptações da Caatinga', banca: 'FUNECE / CEV-UECE', isCorrect: false, timeSpentSeconds: 120, userAnswer: 'B', correctAnswer: 'A', timestamp: new Date(now.getTime() - 4 * 86400000).toISOString() },
-    { id: '8', uid: userUid, questionId: 'q8', discipline: specDiscipline, blockName: 'Origem e Diversidade da Vida', topicName: 'Reinos Vegetal e Animal', subtopicName: 'Angiospermas', banca: 'CEBRASPE', isCorrect: true, timeSpentSeconds: 90, userAnswer: 'A', correctAnswer: 'A', timestamp: new Date(now.getTime() - 5 * 86400000).toISOString() },
-    { id: '9', uid: userUid, questionId: 'q9', discipline: specDiscipline, blockName: 'Ensino de Biologia', topicName: 'Práticas de Laboratório e Didática', subtopicName: 'Metodologias Ativas no Ensino de Ciências', banca: 'FUNECE / CEV-UECE', isCorrect: true, timeSpentSeconds: 75, userAnswer: 'C', correctAnswer: 'C', timestamp: new Date(now.getTime() - 5 * 86400000).toISOString() },
-
-    // Língua Portuguesa
-    { id: '10', uid: userUid, questionId: 'q10', discipline: 'Língua Portuguesa', blockName: 'Sintaxe', topicName: 'Sintaxe de Regência e Crase', subtopicName: 'Emprego do Sinal Indicativo de Crase', banca: 'FUNECE / CEV-UECE', isCorrect: true, timeSpentSeconds: 110, userAnswer: 'B', correctAnswer: 'B', timestamp: new Date(now.getTime() - 1 * 86400000).toISOString() },
-    { id: '11', uid: userUid, questionId: 'q11', discipline: 'Língua Portuguesa', blockName: 'Sintaxe', topicName: 'Sintaxe de Regência e Crase', subtopicName: 'Regência Verbal', banca: 'FUNECE / CEV-UECE', isCorrect: false, timeSpentSeconds: 130, userAnswer: 'C', correctAnswer: 'A', timestamp: new Date(now.getTime() - 2 * 86400000).toISOString() },
-    { id: '12', uid: userUid, questionId: 'q12', discipline: 'Língua Portuguesa', blockName: 'Compreensão de Texto', topicName: 'Coesão e Coerência Textual', subtopicName: 'Anáfora e Conectivos', banca: 'FUNECE / CEV-UECE', isCorrect: true, timeSpentSeconds: 80, userAnswer: 'A', correctAnswer: 'A', timestamp: new Date(now.getTime() - 3 * 86400000).toISOString() },
-    { id: '13', uid: userUid, questionId: 'q13', discipline: 'Língua Portuguesa', blockName: 'Morfossintaxe', topicName: 'Classes de Palavras', subtopicName: 'Conjunções Subordinativas', banca: 'IDECAN', isCorrect: false, timeSpentSeconds: 150, userAnswer: 'D', correctAnswer: 'C', timestamp: new Date(now.getTime() - 6 * 86400000).toISOString() },
-
-    // Administração Pública & Estatuto CE
-    { id: '14', uid: userUid, questionId: 'q14', discipline: 'Administração Pública', blockName: 'Estatuto do Magistério do CE', topicName: 'Lei Estadual nº 10.884/84', subtopicName: 'Direitos, Deveres e Vantagens do Professor', banca: 'FUNECE / CEV-UECE', isCorrect: true, timeSpentSeconds: 65, userAnswer: 'C', correctAnswer: 'C', timestamp: new Date(now.getTime() - 1 * 86400000).toISOString() },
-    { id: '15', uid: userUid, questionId: 'q15', discipline: 'Administração Pública', blockName: 'Organização do Estado', topicName: 'Administração Direta e Indireta', subtopicName: 'Princípios Constitucionais (LIMPE)', banca: 'FUNECE / CEV-UECE', isCorrect: true, timeSpentSeconds: 55, userAnswer: 'A', correctAnswer: 'A', timestamp: new Date(now.getTime() - 4 * 86400000).toISOString() },
-    { id: '16', uid: userUid, questionId: 'q16', discipline: 'Administração Pública', blockName: 'Estatuto do Magistério do CE', topicName: 'Lei Estadual nº 10.884/84', subtopicName: 'Regime Disciplinar e Processo Administrativo', banca: 'FGV', isCorrect: false, timeSpentSeconds: 140, userAnswer: 'B', correctAnswer: 'D', timestamp: new Date(now.getTime() - 7 * 86400000).toISOString() },
-
-    // Temas Educacionais e Pedagógicos
-    { id: '17', uid: userUid, questionId: 'q17', discipline: 'Temas Educacionais', blockName: 'Legislação Nacional', topicName: 'LDB 9.394/96', subtopicName: 'Princípios e Fins da Educação Nacional', banca: 'FUNECE / CEV-UECE', isCorrect: true, timeSpentSeconds: 70, userAnswer: 'B', correctAnswer: 'B', timestamp: new Date(now.getTime() - 2 * 86400000).toISOString() },
-    { id: '18', uid: userUid, questionId: 'q18', discipline: 'Temas Educacionais', blockName: 'Legislação Nacional', topicName: 'LDB 9.394/96', subtopicName: 'Educação Básica e Ensino Médio', banca: 'FUNECE / CEV-UECE', isCorrect: true, timeSpentSeconds: 85, userAnswer: 'D', correctAnswer: 'D', timestamp: new Date(now.getTime() - 3 * 86400000).toISOString() },
-    { id: '19', uid: userUid, questionId: 'q19', discipline: 'Temas Educacionais', blockName: 'Didática Geral', topicName: 'Avaliação Formativa e Didática', subtopicName: 'Saviani e Luckesi - Concepções Pedagógicas', banca: 'FUNECE / CEV-UECE', isCorrect: true, timeSpentSeconds: 90, userAnswer: 'A', correctAnswer: 'A', timestamp: new Date(now.getTime() - 5 * 86400000).toISOString() },
-
-    // Indicadores Educacionais SPAECE
-    { id: '20', uid: userUid, questionId: 'q20', discipline: 'Indicadores Educacionais', blockName: 'SPAECE e IDEB', topicName: 'Indicadores de Qualidade do Ceará', subtopicName: 'Escala do SPAECE e Metas das Escolas', banca: 'FUNECE / CEV-UECE', isCorrect: true, timeSpentSeconds: 75, userAnswer: 'C', correctAnswer: 'C', timestamp: new Date(now.getTime() - 1 * 86400000).toISOString() },
-    { id: '21', uid: userUid, questionId: 'q21', discipline: 'Indicadores Educacionais', blockName: 'SPAECE e IDEB', topicName: 'Análise de Matrizes e Padrões de Desempenho', subtopicName: 'Níveis de Proficiência do SPAECE', banca: 'FUNECE / CEV-UECE', isCorrect: false, timeSpentSeconds: 115, userAnswer: 'A', correctAnswer: 'B', timestamp: new Date(now.getTime() - 4 * 86400000).toISOString() },
-  ];
-}
-
 export default function IntelligenceCenter({ user, profile, setActiveTab, onOpenTutorWithContext }: IntelligenceCenterProps) {
   const [logs, setLogs] = useState<QuestionAnswerLog[]>([]);
   const [expandedDiscipline, setExpandedDiscipline] = useState<string | null>(null);
@@ -84,12 +44,11 @@ export default function IntelligenceCenter({ user, profile, setActiveTab, onOpen
         dbLogs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
         setLogs(dbLogs);
       } else {
-        // Fallback baseline seeding so user immediately sees rich intelligence analytics
-        setLogs(getInitialBaselineLogs(user.uid, targetSubject));
+        setLogs([]);
       }
     }, (err) => {
-      console.warn("Firestore listener error, using fallback logs:", err);
-      setLogs(getInitialBaselineLogs(user.uid, targetSubject));
+      console.warn("Firestore listener error:", err);
+      setLogs([]);
     });
 
     return () => unsubscribe();
@@ -173,7 +132,7 @@ export default function IntelligenceCenter({ user, profile, setActiveTab, onOpen
   // 4. Time Metric Calculations
   const timeMetrics = useMemo(() => {
     if (logs.length === 0) {
-      return { avgSec: 105, minSec: 35, maxSec: 210, totalMin: 12 };
+      return { avgSec: 0, minSec: 0, maxSec: 0, totalMin: 0 };
     }
     const totalTime = logs.reduce((acc, l) => acc + (l.timeSpentSeconds || 90), 0);
     const avgSec = Math.round(totalTime / logs.length);
@@ -214,7 +173,7 @@ export default function IntelligenceCenter({ user, profile, setActiveTab, onOpen
       }
     });
 
-    let cumulativeAccuracy = 70;
+    let cumulativeAccuracy = 0;
     return Object.values(daysMap).map(d => {
       if (d.total > 0) {
         cumulativeAccuracy = Math.round((d.correct / d.total) * 100);
@@ -305,17 +264,23 @@ export default function IntelligenceCenter({ user, profile, setActiveTab, onOpen
 
   // 9. Índice de Preparação / Aprovação SEDUC-CE (0 - 100)
   const aprovaçãoIndex = useMemo(() => {
-    // Formula:
-    // 50% = Específica accuracy
-    // 30% = General subjects accuracy
-    // 20% = Question volume factor (maxed at 50 questions)
+    if (totalQuestions === 0) {
+      return {
+        score: 0,
+        label: 'Aguardando Primeiros Simulados',
+        color: 'text-zinc-700 bg-zinc-100 border-zinc-200',
+        especPct: 0,
+        generalAvg: 0
+      };
+    }
+
     const especificStat = disciplineStats.find(d => d.discipline === targetSubject);
-    const especPct = especificStat && especificStat.total > 0 ? especificStat.pct : 75;
+    const especPct = especificStat && especificStat.total > 0 ? especificStat.pct : 0;
 
     const generalStats = disciplineStats.filter(d => d.discipline !== targetSubject && d.total > 0);
     const generalAvg = generalStats.length > 0 
       ? Math.round(generalStats.reduce((acc, g) => acc + g.pct, 0) / generalStats.length)
-      : 70;
+      : 0;
 
     const volumeBonus = Math.min(20, Math.round((totalQuestions / 40) * 20));
 

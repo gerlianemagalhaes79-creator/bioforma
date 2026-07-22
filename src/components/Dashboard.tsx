@@ -28,7 +28,7 @@ interface DashboardProps {
   user: User;
   profile: UserProfile | null;
   setActiveTab: (tab: string) => void;
-  onOpenProfile?: () => void;
+  onOpenProfile?: (tab?: 'profile' | 'admin_users' | 'add_user') => void;
 }
 
 export default function Dashboard({ user, profile, setActiveTab, onOpenProfile }: DashboardProps) {
@@ -76,7 +76,7 @@ export default function Dashboard({ user, profile, setActiveTab, onOpenProfile }
       <motion.div 
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-gradient-to-br from-emerald-900 via-teal-900 to-emerald-950 text-white rounded-2xl p-4 shadow-md border border-emerald-800/60 relative overflow-hidden space-y-2"
+        className="bg-gradient-to-br from-emerald-900 via-teal-900 to-emerald-950 text-white rounded-2xl p-4 shadow-md border border-emerald-800/60 relative overflow-hidden space-y-2.5"
       >
         <div className="flex items-center justify-between gap-2 relative z-10">
           <div className="flex items-center gap-2 min-w-0">
@@ -92,11 +92,18 @@ export default function Dashboard({ user, profile, setActiveTab, onOpenProfile }
           </div>
         </div>
 
-        <div className="flex items-center justify-between gap-2 text-xs relative z-10 text-emerald-200/90 pt-0.5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs relative z-10 text-emerald-200/90 border-t border-emerald-800/60 pt-2">
           <p className="truncate text-xs">
             Alvo: <span className="font-extrabold text-amber-300">{targetSubject}</span>
             {profile?.degree && <span className="text-xs text-emerald-200/80 block sm:inline sm:ml-1 font-medium">({profile.degree})</span>}
           </p>
+
+          <button
+            onClick={() => onOpenProfile && onOpenProfile('add_user')}
+            className="px-3 py-1.5 bg-amber-400 hover:bg-amber-300 text-amber-950 font-black rounded-xl text-xs transition flex items-center gap-1.5 shrink-0 shadow-sm cursor-pointer self-start sm:self-auto"
+          >
+            <span>+ Cadastrar Novo Professor</span>
+          </button>
         </div>
       </motion.div>
 

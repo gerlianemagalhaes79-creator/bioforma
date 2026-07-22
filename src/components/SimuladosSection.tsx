@@ -34,7 +34,7 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
 
   // Discipline Tree Selection State
   const userDegree = profile?.degree || FUNECE_DEGREE_OPTIONS[0];
-  const [selectedDisciplineCategory, setSelectedDisciplineCategory] = useState<string>('especifico'); // 'especifico' or key in geral
+  const [selectedDisciplineCategory, setSelectedDisciplineCategory] = useState<string>(''); // empty until selected
   const [expandedBlocks, setExpandedBlocks] = useState<Record<string, boolean>>({});
   const [expandedTopics, setExpandedTopics] = useState<Record<string, boolean>>({});
 
@@ -76,6 +76,7 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
 
   // Determine Active Edital Tree based on user selection
   const currentTreeBlocks = useMemo(() => {
+    if (!selectedDisciplineCategory) return [];
     if (selectedDisciplineCategory === 'especifico') {
       return getEspecificoTree(userDegree);
     }
@@ -203,6 +204,11 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
 
   // Generate Simulado via Server API
   const handleGenerateSimulado = async () => {
+    if (!selectedDisciplineCategory) {
+      setGenerationError("Selecione um módulo do edital para poder carregar e escolher os tópicos.");
+      return;
+    }
+
     if (selectedCount === 0) {
       setGenerationError("Selecione pelo menos 1 assunto/subtópico na árvore do edital.");
       return;
@@ -499,10 +505,14 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
                 <label className="block text-[11px] font-extrabold text-zinc-600 mb-1">Módulo do Edital</label>
                 <select
                   value={selectedDisciplineCategory}
-                  onChange={(e) => setSelectedDisciplineCategory(e.target.value)}
+                  onChange={(e) => {
+                    setSelectedDisciplineCategory(e.target.value);
+                    setSelectedSubtopicsMap({});
+                  }}
                   className="w-full bg-zinc-50 border border-zinc-200 rounded-2xl px-3 py-2 text-xs font-bold text-zinc-800 focus:outline-none focus:border-emerald-600 cursor-pointer"
                 >
-                  <option value="especifico">Conhecimentos Específicos</option>
+                  <option value="">-- Selecione o Módulo do Edital --</option>
+                  <option value="especifico">Conhecimentos Específicos ({userDegree})</option>
                   <option value="Educação Brasileira: Temas Educacionais e Pedagógicos">Educação Brasileira & Pedagógicos</option>
                   <option value="Administração Pública">Administração Pública & Estatuto CE</option>
                   <option value="Língua Portuguesa">Língua Portuguesa</option>
@@ -530,13 +540,15 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
               <div className="flex items-center gap-1.5 shrink-0">
                 <button
                   onClick={handleSelectAllInTree}
-                  className="px-3 py-1.5 bg-emerald-50 text-emerald-900 border border-emerald-200 rounded-xl text-[11px] font-extrabold hover:bg-emerald-100 cursor-pointer transition"
+                  disabled={!selectedDisciplineCategory}
+                  className="px-3 py-1.5 bg-emerald-50 text-emerald-900 border border-emerald-200 rounded-xl text-[11px] font-extrabold hover:bg-emerald-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition"
                 >
                   Marcar Todos
                 </button>
                 <button
                   onClick={handleClearAllSelections}
-                  className="px-3 py-1.5 bg-zinc-100 text-zinc-700 border border-zinc-200 rounded-xl text-[11px] font-bold hover:bg-zinc-200 cursor-pointer transition"
+                  disabled={!selectedDisciplineCategory}
+                  className="px-3 py-1.5 bg-zinc-100 text-zinc-700 border border-zinc-200 rounded-xl text-[11px] font-bold hover:bg-zinc-200 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition"
                 >
                   Desmarcar
                 </button>
@@ -545,7 +557,19 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
 
             {/* Tree View Container - Simplified Top-Level Topics */}
             <div className="border border-zinc-200 rounded-2xl p-3 max-h-[480px] overflow-y-auto space-y-2 bg-zinc-50/50 scrollbar-thin">
-              {currentTreeBlocks.map((block) => (
+              {!selectedDisciplineCategory ? (
+                <div className="py-12 px-4 text-center bg-white rounded-2xl border border-dashed border-emerald-200 space-y-3">
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center mx-auto shadow-2xs">
+                    <Filter size={22} />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-black text-zinc-900">Selecione o Módulo do Edital</h4>
+                    <p className="text-[11px] text-zinc-500 max-w-xs mx-auto mt-1 leading-relaxed">
+                      Escolha um módulo no menu acima (ex: Conhecimentos Específicos, Língua Portuguesa) para carregar os tópicos e subtópicos.
+                    </p>
+                  </div>
+                </div>
+              ) : currentTreeBlocks.map((block) => (
                 <div key={block.id} className="space-y-2">
                   {block.topics.map((topic) => {
                     const isTopicExpanded = !!expandedTopics[topic.id];

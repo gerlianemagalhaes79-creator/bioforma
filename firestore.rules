@@ -7,7 +7,7 @@ service cloud.firestore {
     }
 
     match /users/{uid} {
-      allow read, write: if isAuthenticated() && request.auth.uid == uid;
+      allow read, write: if isAuthenticated();
     }
 
     match /studyProgress/{id} {

@@ -187,7 +187,7 @@ export default function TutorIASection({ user, profile }: TutorIASectionProps) {
           type="text"
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
-          placeholder="Digite sua dúvida ou peça orientação ao Mentor IA..."
+          placeholder="Digite sua dúvida ou peça orientação ao Professor Mentor..."
           disabled={loading}
           className="flex-1 bg-white border border-emerald-200 rounded-2xl px-4 py-3 text-xs text-zinc-800 placeholder-zinc-400 focus:outline-hidden focus:border-emerald-600 transition-colors shadow-xs font-medium"
         />
