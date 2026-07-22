@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { User, db, collection, addDoc } from '../firebase';
 import { UserProfile, TutorChatMessage } from '../types';
-import { Bot, Send, Sparkles, BookOpen, BrainCircuit, User as UserIcon, RefreshCw } from 'lucide-react';
+import { GraduationCap, Send, Sparkles, BookOpen, BrainCircuit, User as UserIcon, RefreshCw, Award } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface TutorIASectionProps {
@@ -10,11 +10,14 @@ interface TutorIASectionProps {
 }
 
 export default function TutorIASection({ user, profile }: TutorIASectionProps) {
+  const userName = profile?.name || user.displayName || 'Professor(a)';
+  const userSubject = profile?.targetSubject || 'Língua Portuguesa';
+
   const [messages, setMessages] = useState<TutorChatMessage[]>([
     {
       id: 'welcome-1',
       sender: 'ai',
-      text: `Olá, Prof. ${profile?.name || user.displayName || 'Candidate'}! Sou seu Tutor IA do PasseiSEDUC.\n\nEstou pronto para sanar suas dúvidas sobre LDB, BNCC, Estatuto do Magistério do Ceará, Didática e Resolução de Questões da banca IDECAN/CEBRASPE.\n\nEm que posso ajudar seu estudo hoje?`,
+      text: `Olá, Prof. ${userName}! Sou o seu Professor Mentor IA, especialista na Banca FUNECE (CEV/UECE) para o Concurso Público da SEDUC CE 2026.\n\nAcompanho diariamente seu progresso na Fila Única de Estudos, simulados e estatísticas para garantir sua vaga em ${userSubject}.\n\nComo posso orientar ou acelerar seus estudos hoje?`,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
   ]);
@@ -23,10 +26,11 @@ export default function TutorIASection({ user, profile }: TutorIASectionProps) {
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   const quickPrompts = [
-    'Quais os artigos mais cobrados da LDB?',
-    'Resumo do Estatuto do Magistério do Ceará (Lei 10.884)',
-    'Como diferenciar Avaliação Formativa de Somativa?',
-    'Dicas de Língua Portuguesa para banca IDECAN'
+    'O que estudo hoje?',
+    'Como está meu progresso?',
+    'Me passe um microdesafio FUNECE',
+    'Resumo do Estatuto do CE (Lei 10.884)',
+    'Sinto que estou com dificuldade e atrasado'
   ];
 
   const scrollToBottom = () => {
@@ -58,7 +62,8 @@ export default function TutorIASection({ user, profile }: TutorIASectionProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: text.trim(),
-          subject: profile?.targetSubject || 'Geral'
+          subject: userSubject,
+          profile: profile
         })
       });
 
@@ -85,11 +90,11 @@ export default function TutorIASection({ user, profile }: TutorIASectionProps) {
         }
       }
     } catch (err) {
-      console.error('Erro na chamada ao Tutor IA:', err);
+      console.error('Erro na chamada ao Professor Mentor IA:', err);
       const errorMsg: TutorChatMessage = {
         id: `err-${Date.now()}`,
         sender: 'ai',
-        text: 'Tive uma breve oscilação de conexão. Por favor, reenvie sua dúvida pedagógica.',
+        text: 'Prof., tive uma breve oscilação de sinal. Por favor, reenvie sua pergunta!',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
       setMessages(prev => [...prev, errorMsg]);
@@ -101,19 +106,19 @@ export default function TutorIASection({ user, profile }: TutorIASectionProps) {
   return (
     <div className="space-y-3 flex flex-col h-[78vh]">
       {/* Header */}
-      <div className="bg-white rounded-3xl p-4 border border-emerald-100 shadow-xs flex items-center justify-between shrink-0">
+      <div className="bg-white rounded-2xl p-3.5 sm:p-4 border border-emerald-100 shadow-xs flex items-center justify-between shrink-0">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-gradient-to-br from-emerald-600 to-teal-700 text-white rounded-2xl shadow-xs">
-            <Bot size={22} />
+          <div className="p-2.5 bg-gradient-to-br from-emerald-800 to-teal-900 text-amber-300 rounded-xl shadow-xs">
+            <GraduationCap size={22} />
           </div>
           <div>
-            <h2 className="text-sm font-extrabold text-zinc-900">Tutor Pedagógico IA PasseiSEDUC</h2>
-            <p className="text-[11px] text-zinc-500">Tire dúvidas sobre Legislação, Didática e Matérias do Edital</p>
+            <h2 className="text-sm font-black text-zinc-900">Professor Mentor IA</h2>
+            <p className="text-[11px] text-zinc-500 font-medium">Mentor Pedagógico & Coach de Estudos da Banca FUNECE / SEDUC CE</p>
           </div>
         </div>
 
-        <span className="px-2.5 py-1 bg-emerald-100 text-emerald-800 text-[10px] font-black rounded-full uppercase tracking-wider">
-          Online
+        <span className="px-2.5 py-1 bg-emerald-100 text-emerald-800 text-[10px] font-black rounded-full uppercase tracking-wider shrink-0">
+          Ativo
         </span>
       </div>
 
@@ -124,7 +129,7 @@ export default function TutorIASection({ user, profile }: TutorIASectionProps) {
             key={idx}
             onClick={() => handleSendMessage(prompt)}
             disabled={loading}
-            className="px-3 py-1.5 bg-white border border-emerald-100 hover:bg-emerald-50 text-emerald-900 text-[11px] font-bold rounded-xl whitespace-nowrap transition-all border-0 cursor-pointer shadow-2xs"
+            className="px-3 py-1.5 bg-white border border-emerald-200 hover:bg-emerald-50 text-emerald-950 text-[11px] font-bold rounded-xl whitespace-nowrap transition-all cursor-pointer shadow-2xs"
           >
             {prompt}
           </button>
@@ -132,7 +137,7 @@ export default function TutorIASection({ user, profile }: TutorIASectionProps) {
       </div>
 
       {/* Chat History */}
-      <div className="flex-1 bg-white rounded-3xl p-4 border border-emerald-100/90 shadow-xs overflow-y-auto space-y-3 scrollbar-thin">
+      <div className="flex-1 bg-white rounded-2xl p-4 border border-emerald-100/90 shadow-xs overflow-y-auto space-y-3 scrollbar-thin">
         {messages.map((msg) => {
           const isUser = msg.sender === 'user';
           return (
@@ -141,15 +146,15 @@ export default function TutorIASection({ user, profile }: TutorIASectionProps) {
               className={`flex items-start gap-2.5 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}
             >
               <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-xs font-black ${
-                isUser ? 'bg-emerald-700 text-white' : 'bg-emerald-100 text-emerald-800'
+                isUser ? 'bg-emerald-800 text-white' : 'bg-amber-400 text-emerald-950 font-black'
               }`}>
-                {isUser ? <UserIcon size={14} /> : <Bot size={14} />}
+                {isUser ? <UserIcon size={14} /> : <GraduationCap size={15} />}
               </div>
 
               <div className={`max-w-[85%] rounded-2xl p-3.5 text-xs leading-relaxed space-y-1 ${
                 isUser 
                   ? 'bg-emerald-800 text-white rounded-tr-none shadow-xs' 
-                  : 'bg-zinc-50 text-zinc-800 border border-zinc-100 rounded-tl-none'
+                  : 'bg-zinc-50 text-zinc-800 border border-zinc-200/80 rounded-tl-none'
               }`}>
                 <p className="whitespace-pre-line">{msg.text}</p>
                 <p className={`text-[9px] text-right font-medium ${isUser ? 'text-emerald-200' : 'text-zinc-400'}`}>
@@ -161,9 +166,9 @@ export default function TutorIASection({ user, profile }: TutorIASectionProps) {
         })}
 
         {loading && (
-          <div className="flex items-center gap-2 text-xs text-emerald-700 font-bold p-2 bg-emerald-50 rounded-2xl w-fit animate-pulse">
-            <Bot size={16} />
-            <span>Tutor IA consultando legislação e doutrina...</span>
+          <div className="flex items-center gap-2 text-xs text-emerald-800 font-extrabold p-2.5 bg-emerald-50 rounded-2xl w-fit animate-pulse border border-emerald-200">
+            <GraduationCap size={16} className="text-amber-600" />
+            <span>Professor Mentor IA analisando edital e legislação...</span>
           </div>
         )}
 
@@ -182,15 +187,15 @@ export default function TutorIASection({ user, profile }: TutorIASectionProps) {
           type="text"
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
-          placeholder="Pergunte sobre LDB, BNCC, Legislação do CE ou Didática..."
+          placeholder="Digite sua dúvida ou peça orientação ao Mentor IA..."
           disabled={loading}
-          className="flex-1 bg-white border border-emerald-100 rounded-2xl px-4 py-3 text-xs text-zinc-800 placeholder-zinc-400 focus:outline-hidden focus:border-emerald-600 transition-colors shadow-xs"
+          className="flex-1 bg-white border border-emerald-200 rounded-2xl px-4 py-3 text-xs text-zinc-800 placeholder-zinc-400 focus:outline-hidden focus:border-emerald-600 transition-colors shadow-xs font-medium"
         />
 
         <button
           type="submit"
           disabled={loading || !inputText.trim()}
-          className={`px-5 bg-gradient-to-r from-emerald-600 to-teal-700 text-white rounded-2xl flex items-center justify-center transition-all border-0 cursor-pointer shadow-md ${
+          className={`px-5 bg-gradient-to-r from-emerald-800 to-teal-900 text-amber-300 font-extrabold rounded-2xl flex items-center justify-center transition-all border-0 cursor-pointer shadow-md ${
             loading || !inputText.trim() ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-95'
           }`}
         >

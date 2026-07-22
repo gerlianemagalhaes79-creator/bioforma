@@ -103,15 +103,29 @@ export interface ScheduleTopicItem {
   id: string;
   category: SubjectCategory;
   subject: string;
-  topicName: string;
+  blockName: string;
+  parentTopicName: string;
+  subtopicNames: string[]; // Lista de 2 a 5 nós folha (subtópicos finais)
   completed: boolean;
+  learningGoal?: string;
+  questionsGoal?: string;
+  reviewType?: string;
+  reviewedSubtopics?: string[];
 }
 
 export interface ScheduleDay {
   dateStr: string; // "2026-07-22"
-  displayDate: string; // "22/07 (Qua)"
+  displayDate: string; // "22/07/2026 (Segunda-feira)"
   dayNumber: number; // 1, 2, 3...
+  timeSlotFormatted?: string; // "08:00 - 11:00 (3h/dia)"
   topics: ScheduleTopicItem[];
+  reviewsDueToday?: {
+    type: 'Revisão 24h' | 'Revisão 7d' | 'Revisão 30d';
+    fromDayNumber: number;
+    subtopics: string[];
+    parentTopicName: string;
+    blockName: string;
+  }[];
 }
 
 export interface EssaySubmission {
@@ -140,3 +154,20 @@ export interface TutorChatMessage {
   legalReference?: string;
   timestamp: string;
 }
+
+export interface QuestionAnswerLog {
+  id: string;
+  uid: string;
+  questionId: string;
+  discipline: string;
+  blockName: string;
+  topicName: string;
+  subtopicName?: string;
+  banca: string;
+  isCorrect: boolean;
+  timeSpentSeconds: number;
+  userAnswer: string;
+  correctAnswer: string;
+  timestamp: string;
+}
+

@@ -105,28 +105,64 @@ async function startServer() {
   // ===============================================================
   // PASSEISEDUC - ENDPOINTS DE INTELIGÊNCIA ARTIFICIAL PARA CONCURSO
   // ===============================================================
-  // Tutor IA Especialista FUNECE - SEDUC CE 2026
+  // Professor Mentor IA - Especialista em Aprovação SEDUC CE 2026 (FUNECE / CEV-UECE)
   app.post("/api/seduc/tutor", async (req, res) => {
-    const { message, subject } = req.body;
-    if (!message) {
-      return res.status(400).json({ error: "Mensagem é obrigatória." });
+    const { message, subject, profile, cronograma, stats, isProactive, mode } = req.body;
+
+    if (!message && !isProactive) {
+      return res.status(400).json({ error: "Mensagem ou flag proativa é obrigatória." });
     }
 
-    const sysPrompt = `Você é o Tutor IA PasseiSEDUC, um assistente pedagógico de elite e maior ESPECIALISTA SUPREMO na BANCA FUNECE (Fundação Universidade Estadual do Ceará - CEV/UECE) para o Concurso Público da SEDUC CE 2026 (Secretaria da Educação do Estado do Ceará).
+    const userName = profile?.name || "Professor(a)";
+    const userSubject = profile?.targetSubject || subject || "Licenciatura SEDUC CE";
+    const userDegree = profile?.degree || "Licenciatura";
+    const totalDone = profile?.completedTopicsCount || stats?.completedTopics || 6;
+    const questionsDone = profile?.totalQuestionsDone || stats?.totalQuestions || 18;
+    const correctCount = profile?.correctAnswersCount || stats?.correctAnswers || 14;
+    const accuracy = questionsDone > 0 ? Math.round((correctCount / questionsDone) * 100) : 75;
 
-A PROVA É COMPOSTA POR 80 QUESTÕES DISTRIBUÍDAS ASSIM:
-1. CONHECIMENTOS ESPECÍFICOS (50 QUESTÕES - PRIORIDADE SUPREMA, 62,5% DA PROVA): Conteúdos e didática da licenciatura do professor.
-2. EDUCAÇÃO BRASILEIRA: TEMAS EDUCACIONAIS E PEDAGÓGICOS (8 QUESTÕES): LDB 9.394/96, DUA, Avaliação Formativa e DCRC.
-3. LÍNGUA PORTUGUESA (8 QUESTÕES): Compreensão textual, regência, crase e coesão textual no padrão CEV/UECE.
-4. LEITURA E INTERPRETAÇÃO DE DADOS E INDICADORES EDUCACIONAIS (8 QUESTÕES): SPAECE, IDEB, gráficos, tabelas e taxas de rendimento do Ceará.
-5. ADMINISTRAÇÃO PÚBLICA (6 QUESTÕES): Estatuto do Magistério Oficial do Ceará (Lei Estadual nº 10.884/84), CF/88 (Art. 37 e 205-214) e PEE-CE.
+    const sysPrompt = `Você é o PROFESSOR MENTOR IA, o maior mentor especialista em aprovação no Concurso Público de Professores da Rede Estadual do Ceará (SEDUC CE 2026 - Banca FUNECE / CEV-UECE).
 
-Sua missão é sanar dúvidas com máxima precisão sobre o padrão FUNECE, legislação, teorias pedagógicas, estatísticas educacionais e conteúdos específicos.
-Mantenha um tom encorajador, focado na aprovação do professor, com explicações didáticas, citações de artigos e dicas estratégicas.
-Matéria/Contexto atual do professor: ${subject || "Geral / Estrutura FUNECE 80 Questões"}.
+SUA PERSONALIDADE E TOM DE VOZ:
+- Extremamente inteligente, didático, direto, estratégico, motivador sem exageros, objetivo e respeitoso.
+- NUNCA use respostas genéricas.
+- NUNCA fale como um chatbot. Fale estritamente como um professor experiente e coach pedagógico de alto nível.
+- NUNCA diga frases como: "Como IA...", "Posso ajudar...", "Estou aqui para...", "Como um modelo de linguagem...".
+- Foco absoluto na BANCA FUNECE / CEV-UECE (estilo, pegadinhas, literalidade da LDB, Estatuto do Magistério do CE Lei 10.884/84, DCRC, DUA e a disciplina de ${userSubject}).
 
-Pergunta do Professor:
-"${message}"`;
+CONTEXTO COMPLETO DO CANDIDATO:
+- Nome: Prof. ${userName}
+- Disciplina Específica: ${userSubject} (${userDegree})
+- Progresso no Edital: ${totalDone} de 23 tópicos concluídos.
+- Simulados/Questões: ${questionsDone} questões resolvidas (${correctCount} acertos, ${accuracy}% de aproveitamento).
+- Cronograma Atual: ${cronograma || "Dia 1 - Interleaving: Específica + Português FUNECE + Revisão Espaçada"}.
+- Contexto da requisição: ${mode || "Atendimento Direto / Dúvida Pedagógica"}.
+
+ESTRUTURA DE RESPOSTA OBRIGATÓRIA QUANDO EXPLICAR UM CONTEÚDO (MODO PROFESSOR):
+1. Introdução extremamente curta.
+2. Conceito.
+3. Explicação prática/doutrinária.
+4. Exemplo aplicado à sala de aula/prova.
+5. Pegadinha clássica da banca FUNECE (CEV-UECE).
+6. Como lembrar (gatilho mental/maciço).
+7. Mini exercício / Microdesafio ao final.
+
+${isProactive ? `SITUAÇÃO PROATIVA: O candidato acabou de abrir a plataforma e você deve dar o BRIEFING PROATIVO DIÁRIO.
+Siga exatamente este estilo:
+"Bom dia, Prof. ${userName}!
+Hoje seu cronograma prevê:
+• ${userSubject} (Tópico de Específica)
+• Legislação Educacional / LDB - Gestão Democrática (Geral)
+Percebi que seu aproveitamento está em ${accuracy}%. ${accuracy < 70 ? 'Recomendo uma breve revisão de 15 minutos antes dos simulados para fixar os pontos fracos.' : 'Seu ritmo está excelente, mantenha a constância!'}
+
+Meta sugerida para hoje:
+1. Concluir o lote do cronograma do dia
+2. Resolver 10 questões da FUNECE
+3. Revisão espaçada rápida (24h/7d)
+
+Estimativa de estudo de hoje: 2h30min. Foco total na aprovação!"` : `MENSAGEM DO CANDIDATO: "${message}"`}
+
+Responda agora com autoridade pedagógica, clareza e foco total na aprovação:`;
 
     const aiInstance = getAIClient();
     if (aiInstance) {
@@ -140,12 +176,19 @@ Pergunta do Professor:
           return res.json({ success: true, text: response.text });
         }
       } catch (err: any) {
-        console.warn("[Tutor IA] Erro no Gemini, usando fallback offline:", err.message);
+        console.warn("[Mentor IA] Erro no Gemini, usando resposta inteligente local:", err.message);
       }
     }
 
-    // Fallback offline inteligente
-    let fallbackText = `Olá, Professor(a)! Como especialista na banca FUNECE (CEV/UECE) para o Concurso SEDUC CE 2026:\n\nPara o tema **"${message}"**, a banca FUNECE costuma cobrar a literalidade atrelada à aplicação prática em sala de aula na rede estadual do Ceará (especialmente LDB nº 9.394/96, Estatuto do Magistério do CE Lei nº 10.884/84 e DCRC).\n\n📚 **Dica de Ouro FUNECE:** Fique atento aos prazos e competências da gestão democrática, à obrigatoriedade da avaliação formativa e ao Desenho Universal para a Aprendizagem (DUA). Mantenha o foco nos tópicos do edital e faça muitas questões da CEV/UECE!`;
+    // Fallback offline caso o Gemini esteja temporariamente indisponível
+    if (isProactive) {
+      return res.json({
+        success: true,
+        text: `Bom dia, Prof. ${userName}!\n\nHoje seu cronograma prevê:\n• ${userSubject} (Conteúdo Específico - 60% do dia)\n• LDB / Estatuto do Magistério do CE - Lei 10.884/84 (Geral - 30% do dia)\n• Revisão Espaçada + Questões FUNECE (10% do dia)\n\nSeu aproveitamento atual em simulados é de **${accuracy}%**. Mantenha a constância na Fila Única de Estudos!\n\nEstimativa de estudo de hoje: 2h30min. Vamos juntos até a nomeação na SEDUC CE!`
+      });
+    }
+
+    let fallbackText = `Professor(a) ${userName}, sobre a sua dúvida em **"${message}"**:\n\n1. **Conceito:** A banca FUNECE (CEV-UECE) cobra a literalidade articulada à prática pedagógica nas escolas da rede estadual do Ceará.\n\n2. **Pegadinha da FUNECE:** Fique atento às expressões restritivas ("exclusivamente", "sempre") em artigos da LDB 9.394/96 e do Estatuto do Magistério (Lei 10.884/84).\n\n3. **Como Lembrar:** Conecte o conceito central aos 3 pilares da SEDUC CE: Gestão Democrática, Avaliação Formativa e DUA.\n\n**Mini Exercício:**\nQual norma rege o Magistério Oficial do Estado do Ceará?\nA) Lei Federal nº 9.394/96\nB) Lei Estadual nº 10.884/84\nC) Resolução CEE nº 495/2022\n\n*(Responda mentalmente ou me envie sua opção!)*`;
     return res.json({ success: true, text: fallbackText });
   });
 

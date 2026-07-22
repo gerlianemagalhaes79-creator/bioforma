@@ -1,4 +1,4 @@
-import { EditalTopic, Question, EssayTheme, UserProfile, ScheduleDay, ScheduleTopicItem, EditalBlock, SubjectCategory, GeneralCategoryKey } from '../types';
+import { EditalTopic, Question, EssayTheme, UserProfile, ScheduleDay, ScheduleTopicItem, EditalBlock, SubjectCategory, GeneralCategoryKey, TopicStatus } from '../types';
 import { ALL_DISCIPLINES_EDITAL } from './disciplinesData';
 
 export const FUNECE_DEGREE_OPTIONS = [
@@ -572,16 +572,234 @@ export const ESSAY_THEMES: EssayTheme[] = [
   }
 ];
 
+export interface EditalLeafNode {
+  id: string;
+  category: SubjectCategory;
+  subject: string;
+  blockName: string;
+  parentTopicName: string;
+  leafName: string;
+  status: TopicStatus;
+}
+
+/**
+ * Percorre recursivamente o JSON do edital e expande cada bloco até encontrar APENAS os nós folha (leaf nodes).
+ * É PROIBIDO usar nós intermediários como conteúdo de estudo quando existirem filhos.
+ */
+export function extractEditalLeafNodes(userDegree?: string): EditalLeafNode[] {
+  const leaves: EditalLeafNode[] = [];
+
+  // 1. Processa as 4 Áreas de Conhecimento Geral
+  const generalCats = OFFICIAL_EDITAL_TREE.geral;
+  (Object.keys(generalCats) as GeneralCategoryKey[]).forEach((catKey) => {
+    const blocks = generalCats[catKey];
+    blocks.forEach((block) => {
+      block.topics.forEach((topic) => {
+        if (!topic.subtopics || topic.subtopics.length === 0) {
+          // O próprio tópico é o nó folha
+          leaves.push({
+            id: topic.id,
+            category: catKey as SubjectCategory,
+            subject: catKey,
+            blockName: block.name,
+            parentTopicName: topic.name,
+            leafName: topic.name,
+            status: topic.status || 'not_started'
+          });
+        } else {
+          // Apenas os subtópicos são nós folha
+          topic.subtopics.forEach((sub) => {
+            leaves.push({
+              id: sub.id,
+              category: catKey as SubjectCategory,
+              subject: catKey,
+              blockName: block.name,
+              parentTopicName: topic.name,
+              leafName: sub.name,
+              status: sub.status || 'not_started'
+            });
+          });
+        }
+      });
+    });
+  });
+
+  // 2. Processa o Conteúdo Específico da Licenciatura
+  const specBlocks = getBlocksForDegree(userDegree);
+  const specSubjectName = `Conhecimentos Específicos (${userDegree || 'Licenciatura'})`;
+  specBlocks.forEach((block) => {
+    block.topics.forEach((topic) => {
+      if (!topic.subtopics || topic.subtopics.length === 0) {
+        leaves.push({
+          id: topic.id,
+          category: 'Conhecimentos Específicos',
+          subject: specSubjectName,
+          blockName: block.name,
+          parentTopicName: topic.name,
+          leafName: topic.name,
+          status: topic.status || 'not_started'
+        });
+      } else {
+        topic.subtopics.forEach((sub) => {
+          leaves.push({
+            id: sub.id,
+            category: 'Conhecimentos Específicos',
+            subject: specSubjectName,
+            blockName: block.name,
+            parentTopicName: topic.name,
+            leafName: sub.name,
+            status: sub.status || 'not_started'
+          });
+        });
+      }
+    });
+  });
+
+  return leaves;
+}
+
+export interface InterleavedQueueItem {
+  id: string;
+  category: SubjectCategory;
+  subject: string;
+  blockName: string;
+  parentTopicName: string;
+  subtopicNames: string[];
+  type: 'especifico' | 'geral';
+}
+
+/**
+ * Cria uma FILA ÚNICA E INTERCALADA de estudos (Interleaving Queue).
+ * Intercala ordenadamente lotes de Conhecimentos Específicos e Conhecimentos Gerais.
+ * Proporção: 2 lotes Específicos (~65%) para 1 lote Geral (~35%).
+ */
+export function buildInterleavedStudyQueue(userDegree?: string): InterleavedQueueItem[] {
+  const leaves = extractEditalLeafNodes(userDegree);
+  const specLeaves = leaves.filter(l => l.category === 'Conhecimentos Específicos');
+  const genLeaves = leaves.filter(l => l.category !== 'Conhecimentos Específicos');
+
+  const createBatches = (leafList: EditalLeafNode[], itemType: 'especifico' | 'geral') => {
+    const batches: InterleavedQueueItem[] = [];
+    let currentBatch: EditalLeafNode[] = [];
+
+    leafList.forEach((node) => {
+      if (currentBatch.length === 0) {
+        currentBatch.push(node);
+      } else {
+        const first = currentBatch[0];
+        if (node.parentTopicName === first.parentTopicName && node.blockName === first.blockName && currentBatch.length < 2) {
+          currentBatch.push(node);
+        } else {
+          batches.push({
+            id: `q_batch_${batches.length}_${first.id}`,
+            category: first.category,
+            subject: first.subject,
+            blockName: first.blockName,
+            parentTopicName: first.parentTopicName,
+            subtopicNames: currentBatch.map(b => b.leafName),
+            type: itemType
+          });
+          currentBatch = [node];
+        }
+      }
+    });
+
+    if (currentBatch.length > 0) {
+      const first = currentBatch[0];
+      batches.push({
+        id: `q_batch_${batches.length}_${first.id}`,
+        category: first.category,
+        subject: first.subject,
+        blockName: first.blockName,
+        parentTopicName: first.parentTopicName,
+        subtopicNames: currentBatch.map(b => b.leafName),
+        type: itemType
+      });
+    }
+
+    return batches;
+  };
+
+  const specBatches = createBatches(specLeaves, 'especifico');
+  const genBatches = createBatches(genLeaves, 'geral');
+
+  const queue: InterleavedQueueItem[] = [];
+  let sIdx = 0;
+  let gIdx = 0;
+
+  // Intercala rigorosamente: 2 lotes Específicos, 1 lote Geral
+  while (sIdx < specBatches.length || gIdx < genBatches.length) {
+    if (sIdx < specBatches.length) queue.push(specBatches[sIdx++]);
+    if (sIdx < specBatches.length) queue.push(specBatches[sIdx++]);
+    if (gIdx < genBatches.length) queue.push(genBatches[gIdx++]);
+
+    if (sIdx >= specBatches.length && gIdx < genBatches.length) {
+      queue.push(genBatches[gIdx++]);
+    }
+  }
+
+  return queue;
+}
+
 /**
  * Função Inteligente para Gerar o Cronograma de Estudos Dia a Dia
- * Consome a árvore oficial do edital e garante 62.5% de foco no conteúdo específico.
+ * REGRA ABSOLUTA DE INTERLEAVING (Aprendizagem Intercalada)
  */
 export function generateStudySchedule(
   profile: Partial<UserProfile>,
   topics?: EditalTopic[]
 ): ScheduleDay[] {
-  const activeDegree = profile.degree || profile.targetSubject || 'Licenciatura em Língua Portuguesa / Letras';
-  const allTopics = (topics && topics.length > 0) ? topics : getFlattenedEditalTopics(activeDegree);
+  const activeDegree = profile.degree || profile.targetSubject || 'Licenciatura em Biologia / Ciências Biológicas';
+  const leaves = extractEditalLeafNodes(activeDegree);
+
+  const specLeaves = leaves.filter(l => l.category === 'Conhecimentos Específicos');
+  const genLeaves = leaves.filter(l => l.category !== 'Conhecimentos Específicos');
+
+  const createBatchesFromLeaves = (leafList: EditalLeafNode[], itemType: 'especifico' | 'geral') => {
+    const batches: InterleavedQueueItem[] = [];
+    let currentBatch: EditalLeafNode[] = [];
+
+    leafList.forEach((node) => {
+      if (currentBatch.length === 0) {
+        currentBatch.push(node);
+      } else {
+        const first = currentBatch[0];
+        // Lote compacto: no máximo 2 subtópicos por sessão de estudo
+        if (node.parentTopicName === first.parentTopicName && node.blockName === first.blockName && currentBatch.length < 2) {
+          currentBatch.push(node);
+        } else {
+          batches.push({
+            id: `q_b_${batches.length}_${first.id}`,
+            category: first.category,
+            subject: first.subject,
+            blockName: first.blockName,
+            parentTopicName: first.parentTopicName,
+            subtopicNames: currentBatch.map(b => b.leafName),
+            type: itemType
+          });
+          currentBatch = [node];
+        }
+      }
+    });
+
+    if (currentBatch.length > 0) {
+      const first = currentBatch[0];
+      batches.push({
+        id: `q_b_${batches.length}_${first.id}`,
+        category: first.category,
+        subject: first.subject,
+        blockName: first.blockName,
+        parentTopicName: first.parentTopicName,
+        subtopicNames: currentBatch.map(b => b.leafName),
+        type: itemType
+      });
+    }
+
+    return batches;
+  };
+
+  const specBatches = createBatchesFromLeaves(specLeaves, 'especifico');
+  const genBatches = createBatchesFromLeaves(genLeaves, 'geral');
 
   const startDateStr = profile.startDate || new Date().toISOString().split('T')[0];
   const examDateStr = profile.examDate || '2026-10-18';
@@ -593,58 +811,132 @@ export function generateStudySchedule(
   const totalDays = Math.min(180, Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24))));
 
   const hours = profile.hoursPerDay || 3;
-  let topicsPerDay = 3;
-  if (hours <= 2) topicsPerDay = 2;
-  else if (hours >= 5) topicsPerDay = 4;
-
-  const daysOfWeek = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+  const daysOfWeekFull = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
   const scheduleDays: ScheduleDay[] = [];
 
-  const specificTopics = allTopics.filter(t => t.category === 'Conhecimentos Específicos');
-  const generalPool = allTopics.filter(t => t.category !== 'Conhecimentos Específicos');
+  let specIndex = 0;
+  let genIndex = 0;
 
-  let specIdx = 0;
-  let genIdx = 0;
+  const historyByDay: Record<number, { blockName: string; parentTopicName: string; subtopics: string[]; category: string }[]> = {};
 
   for (let i = 0; i < totalDays; i++) {
+    const dayNum = i + 1;
     const currentDate = new Date(start.getTime() + i * 86400000);
     const dateStr = currentDate.toISOString().split('T')[0];
-    const dayName = daysOfWeek[currentDate.getDay()];
-    const dayFormatted = `${String(currentDate.getDate()).padStart(2, '0')}/${String(currentDate.getMonth() + 1).padStart(2, '0')} (${dayName})`;
+    const dayNameFull = daysOfWeekFull[currentDate.getDay()];
+    const dayFormatted = `${String(currentDate.getDate()).padStart(2, '0')}/${String(currentDate.getMonth() + 1).padStart(2, '0')}/${currentDate.getFullYear()} (${dayNameFull})`;
 
     const dayTopicsList: ScheduleTopicItem[] = [];
+    const dayStudiedSessions: { blockName: string; parentTopicName: string; subtopics: string[]; category: string }[] = [];
 
-    for (let k = 0; k < topicsPerDay; k++) {
-      let chosenTopic: EditalTopic;
+    // --- SESSÃO 1: CONTEÚDO ESPECÍFICO ---
+    if (specBatches.length > 0) {
+      const specBatch = specBatches[specIndex % specBatches.length];
+      specIndex++;
 
-      // Prioridade Foco Total: Assegura que ~60%-66% dos estudos diários sejam da área Específica (50 questões)
-      if ((k === 0 || k === 1) && specificTopics.length > 0) {
-        chosenTopic = specificTopics[specIdx % specificTopics.length];
-        specIdx++;
-      } else if (generalPool.length > 0) {
-        chosenTopic = generalPool[genIdx % generalPool.length];
-        genIdx++;
-      } else if (specificTopics.length > 0) {
-        chosenTopic = specificTopics[specIdx % specificTopics.length];
-        specIdx++;
-      } else {
-        chosenTopic = allTopics[i % allTopics.length];
-      }
+      const specQuestions = 10;
 
       dayTopicsList.push({
-        id: `${chosenTopic.id}_day${i}_${k}`,
-        category: chosenTopic.category,
-        subject: chosenTopic.subject,
-        topicName: chosenTopic.topicName,
-        completed: chosenTopic.status === 'mastered' || chosenTopic.status === 'reviewed'
+        id: `sched_d${dayNum}_spec_${specBatch.id}`,
+        category: specBatch.category,
+        subject: specBatch.subject,
+        blockName: specBatch.blockName,
+        parentTopicName: specBatch.parentTopicName,
+        subtopicNames: specBatch.subtopicNames,
+        completed: false,
+        questionsGoal: `${specQuestions} questões`,
+        reviewType: 'Específica'
+      });
+
+      dayStudiedSessions.push({
+        blockName: specBatch.blockName,
+        parentTopicName: specBatch.parentTopicName,
+        subtopics: specBatch.subtopicNames,
+        category: 'Específica'
+      });
+    }
+
+    // --- SESSÃO 2: CONTEÚDO GERAL ---
+    if (genBatches.length > 0) {
+      const genBatch = genBatches[genIndex % genBatches.length];
+      genIndex++;
+
+      const genQuestions = 5;
+
+      dayTopicsList.push({
+        id: `sched_d${dayNum}_gen_${genBatch.id}`,
+        category: genBatch.category,
+        subject: genBatch.subject,
+        blockName: genBatch.blockName,
+        parentTopicName: genBatch.parentTopicName,
+        subtopicNames: genBatch.subtopicNames,
+        completed: false,
+        questionsGoal: `${genQuestions} questões`,
+        reviewType: 'Geral'
+      });
+
+      dayStudiedSessions.push({
+        blockName: genBatch.blockName,
+        parentTopicName: genBatch.parentTopicName,
+        subtopics: genBatch.subtopicNames,
+        category: 'Geral'
+      });
+    }
+
+    historyByDay[dayNum] = dayStudiedSessions;
+
+    // --- REVISÃO ESPAÇADA ---
+    const reviewsDueToday: {
+      type: 'Revisão 24h' | 'Revisão 7d' | 'Revisão 30d';
+      fromDayNumber: number;
+      subtopics: string[];
+      parentTopicName: string;
+      blockName: string;
+    }[] = [];
+
+    if (dayNum > 1 && historyByDay[dayNum - 1]) {
+      historyByDay[dayNum - 1].forEach(prev => {
+        reviewsDueToday.push({
+          type: 'Revisão 24h',
+          fromDayNumber: dayNum - 1,
+          subtopics: prev.subtopics,
+          parentTopicName: prev.parentTopicName,
+          blockName: prev.blockName
+        });
+      });
+    }
+
+    if (dayNum > 7 && historyByDay[dayNum - 7]) {
+      historyByDay[dayNum - 7].forEach(prev => {
+        reviewsDueToday.push({
+          type: 'Revisão 7d',
+          fromDayNumber: dayNum - 7,
+          subtopics: prev.subtopics,
+          parentTopicName: prev.parentTopicName,
+          blockName: prev.blockName
+        });
+      });
+    }
+
+    if (dayNum > 30 && historyByDay[dayNum - 30]) {
+      historyByDay[dayNum - 30].forEach(prev => {
+        reviewsDueToday.push({
+          type: 'Revisão 30d',
+          fromDayNumber: dayNum - 30,
+          subtopics: prev.subtopics,
+          parentTopicName: prev.parentTopicName,
+          blockName: prev.blockName
+        });
       });
     }
 
     scheduleDays.push({
       dateStr,
       displayDate: dayFormatted,
-      dayNumber: i + 1,
-      topics: dayTopicsList
+      dayNumber: dayNum,
+      timeSlotFormatted: `${hours}h/dia`,
+      topics: dayTopicsList,
+      reviewsDueToday
     });
   }
 

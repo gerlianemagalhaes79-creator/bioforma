@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { User, db, doc, setDoc } from '../firebase';
-import { UserProfile, Question } from '../types';
+import { User, db, doc, setDoc, collection, addDoc } from '../firebase';
+import { UserProfile, Question, QuestionAnswerLog } from '../types';
 import { SEDUC_QUESTIONS, OFFICIAL_EDITAL_TREE, getEspecificoTree, FUNECE_DEGREE_OPTIONS } from '../data/seducData';
 import { 
   FileText, CheckCircle2, XCircle, Sparkles, Filter, ChevronRight, ChevronDown, 
@@ -304,6 +304,23 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
         totalQuestionsDone: (profile?.totalQuestionsDone || 0) + 1,
         correctAnswersCount: (profile?.correctAnswersCount || 0) + (isCorrect ? 1 : 0)
       }, { merge: true });
+
+      // Save granular question log
+      const logsRef = collection(db, 'users', user.uid, 'questionLogs');
+      await addDoc(logsRef, {
+        uid: user.uid,
+        questionId: q.id,
+        discipline: q.subject || 'Conhecimentos Específicos',
+        blockName: q.category || 'Edital SEDUC',
+        topicName: q.topic || 'Conceitos Gerais',
+        subtopicName: q.subtopic || q.topic || 'Conceitos Gerais',
+        banca: q.banca || 'FUNECE / CEV-UECE',
+        isCorrect,
+        timeSpentSeconds: Math.max(12, Math.round(quizElapsedTime / Math.max(1, qIdx + 1))),
+        userAnswer: userAnswersMap[qIdx],
+        correctAnswer: q.correctAnswer,
+        timestamp: new Date().toISOString()
+      });
     } catch (err) {
       console.warn("Erro ao atualizar perfil:", err);
     }
@@ -328,6 +345,29 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
         totalQuestionsDone: (profile?.totalQuestionsDone || 0) + activeQuizQuestions.length,
         correctAnswersCount: (profile?.correctAnswersCount || 0) + correctCount
       }, { merge: true });
+
+      const logsRef = collection(db, 'users', user.uid, 'questionLogs');
+      for (let idx = 0; idx < activeQuizQuestions.length; idx++) {
+        const q = activeQuizQuestions[idx];
+        const uAns = userAnswersMap[idx];
+        if (uAns) {
+          const isCorr = uAns === q.correctAnswer;
+          await addDoc(logsRef, {
+            uid: user.uid,
+            questionId: q.id,
+            discipline: q.subject || 'Conhecimentos Específicos',
+            blockName: q.category || 'Edital SEDUC',
+            topicName: q.topic || 'Conceitos Gerais',
+            subtopicName: q.subtopic || q.topic || 'Conceitos Gerais',
+            banca: q.banca || 'FUNECE / CEV-UECE',
+            isCorrect: isCorr,
+            timeSpentSeconds: Math.max(12, Math.round(quizElapsedTime / activeQuizQuestions.length)),
+            userAnswer: uAns,
+            correctAnswer: q.correctAnswer,
+            timestamp: new Date().toISOString()
+          });
+        }
+      }
     } catch (err) {
       console.warn("Erro ao salvar resultado final do simulado:", err);
     }

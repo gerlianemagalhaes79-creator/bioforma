@@ -33,7 +33,7 @@ export default function Layout({
   return (
     <div className="min-h-screen w-full overflow-x-hidden bg-[#f4fbf7] text-zinc-800 font-sans pb-24">
       {/* Top Header */}
-      <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-emerald-100 px-3 sm:px-6 py-3 flex items-center justify-between shadow-xs">
+      <header className="no-print sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-emerald-100 px-3 sm:px-6 py-3 flex items-center justify-between shadow-xs">
         <div 
           onClick={() => setActiveTab('dashboard')} 
           className="flex items-center gap-2.5 cursor-pointer select-none"
@@ -96,7 +96,7 @@ export default function Layout({
       </main>
 
       {/* Bottom Floating Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-emerald-100 px-1 py-1.5 shadow-lg">
+      <nav className="no-print fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-emerald-100 px-1 py-1.5 shadow-lg">
         <div className="max-w-xl mx-auto flex justify-around items-center">
           {tabs.map((tab) => {
             const isActive = activeTab === tab.id;

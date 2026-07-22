@@ -272,7 +272,8 @@ export default function CronogramaModal({ profile, onClose, onOpenEditProfile }:
                               {item.subject}
                             </span>
                             <p className={`font-medium leading-snug text-[11px] ${isDone ? 'line-through text-emerald-800/70' : 'text-zinc-800'}`}>
-                              {item.topicName}
+                              <strong>{item.parentTopicName}: </strong>
+                              {item.subtopicNames ? item.subtopicNames.join(', ') : ''}
                             </p>
                           </div>
                         </div>
