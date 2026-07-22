@@ -105,23 +105,25 @@ async function startServer() {
   // ===============================================================
   // PASSEISEDUC - ENDPOINTS DE INTELIGÊNCIA ARTIFICIAL PARA CONCURSO
   // ===============================================================
-
-  // Tutor IA Especialista SEDUC CE 2026
+  // Tutor IA Especialista FUNECE - SEDUC CE 2026
   app.post("/api/seduc/tutor", async (req, res) => {
     const { message, subject } = req.body;
     if (!message) {
       return res.status(400).json({ error: "Mensagem é obrigatória." });
     }
 
-    const sysPrompt = `Você é o Tutor IA PasseiSEDUC, um assistente pedagógico de elite especializado exclusivamente na preparação de professores para o Concurso da SEDUC CE 2026 (Secretaria da Educação do Ceará).
-Sua missão é responder dúvidas sobre:
-1. Legislação Educacional: LDB nº 9.394/96, Constituição Federal (Art. 205-214), BNCC, Diretrizes Curriculares Nacionais, PNE e PEE-CE.
-2. Legislação do Estado do Ceará: Estatuto do Magistério do Ceará (Lei nº 10.884/84) e programas estaduais (EEMTI, EEEP, Ceará Educa Mais).
-3. Didática e Pedagogia: Tendências pedagógicas (Libâneo, Saviani, Freire), Avaliação da Aprendizagem (Luckesi, Hoffmann), Educação Inclusiva (DUA, PDI) e Metodologias Ativas.
-4. Dicas de Resolução de Questões das bancas IDECAN, CEBRASPE e VUNESP.
+    const sysPrompt = `Você é o Tutor IA PasseiSEDUC, um assistente pedagógico de elite e maior ESPECIALISTA SUPREMO na BANCA FUNECE (Fundação Universidade Estadual do Ceará - CEV/UECE) para o Concurso Público da SEDUC CE 2026 (Secretaria da Educação do Estado do Ceará).
 
-Mantenha um tom encorajador, altamente profissional, pedagógico e estruturado. Sempre cite o artigo de lei ou o autor quando relevante.
-Matéria/Contexto atual do usuário: ${subject || "Geral / Legislação e Didática"}.
+A PROVA É COMPOSTA POR 80 QUESTÕES DISTRIBUÍDAS ASSIM:
+1. CONHECIMENTOS ESPECÍFICOS (50 QUESTÕES - PRIORIDADE SUPREMA, 62,5% DA PROVA): Conteúdos e didática da licenciatura do professor.
+2. EDUCAÇÃO BRASILEIRA: TEMAS EDUCACIONAIS E PEDAGÓGICOS (8 QUESTÕES): LDB 9.394/96, DUA, Avaliação Formativa e DCRC.
+3. LÍNGUA PORTUGUESA (8 QUESTÕES): Compreensão textual, regência, crase e coesão textual no padrão CEV/UECE.
+4. LEITURA E INTERPRETAÇÃO DE DADOS E INDICADORES EDUCACIONAIS (8 QUESTÕES): SPAECE, IDEB, gráficos, tabelas e taxas de rendimento do Ceará.
+5. ADMINISTRAÇÃO PÚBLICA (6 QUESTÕES): Estatuto do Magistério Oficial do Ceará (Lei Estadual nº 10.884/84), CF/88 (Art. 37 e 205-214) e PEE-CE.
+
+Sua missão é sanar dúvidas com máxima precisão sobre o padrão FUNECE, legislação, teorias pedagógicas, estatísticas educacionais e conteúdos específicos.
+Mantenha um tom encorajador, focado na aprovação do professor, com explicações didáticas, citações de artigos e dicas estratégicas.
+Matéria/Contexto atual do professor: ${subject || "Geral / Estrutura FUNECE 80 Questões"}.
 
 Pergunta do Professor:
 "${message}"`;
@@ -143,7 +145,7 @@ Pergunta do Professor:
     }
 
     // Fallback offline inteligente
-    let fallbackText = `Olá, Professor(a)! Com base nas diretrizes do Concurso SEDUC CE 2026:\n\nPara o tema **"${message}"**, é fundamental atentar para a legislação vigente (especialmente a LDB nº 9.394/96 e a BNCC do Ensino Médio) e para os princípios da Gestão Democrática e Avaliação Formativa.\n\n📚 **Dica de Prova (Banca IDECAN/CEBRASPE):** As bancas costumam cobrar a aplicação prática desses conceitos no cotidiano das Escolas de Ensino Médio em Tempo Integral do Ceará. Fique atento a pegadinhas sobre a obrigatoriedade do PDI e o papel do Projeto de Vida!`;
+    let fallbackText = `Olá, Professor(a)! Como especialista na banca FUNECE (CEV/UECE) para o Concurso SEDUC CE 2026:\n\nPara o tema **"${message}"**, a banca FUNECE costuma cobrar a literalidade atrelada à aplicação prática em sala de aula na rede estadual do Ceará (especialmente LDB nº 9.394/96, Estatuto do Magistério do CE Lei nº 10.884/84 e DCRC).\n\n📚 **Dica de Ouro FUNECE:** Fique atento aos prazos e competências da gestão democrática, à obrigatoriedade da avaliação formativa e ao Desenho Universal para a Aprendizagem (DUA). Mantenha o foco nos tópicos do edital e faça muitas questões da CEV/UECE!`;
     return res.json({ success: true, text: fallbackText });
   });
 
@@ -151,18 +153,18 @@ Pergunta do Professor:
   app.post("/api/seduc/question-explain", async (req, res) => {
     const { questionText, options, correctAnswer, userAnswer, subject, topic } = req.body;
 
-    const prompt = `Como professor especialista na banca do Concurso SEDUC CE 2026, comente detalhadamente esta questão de prova:
-Matéria: ${subject || 'Didática / Legislação'}
+    const prompt = `Como professor especialista na BANCA FUNECE / CEV-UECE do Concurso SEDUC CE 2026, comente detalhadamente esta questão de prova:
+Matéria: ${subject || 'Didática / Legislação FUNECE'}
 Tópico: ${topic || 'Conhecimentos Gerais'}
 Enunciado: "${questionText}"
 Gabarito Oficial: Alternativa ${correctAnswer}
 Resposta do Aluno: Alternativa ${userAnswer || 'N/A'}
 
-Forneça um comentário explicativo completo contendo:
+Forneça um comentário explicativo completo no estilo FUNECE contendo:
 1. Fundamentação Legal ou Doutrinária (Artigo da lei, norma da BNCC ou teoria pedagógica aplicada).
-2. Por que a alternativa ${correctAnswer} é a correta.
+2. Por que a alternativa ${correctAnswer} é a correta segundo o gabarito oficial da FUNECE.
 3. Por que as outras alternativas são distratores / estão incorretas.
-4. Uma dica prática para não errar esse tipo de questão na prova da SEDUC CE.`;
+4. Uma dica prática sobre a pegadinha clássica da FUNECE para não errar esse tipo de questão na prova da SEDUC CE.`;
 
     const aiInstance = getAIClient();
     if (aiInstance) {
@@ -182,7 +184,7 @@ Forneça um comentário explicativo completo contendo:
 
     return res.json({
       success: true,
-      text: ` Comentário Pedagógico PasseiSEDUC:\n\nA alternativa correta é a **${correctAnswer}**.\n\n A questão aborda conceitos fundamentais previstos na legislação educacional e na jurisprudência da SEDUC CE. A alternativa ${correctAnswer} expressa exatamente o dispositivo legal sem distorções, ao passo que as demais alternativas contêm pegadinhas comuns da banca (como inverter competências ou utilizar termos absolutistas como "exclusivamente" ou "isoladamente").`
+      text: ` Comentário Pedagógico Especialista FUNECE:\n\nA alternativa correta segundo a FUNECE é a **${correctAnswer}**.\n\nA banca CEV/UECE (FUNECE) exige atenção às expressões exatas da legislação educacional do Ceará (Estatuto do Magistério, PEE-CE e LDB) e aos fundamentos pedagógicos de autores como Luckesi e Libâneo. A alternativa ${correctAnswer} reflete com precisão a norma vigente, enquanto os distratores trazem modificações sutis em conceitos e atribuições.`
     });
   });
 

@@ -20,7 +20,22 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
   const [score, setScore] = useState({ correct: 0, total: 0 });
   const [selectedSubject, setSelectedSubject] = useState<string>('Todas');
 
-  const currentQuestion = questions[currentIndex];
+  const subjectsList = [
+    'Todas',
+    'Conhecimentos Específicos',
+    'Educação Brasileira e Pedagógicos',
+    'Língua Portuguesa',
+    'Dados e Indicadores Educacionais',
+    'Administração Pública'
+  ];
+
+  const filteredQuestions = questions.filter(q => {
+    if (selectedSubject === 'Todas') return true;
+    return q.category === selectedSubject || q.subject === selectedSubject;
+  });
+
+  const activeQuestionIndex = Math.min(currentIndex, Math.max(0, filteredQuestions.length - 1));
+  const currentQuestion = filteredQuestions[activeQuestionIndex] || questions[0];
 
   const handleSelectOption = (letter: 'A' | 'B' | 'C' | 'D' | 'E') => {
     if (isSubmitted) return;
@@ -109,6 +124,28 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
             {score.correct}/{score.total} <span className="text-[10px] text-emerald-700">({score.total > 0 ? Math.round((score.correct / score.total) * 100) : 0}%)</span>
           </p>
         </div>
+      </div>
+
+      {/* Subject Filter Pills (5 Bloco Oficial FUNECE) */}
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+        {subjectsList.map((subj) => (
+          <button
+            key={subj}
+            onClick={() => {
+              setSelectedSubject(subj);
+              setCurrentIndex(0);
+              setSelectedOption(null);
+              setIsSubmitted(false);
+            }}
+            className={`px-3 py-1.5 rounded-xl text-xs font-extrabold whitespace-nowrap transition cursor-pointer shrink-0 ${
+              selectedSubject === subj
+                ? 'bg-emerald-800 text-white shadow-xs'
+                : 'bg-white border border-zinc-200 text-zinc-600 hover:border-emerald-300'
+            }`}
+          >
+            {subj}
+          </button>
+        ))}
       </div>
 
       {/* Active Question Card */}

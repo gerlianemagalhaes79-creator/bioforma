@@ -1,11 +1,52 @@
-export type SubjectCategory = 'Conhecimentos Básicos' | 'Didática e Legislação' | 'Conhecimentos Específicos';
+export type SubjectCategory = 
+  | 'Conhecimentos Específicos'
+  | 'Educação Brasileira: Temas Educacionais e Pedagógicos'
+  | 'Língua Portuguesa'
+  | 'Dados e Indicadores Educacionais'
+  | 'Administração Pública'
+  | 'Conhecimentos Básicos'
+  | 'Didática e Legislação';
 
 export type TopicStatus = 'not_started' | 'in_progress' | 'reviewed' | 'mastered';
+
+export interface EditalSubtopic {
+  id: string;
+  name: string;
+  status: TopicStatus;
+}
+
+export interface EditalTopicItem {
+  id: string;
+  name: string;
+  status: TopicStatus;
+  subtopics: EditalSubtopic[];
+}
+
+export interface EditalBlock {
+  id: string;
+  name: string;
+  topics: EditalTopicItem[];
+}
+
+export type GeneralCategoryKey = 
+  | 'Educação Brasileira: Temas Educacionais e Pedagógicos'
+  | 'Administração Pública'
+  | 'Língua Portuguesa'
+  | 'Leitura e Interpretação de Dados e Indicadores Educacionais';
 
 export interface UserProfile {
   uid: string;
   name: string;
   email: string;
+  role?: 'admin' | 'professor';
+  isAdmin?: boolean;
+  age?: number;
+  isWorkingInArea?: string; // e.g., "Sim - Professor Temporário (Rede Pública)", "Sim - Rede Privada", "Não atuo ainda"
+  startDate?: string; // e.g. "2026-07-22"
+  examDate?: string; // e.g. "2026-10-18"
+  degree?: string; // e.g. "Licenciatura em Língua Portuguesa", "Licenciatura em Matemática", etc.
+  hoursPerDay?: number; // e.g. 3
+  onboardingCompleted?: boolean;
   targetSubject: string; // e.g. "Língua Portuguesa", "Matemática", "História", "Biologia", etc.
   dailyGoalMinutes: number; // e.g. 180 (3 horas)
   streakDays: number;
@@ -19,7 +60,9 @@ export interface EditalTopic {
   id: string;
   category: SubjectCategory;
   subject: string;
+  blockName?: string;
   topicName: string;
+  subtopics?: string[];
   status: TopicStatus;
   notes?: string;
   importance: 'alta' | 'média' | 'baixa';
@@ -30,7 +73,7 @@ export interface Question {
   category: SubjectCategory;
   subject: string;
   topic: string;
-  banca: 'IDECAN' | 'CEBRASPE' | 'VUNESP' | 'FAPEC' | 'Inédita PasseiSEDUC';
+  banca: 'FUNECE' | 'CEV/UECE' | 'IDECAN' | 'CEBRASPE' | 'VUNESP' | 'Inédita PasseiSEDUC';
   questionText: string;
   supportText?: string;
   options: {
@@ -50,6 +93,21 @@ export interface EssayTheme {
   prompt: string;
   contextText: string;
   guidePoints: string[];
+}
+
+export interface ScheduleTopicItem {
+  id: string;
+  category: SubjectCategory;
+  subject: string;
+  topicName: string;
+  completed: boolean;
+}
+
+export interface ScheduleDay {
+  dateStr: string; // "2026-07-22"
+  displayDate: string; // "22/07 (Qua)"
+  dayNumber: number; // 1, 2, 3...
+  topics: ScheduleTopicItem[];
 }
 
 export interface EssaySubmission {

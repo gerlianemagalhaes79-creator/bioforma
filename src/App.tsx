@@ -15,10 +15,13 @@ import {
 import { UserProfile } from './types';
 import Layout from './components/Layout';
 import Dashboard from './components/Dashboard';
+import CronogramaSection from './components/CronogramaSection';
 import EditalSection from './components/EditalSection';
 import SimuladosSection from './components/SimuladosSection';
 import RedacaoSection from './components/RedacaoSection';
 import TutorIASection from './components/TutorIASection';
+import ProfileModal from './components/ProfileModal';
+import OnboardingModal from './components/OnboardingModal';
 import { LogIn, GraduationCap, Sparkles, BookOpen, BrainCircuit } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -29,6 +32,8 @@ export default function App() {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [signingIn, setSigningIn] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showOnboardingModal, setShowOnboardingModal] = useState(false);
 
   const handleLogin = async () => {
     if (signingIn) return;
@@ -64,8 +69,10 @@ export default function App() {
         if (!userSnap.exists()) {
           const newProfile: UserProfile = {
             uid: currentUser.uid,
-            name: currentUser.displayName || 'Professor(a)',
+            name: currentUser.displayName || 'Professor(a) Administrador(a)',
             email: currentUser.email || '',
+            role: 'admin',
+            isAdmin: true,
             targetSubject: 'Língua Portuguesa',
             dailyGoalMinutes: 180,
             streakDays: 7,
@@ -75,6 +82,12 @@ export default function App() {
             createdAt: Timestamp.now()
           };
           await setDoc(userRef, newProfile);
+        } else {
+          // If existing profile without role, merge role: admin
+          const existingData = userSnap.data();
+          if (!existingData.role) {
+            await setDoc(userRef, { role: 'admin', isAdmin: true }, { merge: true });
+          }
         }
 
         // Listen to changes in real-time
@@ -138,7 +151,7 @@ export default function App() {
               Passei<span className="text-emerald-600">SEDUC</span>
             </h1>
             <p className="text-zinc-600 text-sm mt-3 leading-relaxed">
-              Plataforma ultra inteligente de aprovação para professores no Concurso da SEDUC Ceará 2026. Edital verticalizado, simulados, discursivas e Tutor IA.
+              Plataforma ultra inteligente de aprovação para professores no Concurso da SEDUC Ceará 2026. Edital verticalizado, cronograma interativo, simulados FUNECE, discursivas e Tutor IA.
             </p>
           </div>
           
@@ -182,7 +195,9 @@ export default function App() {
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <Dashboard user={user} profile={userProfile} setActiveTab={setActiveTab} />;
+        return <Dashboard user={user} profile={userProfile} setActiveTab={setActiveTab} onOpenProfile={() => setShowProfileModal(true)} />;
+      case 'cronograma':
+        return <CronogramaSection user={user} profile={userProfile} setActiveTab={setActiveTab} />;
       case 'edital':
         return <EditalSection user={user} profile={userProfile} setActiveTab={setActiveTab} />;
       case 'simulados':
@@ -192,7 +207,7 @@ export default function App() {
       case 'tutor':
         return <TutorIASection user={user} profile={userProfile} />;
       default:
-        return <Dashboard user={user} profile={userProfile} setActiveTab={setActiveTab} />;
+        return <Dashboard user={user} profile={userProfile} setActiveTab={setActiveTab} onOpenProfile={() => setShowProfileModal(true)} />;
     }
   };
 
@@ -203,7 +218,27 @@ export default function App() {
       user={user}
       logout={logout}
       streakDays={userProfile?.streakDays || 7}
+      onOpenProfile={() => setShowProfileModal(true)}
     >
+      {/* Profile Modal */}
+      {showProfileModal && (
+        <ProfileModal
+          user={user}
+          profile={userProfile}
+          onClose={() => setShowProfileModal(false)}
+          onRecadastrar={() => setShowOnboardingModal(true)}
+        />
+      )}
+
+      {/* Recadastrar / Onboarding Modal */}
+      {showOnboardingModal && (
+        <OnboardingModal
+          user={user}
+          profile={userProfile}
+          onComplete={() => setShowOnboardingModal(false)}
+        />
+      )}
+
       <AnimatePresence mode="wait">
         <motion.div
           key={activeTab}
@@ -218,3 +253,4 @@ export default function App() {
     </Layout>
   );
 }
+
