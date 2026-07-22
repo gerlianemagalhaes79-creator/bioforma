@@ -322,74 +322,54 @@ export default function IntelligenceCenter({ user, profile, setActiveTab, onOpen
   return (
     <div className="space-y-5 animate-fade-in pb-12">
       {/* ========================================================= */}
-      {/* TOP HEADER: LIGHT, CLEAN, & COMPACT CENTRAL DE INTELIGÊNCIA */}
+      {/* TOP HEADER: ULTRA-COMPACT CENTRAL DE INTELIGÊNCIA           */}
       {/* ========================================================= */}
-      <div className="bg-white rounded-2xl p-5 border border-emerald-200/80 shadow-xs space-y-4">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          {/* Left: Clean Titles & Stats */}
-          <div className="space-y-2 max-w-xl">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="px-2.5 py-0.5 bg-emerald-100 text-emerald-900 border border-emerald-300 text-[10px] font-extrabold uppercase tracking-wider rounded-md flex items-center gap-1.5">
-                <BrainCircuit size={13} className="text-emerald-700" />
-                Central de Inteligência
-              </span>
-              <span className="text-zinc-500 text-xs font-bold">• Banca FUNECE (CEV-UECE)</span>
+      <div className="bg-white rounded-2xl p-3.5 sm:p-4 border border-emerald-200/80 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        {/* Left: Clean Titles & Quick Stats */}
+        <div className="space-y-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="p-1.5 bg-emerald-100 text-emerald-900 rounded-lg">
+              <BrainCircuit size={16} className="text-emerald-700" />
             </div>
-
-            <h1 className="text-xl sm:text-2xl font-black text-zinc-900 tracking-tight">
-              Diagnóstico Estratégico de Performance
+            <h1 className="text-base font-black text-zinc-900 tracking-tight flex items-center gap-2">
+              Central de Inteligência
+              <span className="text-xs font-semibold text-zinc-500 font-normal">| Banca FUNECE</span>
             </h1>
+          </div>
 
-            <p className="text-xs text-zinc-600 leading-relaxed">
-              Análise contínua das suas respostas para o concurso SEDUC-CE, calibrada na incidência histórica da prova.
-            </p>
+          <div className="flex flex-wrap items-center gap-2.5 text-xs text-zinc-600 pl-8">
+            <span className="font-extrabold text-zinc-800 flex items-center gap-1">
+              <CheckCircle2 size={13} className="text-emerald-600" />
+              {totalQuestions} Questões Respondidas
+            </span>
+            <span className="text-zinc-300">•</span>
+            <span className="font-extrabold text-emerald-800 flex items-center gap-1">
+              <Target size={13} className="text-emerald-700" />
+              {overallAccuracy}% Aproveitamento Geral
+            </span>
+          </div>
+        </div>
 
-            <div className="flex flex-wrap items-center gap-3 pt-1">
-              <div className="px-3 py-1 bg-zinc-100 rounded-lg text-xs font-extrabold text-zinc-800 flex items-center gap-1.5 border border-zinc-200">
-                <CheckCircle2 size={14} className="text-emerald-600" />
-                <span>{totalQuestions} Questões Respondidas</span>
-              </div>
-              <div className="px-3 py-1 bg-emerald-50 rounded-lg text-xs font-extrabold text-emerald-900 flex items-center gap-1.5 border border-emerald-200">
-                <Target size={14} className="text-emerald-700" />
-                <span>{overallAccuracy}% Aproveitamento Geral</span>
-              </div>
+        {/* Right: Ultra Compact Índice de Preparação */}
+        <div className="bg-emerald-50/70 rounded-xl px-3 py-2 border border-emerald-200/90 flex items-center gap-3 shrink-0 self-start sm:self-auto">
+          <div className="text-center shrink-0 border-r border-emerald-200/80 pr-3">
+            <span className="text-[10px] font-black uppercase tracking-wider text-emerald-900 block flex items-center gap-1">
+              <Award size={12} className="text-emerald-700" />
+              Índice
+            </span>
+            <div className="flex items-baseline justify-center gap-0.5">
+              <span className="text-base font-black text-emerald-950">{aprovaçãoIndex.score}</span>
+              <span className="text-[10px] font-bold text-emerald-700">/100</span>
             </div>
           </div>
 
-          {/* Right: Índice de Preparação (Light Box) */}
-          <div className="bg-emerald-50/60 rounded-xl p-4 border border-emerald-200/90 space-y-2.5 min-w-[280px]">
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-[11px] font-black uppercase tracking-wider text-emerald-950 flex items-center gap-1.5">
-                <Award size={15} className="text-emerald-700" />
-                Índice de Preparação
-              </span>
-              <span className={`text-[10px] px-2 py-0.5 rounded-md font-extrabold border ${aprovaçãoIndex.color}`}>
-                {aprovaçãoIndex.label}
-              </span>
-            </div>
-
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-4xl font-black text-emerald-950">{aprovaçãoIndex.score}</span>
-              <span className="text-sm font-bold text-emerald-700">/100 pts</span>
-            </div>
-
-            {/* Gauge bar */}
-            <div className="w-full bg-emerald-200/60 rounded-full h-2 overflow-hidden">
-              <div 
-                className="bg-emerald-700 h-full rounded-full transition-all duration-700"
-                style={{ width: `${aprovaçãoIndex.score}%` }}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 text-[10px] text-zinc-700 pt-1">
-              <div className="bg-white p-1.5 rounded-lg border border-emerald-100 text-center">
-                <span className="text-zinc-500 block">Específica</span>
-                <span className="font-extrabold text-emerald-900">{aprovaçãoIndex.especPct}% acerto</span>
-              </div>
-              <div className="bg-white p-1.5 rounded-lg border border-emerald-100 text-center">
-                <span className="text-zinc-500 block">Gerais</span>
-                <span className="font-extrabold text-emerald-900">{aprovaçãoIndex.generalAvg}% acerto</span>
-              </div>
+          <div className="text-[11px] space-y-1">
+            <span className={`text-[9px] px-1.5 py-0.5 rounded font-extrabold border block text-center ${aprovaçãoIndex.color}`}>
+              {aprovaçãoIndex.label}
+            </span>
+            <div className="flex items-center gap-2 text-[10px] text-zinc-600 font-bold">
+              <span>Esp: <strong className="text-emerald-900">{aprovaçãoIndex.especPct}%</strong></span>
+              <span>Ger: <strong className="text-emerald-900">{aprovaçãoIndex.generalAvg}%</strong></span>
             </div>
           </div>
         </div>
