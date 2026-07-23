@@ -790,24 +790,6 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
               Parâmetros do Simulado
             </h3>
 
-            {/* Banca Selection */}
-            <div>
-              <label className="block text-[11px] font-extrabold text-zinc-700 mb-1">Banca Examinadora</label>
-              <select
-                value={selectedBanca}
-                onChange={(e) => setSelectedBanca(e.target.value)}
-                className="w-full bg-zinc-50 border border-zinc-200 rounded-2xl px-3 py-2 text-xs font-bold text-zinc-800 focus:outline-none focus:border-emerald-600 cursor-pointer"
-              >
-                <option value="FUNECE / CEV-UECE">FUNECE / CEV-UECE (Oficial SEDUC CE)</option>
-                <option value="IDECAN">IDECAN</option>
-                <option value="CEBRASPE">CEBRASPE</option>
-                <option value="FGV">FGV (Fundação Getulio Vargas)</option>
-                <option value="VUNESP">VUNESP</option>
-                <option value="IBFC">IBFC</option>
-                <option value="Inédita PasseiSEDUC">Inédita PasseiSEDUC (IA Avançada)</option>
-              </select>
-            </div>
-
             {/* Quantity Slider/Pills */}
             <div>
               <label className="block text-[11px] font-extrabold text-zinc-700 mb-1">
@@ -848,24 +830,6 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
                   </button>
                 ))}
               </div>
-            </div>
-
-            {/* Question Style / Type */}
-            <div>
-              <label className="block text-[11px] font-extrabold text-zinc-700 mb-1">Estilo / Abordagem</label>
-              <select
-                value={selectedQuestionType}
-                onChange={(e) => setSelectedQuestionType(e.target.value)}
-                className="w-full bg-zinc-50 border border-zinc-200 rounded-2xl px-3 py-2 text-xs font-bold text-zinc-800 focus:outline-none focus:border-emerald-600 cursor-pointer"
-              >
-                <option value="Estilo banca">Estilo Banca FUNECE (Equilibrado)</option>
-                <option value="Questão inédita">Inédita de Alta Profundidade</option>
-                <option value="Literal">Literalidade do Edital / Norma</option>
-                <option value="Interpretativa">Interpretativa & Análise Textual</option>
-                <option value="Caso prático">Estudo de Caso Prático Pedagógico</option>
-                <option value="Multidisciplinar">Multidisciplinaridade</option>
-                <option value="Alta incidência">Questão de Alta Incidência de Prova</option>
-              </select>
             </div>
 
             {/* Quiz Mode (Instant vs Exam) */}
