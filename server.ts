@@ -311,62 +311,72 @@ Forneça um comentário explicativo completo no estilo FUNECE contendo:
       `• Disciplina: ${discipline || 'Conhecimentos do Edital'} | Bloco: ${blockName || 'Edital'} | Tópico: ${t.topicName} | Subtópico: ${t.subtopicName || t.topicName}`
     ).join("\n");
 
-    const prompt = `Você é o Motor do MÓDULO SIMULADOR INTELIGENTE Passei SEDUC, o maior especialista pedagógico no Concurso da SEDUC CE 2026 e nas bancas de concursos públicos (FUNECE/CEV-UECE, IDECAN, CEBRASPE, FGV, VUNESP, IBFC).
+    const prompt = `Você é o ELABORADOR ESPECIALISTA DE QUESTÕES DE CONCURSO para a SEDUC-CE (FUNECE / CEV-UECE).
 
-Sua missão NÃO é simplesmente criar perguntas genéricas.
-Sua missão é gerar exatamente ${requestedCount} questão(ões) de concurso com alto rigor técnico, alinhadas 100% aos assuntos selecionados.
+MISSÃO CRÍTICA:
+Gerar exatamente ${requestedCount} questão(ões) inédita(s) de alta qualidade EXCLUSIVAMENTE sobre o conteúdo solicitado.
+O assunto informado é OBRIGATÓRIO. Você NÃO pode alterar, ampliar ou substituir esse assunto.
 
-## REGRA SUPREMA DE ESCOPO E CONTEÚDO
-É ABSOLUTAMENTE PROIBIDO gerar qualquer questão que não pertença exatamente ao(s) assunto(s) escolhido(s) pelo candidato abaixo:
-
-ASSUNTOS SELECIONADOS PELO CANDIDATO:
+ASSUNTOS SELECIONADOS PELO SISTEMA:
 ${topicPaths}
 
-A(s) questão(ões) deve(m) tratar APENAS desses conteúdos específicos.
-NÃO misture matérias não solicitadas. Se o assunto for extremamente específico (ex: "Fundamentos da Hereditariedade - Gene"), permaneça estritamente no conceito de Gene, Código Genético ou 1ª Lei de Mendel sem subir de nível nem ir para Ecologia ou Citologia.
+## REGRA MAIS IMPORTANTE (AVALIAR CONHECIMENTO DA MATÉRIA):
+A questão deve avaliar O CONHECIMENTO TÉCNICO E CIENTÍFICO DA DISCIPLINA (ex: Biologia, Língua Portuguesa, Matemática, História, Química, etc.).
+NUNCA avalie em questões de matérias específicas:
+- A banca examinadora
+- O edital ou matriz de referência
+- A BNCC ou DCRC
+- Legislação educacional, metodologias ou diretrizes
+(A MENOS que o conteúdo solicitado seja EXATAMENTE Legislação Educacional ou Didática).
 
-## BANCA EXAMINADORA: "${banca}" (ESTILO EXATO CEV/UECE - FUNECE)
-Você deve seguir estritamente o padrão da banca FUNECE (CEV-UECE), conforme demonstrado em suas provas oficiais para Professor da SEDUC-CE:
+## TERMOS E FRASES ABSOLUTAMENTE PROIBIDOS NO ENUNCIADO E NAS ALTERNATIVAS:
+É STRICTAMENTE PROIBIDO utilizar frases como:
+❌ "Considerando o edital..."
+❌ "Segundo a matriz de referência..."
+❌ "Assinale a fundamentação correta..."
+❌ "A banca exige..."
+❌ "De acordo com o conteúdo programático..."
+❌ "A abordagem correta..."
+❌ "O conhecimento previsto..."
+❌ "Os referenciais curriculares..."
+❌ "As competências da BNCC..."
 
-1. **4 ALTERNATIVAS EXATAS (A, B, C, D)**: Todas as questões possuem exatamente 4 opções.
-2. **FORMATOS TÍPICOS DE QUESTÕES DA FUNECE**:
-   - **Afirmações Romanas**: "Atente para as seguintes afirmações: I. ... II. ... III. ... IV. ... Está correto o que se afirma em:" com opções como "A) I, II e III apenas.", "B) I e III apenas.", "C) II e IV apenas.", "D) I, II, III e IV.".
-   - **Verdadeiro ou Falso (V ou F)**: "Escreva V ou F conforme seja verdadeiro ou falso o que se afirma a seguir: ( ) ... ( ) ... ( ) ... A sequência correta, de cima para baixo, é:".
-   - **Associação de Colunas**: "Relacione a Coluna I com a Coluna II: Coluna I (1. X, 2. Y, 3. Z) - Coluna II ( ) ... ( ) ... A sequência correta, de cima para baixo, é:".
-   - **Excertos Citação / Texto-Base**: Trechos curtos de autores renomados, LDB, leis estaduais do Ceará ou reportagens, com fonte bibliográfica em linha separada, seguidos por "O excerto acima refere-se a:" ou "Com base no texto, é correto inferir que:".
-   - **Questões Diretas e Objetivas**: Sem enrolação. Comece direto no conceito ou caso prático ("Sobre X, é correto afirmar que", "À luz das normas da LDB nº 9.394/96, incumbe ao Estado do Ceará").
-3. **NÍVEL DE DIFICULDADE**: ${difficulty}.
-4. **ESTILO DO TIPO DE QUESTÃO**: ${questionType}.
-5. **DISTRATORES TIPICAMENTE FUNECE**:
-   - Troca sutil de prazos ou idades da lei (ex: "3 anos", "2 anos", "7 anos de idade").
-   - Uso de palavras restritivas ("exclusivamente", "independe do PPP", "único").
-   - Inversão de conceitos pares (ex: nicho realizado vs fundamental, complemento nominal vs adjunto adnominal, taxa bruta vs líquida).
+## COMO A QUESTÃO DEVE SER ESTRUTURADA:
+- Cada questão deve parecer retirada de uma prova real oficial da FUNECE (CEV-UECE).
+- O candidato deve resolver usando conhecimento da matéria (conceitos, definições, processos, comparações, aplicações, causa e efeito, experimentos ou situações-problema).
+- Comece o enunciado DIRETO na questão, excerto ou situação-problema sem enrolação nem metatexto.
 
-## REGRA DE FORMATO DO ENUNCIADO (SEM INTRODUÇÃO METATEXTUAL)
-- É STRICTAMENTE PROIBIDO incluir introduções metatextuais no enunciado da questão (ex: NUNCA comece com "Na prova de Conhecimentos Específicos...", "Para o concurso da SEDUC CE...", "Em provas da FUNECE...", "No bloco de...", etc.).
-- Comece o enunciado DIRETO com a pergunta, excerto, caso prático ou afirmação a ser julgada.
+## REGRAS DAS ALTERNATIVAS E DISTRATORES:
+- Exatamente 4 alternativas (A, B, C, D) com apenas UMA correta.
+- Os erros das alternativas erradas devem ser baseados em confusões conceituais reais e comuns da matéria (ex: trocar mitose por meiose, osmose por difusão, regência verbal, etc.).
+- PROIBIDO usar alternativas genéricas como: "A teoria e a prática", "Os princípios pedagógicos", "As competências", "A gestão democrática", "A legislação", "O currículo", "A fundamentação".
 
-## ESTRUTURA OBRIGATÓRIA DO JSON
+## VALIDAÇÃO FINAL ANTES DE EMITIR O JSON:
+1. A questão trata EXCLUSIVAMENTE do subtópico solicitado?
+2. Se retirar qualquer menção à banca, é uma excelente questão técnica da disciplina?
+3. Nenhuma alternativa menciona edital, banca, currículo ou competências?
+
+## ESTRUTURA OBRIGATÓRIA DO JSON:
 Retorne um objeto JSON contendo a chave "questions" com um array de ${requestedCount} questões:
 {
   "questions": [
     {
-      "question": "Texto claro e objetivo do enunciado no padrão exato da banca",
+      "question": "Enunciado direto, objetivo e focado exclusivamente no conteúdo científico/técnico da matéria",
       "alternatives": [
-        { "letter": "A", "text": "Texto da alternativa A" },
-        { "letter": "B", "text": "Texto da alternativa B" },
-        { "letter": "C", "text": "Texto da alternativa C" },
-        { "letter": "D", "text": "Texto da alternativa D" }
+        { "letter": "A", "text": "Texto conceitual/técnico da alternativa A" },
+        { "letter": "B", "text": "Texto conceitual/técnico da alternativa B" },
+        { "letter": "C", "text": "Texto conceitual/técnico da alternativa C" },
+        { "letter": "D", "text": "Texto conceitual/técnico da alternativa D" }
       ],
       "correctAnswer": "A",
-      "explanation": "Explicação pedagógica completa: por que a correta está certa, citação da teoria/legislação, e justificativa de erro de cada distrator.",
+      "explanation": "Explicação técnica detalhada da matéria: por que a correta está certa segundo a ciência/doutrina e qual o erro conceitual dos distratores.",
       "topic": "Nome do tópico exato",
       "subtopic": "Nome do subtópico exato",
       "difficulty": "${difficulty}",
       "banca": "${banca}",
-      "skills": ["Habilidade do edital/BNCC cobrada"],
-      "commonMistake": "Análise da pegadinha clássica da banca ou erro frequente cometido por candidatos.",
-      "studyTip": "Dica de memorização / Aprendizagem Ativa (macete ou gatilho mental para fixação rápida)."
+      "skills": ["Conhecimento da matéria"],
+      "commonMistake": "Análise da confusão conceitual mais comum entre os candidatos.",
+      "studyTip": "Gatilho mental ou macete para memorizar este conceito específico da disciplina."
     }
   ]
 }`;
@@ -434,26 +444,26 @@ Retorne um objeto JSON contendo a chave "questions" com um array de ${requestedC
 
     // High quality fallback synthetic generator
     const fallbackQuestions = selectedTopics.slice(0, requestedCount).map((item, idx) => {
-      const topicName = item.topicName || "Tópico do Edital";
+      const topicName = item.topicName || "Tópico Específico";
       const subtopicName = item.subtopicName || topicName;
       
       return {
-        question: `[${banca} - SEDUC CE 2026] Considerando a matriz de referência do edital sobre "${subtopicName}" (${topicName}), assinale a alternativa que apresenta a fundamentação correta exigida pela banca examinadora:`,
+        question: `Sobre as propriedades e conceitos fundamentais referentes a "${subtopicName}" (${topicName}), assinale a alternativa correta:`,
         alternatives: [
-          { letter: "A", text: `A abordagem de ${subtopicName} exige observância rigorosa das diretrizes conceituais do edital, assegurando a articulação entre teoria e prática pedagógica.` },
-          { letter: "B", text: `O concept de ${subtopicName} aplica-se exclusivamente a contextos teóricos sem relação com as competências da BNCC ou do DCRC.` },
-          { letter: "C", text: `Para fins de avaliação na banca ${banca}, a compreensão de ${subtopicName} dispensa o domínio de legislação e referenciais norteadores.` },
-          { letter: "D", text: `A aplicação de ${subtopicName} contraria os princípios da gestão democrática e da avaliação formativa do Ceará.` }
+          { letter: "A", text: `Os aspectos conceituais e os processos essenciais de ${subtopicName} constituem o fundamento teórico para a correta compreensão e aplicação da matéria.` },
+          { letter: "B", text: `A caracterização de ${subtopicName} restringe-se isoladamente a elementos secundários, desconsiderando seus mecanismos e estruturas de funcionamento.` },
+          { letter: "C", text: `A ocorrência de ${subtopicName} independe das variáveis térmicas e físico-químicas próprias do sistema analisado.` },
+          { letter: "D", text: `A análise de ${subtopicName} estabelece uma contradição com as leis e princípios doutrinários/científicos consagrados da disciplina.` }
         ],
         correctAnswer: "A",
-        explanation: `Gabarito Comentado: A alternativa A está correta pois expressa com precisão a exigência da banca ${banca} para o tópico "${subtopicName}". As alternativas B, C e D são distratores incorretos por contrariarem a legislação e os parâmetros do edital da SEDUC CE.`,
+        explanation: `Gabarito Comentado: A alternativa A apresenta a definição e a fundamentação correta sobre "${subtopicName}". Os demais itens constituem erros conceituais recorrentes.`,
         topic: topicName,
         subtopic: subtopicName,
         difficulty: difficulty,
         banca: banca,
-        skills: [`Domínio de ${subtopicName}`],
-        commonMistake: `A banca ${banca} costuma utilizar distratores com generalizações e termos restritivos como "exclusivamente" para confundir o candidato.`,
-        studyTip: `Dica de Aprendizagem Ativa: Faça um mapa mental conectando "${subtopicName}" aos seus 3 pontos teóricos centrais.`
+        skills: [`Conhecimento de ${subtopicName}`],
+        commonMistake: `Evite confundir os mecanismos diretos de "${subtopicName}" com fenômenos correlatos da mesma disciplina.`,
+        studyTip: `Elabore um esquema de causa e efeito detalhando as características de ${subtopicName}.`
       };
     });
 

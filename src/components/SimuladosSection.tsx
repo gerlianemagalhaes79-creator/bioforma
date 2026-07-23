@@ -257,16 +257,16 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
         });
       } else {
         // Build a custom topic-tailored question so question text directly addresses subtopicName/topicName
-        let qText = `Considerando a matriz de referência da FUNECE / CEV-UECE para o concurso SEDUC CE 2026, assinale a alternativa correta acerca de "${subtopicName}":`;
+        let qText = `Sobre os conceitos e fundamentos científicos/técnicos de "${subtopicName}" (${topicName}), assinale a alternativa correta:`;
         let opts: { letter: 'A' | 'B' | 'C' | 'D' | 'E'; text: string }[] = [
-          { letter: 'A', text: `A abordagem de ${subtopicName} deve articular os conceitos fundamentais da disciplina às competências ativas do Ensino Médio.` },
-          { letter: 'B', text: `O estudo de ${subtopicName} dispensa a relação com os objetivos de aprendizagem estabelecidos no DCRC.` },
-          { letter: 'C', text: `A avaliação em ${subtopicName} limita-se à memorização mecânica de definições do livro didático.` },
-          { letter: 'D', text: `As diretrizes pedagógicas estaduais proíbem a aplicação de resolução de problemas em ${subtopicName}.` }
+          { letter: 'A', text: `A caracterização de ${subtopicName} baseia-se na integração dos princípios essenciais da matéria e de suas propriedades fundamentais.` },
+          { letter: 'B', text: `O processo de ${subtopicName} limita-se a um evento isolado sem relação com os demais fenômenos da disciplina.` },
+          { letter: 'C', text: `A ocorrência de ${subtopicName} independe das variáveis estruturais e físico-químicas do sistema.` },
+          { letter: 'D', text: `A análise técnica de ${subtopicName} nega os postulados e leis consagrados da área de conhecimento.` }
         ];
 
         if (subtopicName.toLowerCase().includes('organela') || topicName.toLowerCase().includes('organela') || topicName.toLowerCase().includes('seres vivos')) {
-          qText = `Em relação à estrutura celular e às organelas citoplasmáticas nas células eucarióticas (Assunto: ${subtopicName}), assinale a opção correta de acordo com a banca FUNECE:`;
+          qText = `Em relação à estrutura celular e às organelas citoplasmáticas nas células eucarióticas (${subtopicName}), assinale a opção correta:`;
           opts = [
             { letter: 'A', text: 'As mitocôndrias são organelas membranosas responsáveis pelo processo de respiração celular e síntese de ATP.' },
             { letter: 'B', text: 'Os ribossomos realizam exclusivamente a digestão intracelular de macromoléculas fagocitadas.' },
@@ -285,11 +285,11 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
           questionText: qText,
           options: opts,
           correctAnswer: 'A',
-          explanation: `Gabarito A: A alternativa A traz a afirmação conceitual correta referente a ${subtopicName}, de acordo com o programa do edital FUNECE / CEV-UECE.`,
+          explanation: `Gabarito A: A alternativa A traz a afirmação conceitual correta referente a ${subtopicName}.`,
           difficulty: 'medio',
-          skills: ['Compreensão Conceitual', 'Aplicação de Conteúdo'],
-          commonMistake: 'Confundir a função primária das organelas intracelulares.',
-          studyTip: `Revise os conceitos de ${subtopicName} no edital verticalizado FUNECE.`
+          skills: ['Compreensão Conceitual', 'Aplicação da Disciplina'],
+          commonMistake: `Confundir a definição ou mecanismos de ${subtopicName}.`,
+          studyTip: `Revise os conceitos diretos de ${subtopicName}.`
         });
       }
     }
