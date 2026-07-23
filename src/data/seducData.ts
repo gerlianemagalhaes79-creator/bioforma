@@ -454,8 +454,7 @@ export const SEDUC_QUESTIONS: Question[] = [
       { letter: 'A', text: 'O ensino por competências elimina a necessidade de conteúdos conceituais na área de conhecimento.' },
       { letter: 'B', text: 'A avaliação específica deve integrar saberes científicos com a resolução de problemas do cotidiano do estudante cearense.' },
       { letter: 'C', text: 'O professor deve limitar a transmissão de conteúdos à memorização passiva das definições do livro didático.' },
-      { letter: 'D', text: 'A matriz de referência da FUNECE proíbe a utilização de práticas laboratoriais no ensino de ciências e linguagens.' },
-      { letter: 'E', text: 'A componente curricular específica não possui relação com os objetivos de aprendizagem do DCRC.' }
+      { letter: 'D', text: 'A matriz de referência da FUNECE proíbe a utilização de práticas laboratoriais no ensino de ciências e linguagens.' }
     ],
     correctAnswer: 'B',
     legalReference: 'Diretrizes Curriculares do Ceará (DCRC) e Matriz FUNECE',
@@ -474,8 +473,7 @@ export const SEDUC_QUESTIONS: Question[] = [
       { letter: 'A', text: 'Elaborar e cumprir plano de trabalho, segundo a proposta pedagógica do estabelecimento de ensino.' },
       { letter: 'B', text: 'Zelar pela aprendizagem dos alunos e estabelecer estratégias de recuperação para os de menor rendimento.' },
       { letter: 'C', text: 'Formular a proposta pedagógica da escola de forma individual e isolada, sem submissão ao conselho escolar.' },
-      { letter: 'D', text: 'Ministrar os dias letivos e horas-aula estabelecidos, além de participar integralmente dos períodos dedicados ao planejamento.' },
-      { letter: 'E', text: 'Colaborar com as atividades de articulação da escola com as famílias e a comunidade.' }
+      { letter: 'D', text: 'Ministrar os dias letivos e horas-aula estabelecidos, além de participar integralmente dos períodos dedicados ao planejamento.' }
     ],
     correctAnswer: 'C',
     legalReference: 'LDB nº 9.394/96, Art. 12 e Art. 13',
@@ -494,8 +492,7 @@ export const SEDUC_QUESTIONS: Question[] = [
       { letter: 'A', text: 'à – as – às' },
       { letter: 'B', text: 'a – às – as' },
       { letter: 'C', text: 'à – às – as' },
-      { letter: 'D', text: 'a – as – às' },
-      { letter: 'E', text: 'à – as – as' }
+      { letter: 'D', text: 'a – as – às' }
     ],
     correctAnswer: 'A',
     legalReference: 'Gramática Normativa - CEV/UECE',
@@ -514,8 +511,7 @@ export const SEDUC_QUESTIONS: Question[] = [
       { letter: 'A', text: 'Todos os alunos da escola dominam 100% dos descritores da matriz de referência do SPAECE.' },
       { letter: 'B', text: 'A maioria absoluta (três quartos) dos estudantes avaliados demonstrou as competências consolidadas esperadas para a etapa.' },
       { letter: 'C', text: 'O indicador comprova que a escola não necessita de plano de recomposição de aprendizagem para os 25% restantes.' },
-      { letter: 'D', text: 'O resultado do SPAECE impede que a escola receba recursos do Fundo de Manutenção da Educação Básica.' },
-      { letter: 'E', text: 'A taxa de proficiência do SPAECE substitui as notas regimentais de avaliação formativa atribuídas pelo docente.' }
+      { letter: 'D', text: 'O resultado do SPAECE impede que a escola receba recursos do Fundo de Manutenção da Educação Básica.' }
     ],
     correctAnswer: 'B',
     legalReference: 'Manual de Indicadores Educacionais do Ceará / SPAECE SEDUC CE',
@@ -534,8 +530,7 @@ export const SEDUC_QUESTIONS: Question[] = [
       { letter: 'A', text: 'O estágio probatório possui prazo de 2 (dois) anos, dispensando comissão de avaliação.' },
       { letter: 'B', text: 'O estágio probatório cumpre-se em 3 (três) anos de efetivo exercício, condicionado à avaliação especial de desempenho.' },
       { letter: 'C', text: 'A estabilidade no serviço público estadual ocorre automaticamente com 12 meses de contrato.' },
-      { letter: 'D', text: 'O servidor em estágio probatório fica proibido de solicitar licença para tratamento de saúde.' },
-      { letter: 'E', text: 'A exoneração do professor durante o estágio probatório não exige motivação legal nem contraditório.' }
+      { letter: 'D', text: 'O servidor em estágio probatório fica proibido de solicitar licença para tratamento de saúde.' }
     ],
     correctAnswer: 'B',
     legalReference: 'CF/88 Art. 41 e Lei Estadual do Ceará nº 10.884/84',

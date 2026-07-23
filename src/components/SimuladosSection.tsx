@@ -94,6 +94,11 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
     setExpandedTopics({});
   }, [currentTreeBlocks]);
 
+  // Clear subtopic selections when switching discipline category to avoid cross-subject topic pollution
+  useEffect(() => {
+    setSelectedSubtopicsMap({});
+  }, [selectedDisciplineCategory]);
+
   // Quiz Timer Effect
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -202,6 +207,96 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
 
   const selectedCount = Object.keys(selectedSubtopicsMap).length;
 
+  const generateSmartFallbackQuestions = (
+    disciplineName: string,
+    category: string,
+    topicPayload: { topicName: string; subtopicName: string }[],
+    count: number
+  ): Question[] => {
+    const selectedQuestions: Question[] = [];
+
+    // Filter bank questions that belong to this discipline or category
+    const categoryMatch = SEDUC_QUESTIONS.filter(q => {
+      const qSub = q.subject.toLowerCase();
+      const qCat = q.category.toLowerCase();
+      const disc = disciplineName.toLowerCase();
+      const cat = category.toLowerCase();
+
+      if (category === 'especifico') {
+        return qCat.includes('específic') || qSub.includes(disc) || disc.includes(qSub);
+      }
+      return qCat.includes(cat) || qSub.includes(cat) || cat.includes(qCat);
+    });
+
+    for (let i = 0; i < count; i++) {
+      const topObj = topicPayload[i % topicPayload.length] || { topicName: 'Tópico de Estudo', subtopicName: '' };
+      const topicName = topObj.topicName;
+      const subtopicName = topObj.subtopicName || topicName;
+
+      // Check if we have an exact matching question from SEDUC_QUESTIONS
+      const exactMatch = categoryMatch.find(q => 
+        q.topic.toLowerCase().includes(topicName.toLowerCase()) || 
+        (subtopicName && q.subtopic.toLowerCase().includes(subtopicName.toLowerCase()))
+      );
+
+      if (exactMatch) {
+        selectedQuestions.push({
+          ...exactMatch,
+          id: `fallback-smart-${Date.now()}-${i}`,
+          subject: disciplineName,
+          options: exactMatch.options.slice(0, 4)
+        });
+      } else if (categoryMatch.length > 0) {
+        // Use a question from the same category/subject, keeping its OWN topic so text matches topic!
+        const baseQ = categoryMatch[i % categoryMatch.length];
+        selectedQuestions.push({
+          ...baseQ,
+          id: `fallback-cat-${Date.now()}-${i}`,
+          subject: disciplineName,
+          options: baseQ.options.slice(0, 4)
+        });
+      } else {
+        // Build a custom topic-tailored question so question text directly addresses subtopicName/topicName
+        let qText = `Considerando a matriz de referência da FUNECE / CEV-UECE para o concurso SEDUC CE 2026, assinale a alternativa correta acerca de "${subtopicName}":`;
+        let opts: { letter: 'A' | 'B' | 'C' | 'D' | 'E'; text: string }[] = [
+          { letter: 'A', text: `A abordagem de ${subtopicName} deve articular os conceitos fundamentais da disciplina às competências ativas do Ensino Médio.` },
+          { letter: 'B', text: `O estudo de ${subtopicName} dispensa a relação com os objetivos de aprendizagem estabelecidos no DCRC.` },
+          { letter: 'C', text: `A avaliação em ${subtopicName} limita-se à memorização mecânica de definições do livro didático.` },
+          { letter: 'D', text: `As diretrizes pedagógicas estaduais proíbem a aplicação de resolução de problemas em ${subtopicName}.` }
+        ];
+
+        if (subtopicName.toLowerCase().includes('organela') || topicName.toLowerCase().includes('organela') || topicName.toLowerCase().includes('seres vivos')) {
+          qText = `Em relação à estrutura celular e às organelas citoplasmáticas nas células eucarióticas (Assunto: ${subtopicName}), assinale a opção correta de acordo com a banca FUNECE:`;
+          opts = [
+            { letter: 'A', text: 'As mitocôndrias são organelas membranosas responsáveis pelo processo de respiração celular e síntese de ATP.' },
+            { letter: 'B', text: 'Os ribossomos realizam exclusivamente a digestão intracelular de macromoléculas fagocitadas.' },
+            { letter: 'C', text: 'O complexo de Golgi atua de forma isolada na síntese primária de ácidos nucleicos do núcleo celular.' },
+            { letter: 'D', text: 'O retículo endoplasmático liso é o local onde ocorre a tradução de todas as proteínas de exportação.' }
+          ];
+        }
+
+        selectedQuestions.push({
+          id: `fallback-gen-${Date.now()}-${i}`,
+          category: category === 'especifico' ? 'Conhecimentos Específicos' : (category as any),
+          subject: disciplineName,
+          topic: topicName,
+          subtopic: subtopicName,
+          banca: 'FUNECE',
+          questionText: qText,
+          options: opts,
+          correctAnswer: 'A',
+          explanation: `Gabarito A: A alternativa A traz a afirmação conceitual correta referente a ${subtopicName}, de acordo com o programa do edital FUNECE / CEV-UECE.`,
+          difficulty: 'medio',
+          skills: ['Compreensão Conceitual', 'Aplicação de Conteúdo'],
+          commonMistake: 'Confundir a função primária das organelas intracelulares.',
+          studyTip: `Revise os conceitos de ${subtopicName} no edital verticalizado FUNECE.`
+        });
+      }
+    }
+
+    return selectedQuestions;
+  };
+
   // Generate Simulado via Server API
   const handleGenerateSimulado = async () => {
     if (!selectedDisciplineCategory) {
@@ -280,26 +375,10 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
         setIsQuizCompleted(false);
       } else {
         // Fallback: load matching offline questions from bank if API is unreachable/fails
-        console.warn("API de geração indisponível ou resposta inválida. Usando banco de dados local da FUNECE como fallback.");
-        const fallbackList = SEDUC_QUESTIONS.filter(q => {
-          if (selectedDisciplineCategory === 'especifico') return true;
-          return q.category.toLowerCase().includes(selectedDisciplineCategory.toLowerCase()) || 
-                 q.subject.toLowerCase().includes(selectedDisciplineCategory.toLowerCase());
-        });
+        console.warn("API de geração indisponível ou resposta inválida. Usando gerador adaptativo de questões FUNECE.");
+        const fallbackQuestions = generateSmartFallbackQuestions(disciplineName, selectedDisciplineCategory, topicPayload, questionCount);
 
-        const pool = fallbackList.length > 0 ? fallbackList : SEDUC_QUESTIONS;
-        const selectedFallback: Question[] = [];
-        for (let i = 0; i < questionCount; i++) {
-          const baseQ = pool[i % pool.length];
-          selectedFallback.push({
-            ...baseQ,
-            id: `fallback-q-${Date.now()}-${i}`,
-            topic: topicPayload[i % topicPayload.length]?.topicName || baseQ.topic,
-            subtopic: topicPayload[i % topicPayload.length]?.subtopicName || baseQ.subtopic
-          });
-        }
-
-        setActiveQuizQuestions(selectedFallback);
+        setActiveQuizQuestions(fallbackQuestions);
         setCurrentQuestionIndex(0);
         setUserAnswersMap({});
         setSubmittedQuestionsMap({});
@@ -312,18 +391,8 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
     } catch (err: any) {
       console.error("Erro ao gerar simulado:", err);
       // Fallback on total network error
-      const pool = SEDUC_QUESTIONS;
-      const selectedFallback: Question[] = [];
-      for (let i = 0; i < questionCount; i++) {
-        const baseQ = pool[i % pool.length];
-        selectedFallback.push({
-          ...baseQ,
-          id: `fallback-err-q-${Date.now()}-${i}`,
-          topic: topicPayload[i % topicPayload.length]?.topicName || baseQ.topic,
-          subtopic: topicPayload[i % topicPayload.length]?.subtopicName || baseQ.subtopic
-        });
-      }
-      setActiveQuizQuestions(selectedFallback);
+      const fallbackQuestions = generateSmartFallbackQuestions(disciplineName, selectedDisciplineCategory, topicPayload, questionCount);
+      setActiveQuizQuestions(fallbackQuestions);
       setCurrentQuestionIndex(0);
       setUserAnswersMap({});
       setSubmittedQuestionsMap({});

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { User, db, collection, addDoc } from '../firebase';
 import { UserProfile, TutorChatMessage } from '../types';
+import { ALL_DISCIPLINES_EDITAL } from '../data/disciplinesData';
 import { GraduationCap, Send, Sparkles, BookOpen, BrainCircuit, User as UserIcon, RefreshCw, Award } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -11,7 +12,10 @@ interface TutorIASectionProps {
 
 export default function TutorIASection({ user, profile }: TutorIASectionProps) {
   const userName = profile?.name || user.displayName || 'Professor(a)';
-  const userSubject = profile?.targetSubject || 'Língua Portuguesa';
+  const userSubject = profile?.targetSubject || 'Licenciatura em Língua Portuguesa / Letras';
+  const editalBlocks = ALL_DISCIPLINES_EDITAL[userSubject] || ALL_DISCIPLINES_EDITAL['Licenciatura em Língua Portuguesa / Letras'] || [];
+  const firstBlockTopics = editalBlocks[0]?.topics || [];
+  const sampleTopicNames = firstBlockTopics.slice(0, 5).map(t => t.name);
 
   const [messages, setMessages] = useState<TutorChatMessage[]>([
     {
@@ -63,7 +67,8 @@ export default function TutorIASection({ user, profile }: TutorIASectionProps) {
         body: JSON.stringify({
           message: text.trim(),
           subject: userSubject,
-          profile: profile
+          profile: profile,
+          activeTopics: sampleTopicNames
         })
       });
 
@@ -101,14 +106,17 @@ export default function TutorIASection({ user, profile }: TutorIASectionProps) {
       const userName = profile?.name || 'Professor(a)';
       let replyText = '';
 
+      const mainTopicToday = sampleTopicNames[0] || 'Conteúdo Específico do Edital';
+      const secTopicToday = sampleTopicNames[1] || 'Tópicos Fundamentais do Edital';
+
       if (lowerMsg.includes('estudo hoje') || lowerMsg.includes('hoje') || lowerMsg.includes('cronograma')) {
-        replyText = `📅 **Estudo de hoje**\n\nHoje seu cronograma de estudos recomenda:\n\n🧬 **${userSubject}** (60 min)\n• Conteúdo Específico do Edital FUNECE\n• Resolução de questões de fixação\n\n📖 **Legislação Educacional / Didática** (40 min)\n• Estatuto do Magistério do CE (Lei nº 10.884/84)\n• Diretrizes Curriculares do Ceará (DCRC)\n\n📚 **Revisão Espaçada** (20 min)\n• Resolução de questões FUNECE dos temas da semana\n\n**Ordem sugerida:**\n1. ${userSubject}\n2. Legislação / Didática\n3. Revisão Espaçada\n\n*Quando concluir, marque as atividades no seu painel para atualizar seu progresso!*`;
+        replyText = `📅 **Estudo de Hoje (Edital Verticalizado FUNECE)**\n\nHoje seu cronograma recomenda:\n\n📚 **${userSubject}** (60 min)\n• **Meta Principal:** ${mainTopicToday}\n• **Complemento:** ${secTopicToday}\n\n📖 **Legislação Educacional / Didática** (40 min)\n• Estatuto do Magistério do CE (Lei nº 10.884/84)\n• LDB nº 9.394/96 (Art. 12 e Art. 13) e DCRC\n\n✍️ **Revisão Espaçada & Prática** (20 min)\n• Resolução de 5 a 10 questões da FUNECE sobre ${mainTopicToday}\n\n**Ordem Recomendada:**\n1. Específica (${mainTopicToday})\n2. Legislação & Didática SEDUC CE\n3. Simulados / Questões da Semana\n\n*Precisa que eu explique ${mainTopicToday} ou algum ponto específico deste conteúdo? É só me pedir!*`;
       } else if (lowerMsg.includes('progresso') || lowerMsg.includes('onde paramos') || lowerMsg.includes('desempenho')) {
-        replyText = `📊 **Seu Progresso de Estudos**\n\n• **Tópicos do Edital:** Tópicos em andamento no edital verticalizado FUNECE.\n• **Foco Principal:** ${userSubject}\n• **Aproveitamento em Simulados:** Acompanhe seu histórico completo na aba de Desempenho!\n\n*Deseja focar na resolução de questões do seu tópico atual hoje?*`;
+        replyText = `📊 **Análise do seu Progresso**\n\n• **Disciplina Alvo:** ${userSubject}\n• **Próximo Tópico da Fila:** ${mainTopicToday}\n• **Aproveitamento Geral:** Acompanhe suas estatísticas detalhadas na aba de Desempenho!\n\n*Quer realizar um simulado focado em ${mainTopicToday} agora?*`;
       } else if (lowerMsg.includes('atrasad') || lowerMsg.includes('atraso')) {
-        replyText = `⏱ **Análise do Cronograma**\n\n**Plano de Compensação Rápido FUNECE:**\n1. Dedique 1h/dia ao tópico principal do edital verticalizado.\n2. Utilize o modo de Simulados da FUNECE para acelerar a fixação das matérias gerais (LDB / Didática).\n3. Mantenha revisões curtas de 15 minutos ao final do dia.`;
+        replyText = `⏱ **Ajuste de Cronograma (Plano de Aceleração FUNECE)**\n\n1. Foque no tópico essencial de hoje: **${mainTopicToday}**.\n2. Utilize o gerador de simulados com filtro em **${userSubject}** para praticar 10 questões rápidas da FUNECE.\n3. Faça uma revisão ativa de 15 minutos do Estatuto do Magistério do CE (Lei nº 10.884/84).`;
       } else {
-        replyText = `Professor(a) ${userName}, referente a **"${text.trim()}"**:\n\nPara a banca **FUNECE / CEV-UECE (SEDUC CE 2026)**, estude com foco na literalidade das normas estaduais (Lei nº 10.884/84), LDB nº 9.394/96 e nas diretrizes pedagógicas ativas do Ensino Médio no Ceará.\n\n*Você também pode usar a aba de Simulados para praticar questões do estilo FUNECE sobre este tema!*`;
+        replyText = `Prof. ${userName}, como Doutor Mentor especialista em **${userSubject}** e Banca **FUNECE / CEV-UECE**:\n\nSobre **"${text.trim()}"**:\n\n1. **Orientação Técnica:** Para a prova da SEDUC CE 2026, relacione esse tema diretamente às competências do DCRC (Diretrizes Curriculares do Ceará) e às questões recentes da banca UECE/CEV.\n2. **Foco Prático:** Foque na resolução de problemas e na aplicação pedagógica em sala de aula.\n\n*Gostaria de uma explicação detalhada, um resumo em tópicos ou questões de fixação sobre este tema?*`;
       }
 
       const aiMsg: TutorChatMessage = {
