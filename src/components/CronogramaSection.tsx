@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { User } from '../firebase';
+import React, { useState, useMemo, useEffect } from 'react';
+import { User, db, doc, getDoc, setDoc } from '../firebase';
 import { UserProfile, EditalTopic } from '../types';
 import { generateStudySchedule, buildInterleavedStudyQueue, INITIAL_EDITAL_TOPICS } from '../data/seducData';
 import { 
@@ -27,8 +27,53 @@ interface CronogramaSectionProps {
 
 export default function CronogramaSection({ user, profile, setActiveTab }: CronogramaSectionProps) {
   const [topics] = useState<EditalTopic[]>(INITIAL_EDITAL_TOPICS);
-  const [completedTopicIds, setCompletedTopicIds] = useState<Record<string, boolean>>({});
+  const uid = user?.uid || profile?.uid || 'guest';
+  const storageKey = `cronogramaProgress_${uid}`;
+
+  const [completedTopicIds, setCompletedTopicIds] = useState<Record<string, boolean>>(() => {
+    try {
+      const saved = localStorage.getItem(storageKey);
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
   const [showQueueModal, setShowQueueModal] = useState(false);
+
+  // Sync / Load saved cronograma completion progress from localStorage & Firestore
+  useEffect(() => {
+    const loadSavedCronogramaProgress = async () => {
+      // 1. Try local storage first for speed
+      try {
+        const savedLocal = localStorage.getItem(storageKey);
+        if (savedLocal) {
+          setCompletedTopicIds(JSON.parse(savedLocal));
+        }
+      } catch (err) {
+        console.warn('Erro ao carregar do localStorage:', err);
+      }
+
+      // 2. Sync from Firestore if user UID is present
+      if (user?.uid) {
+        try {
+          const docRef = doc(db, 'cronogramaProgress', user.uid);
+          const snap = await getDoc(docRef);
+          if (snap.exists()) {
+            const data = snap.data();
+            if (data && data.completedTopicIds) {
+              setCompletedTopicIds(data.completedTopicIds);
+              localStorage.setItem(storageKey, JSON.stringify(data.completedTopicIds));
+            }
+          }
+        } catch (err) {
+          console.warn('Erro ao carregar do Firestore:', err);
+        }
+      }
+    };
+
+    loadSavedCronogramaProgress();
+  }, [user?.uid, storageKey]);
 
   const activeDegree = profile?.degree || profile?.targetSubject || 'Licenciatura em Biologia / Ciências Biológicas';
 
@@ -43,10 +88,32 @@ export default function CronogramaSection({ user, profile, setActiveTab }: Crono
   }, [profile, topics]);
 
   const toggleSubtopicCompletion = (subKey: string) => {
-    setCompletedTopicIds(prev => ({
-      ...prev,
-      [subKey]: !prev[subKey]
-    }));
+    setCompletedTopicIds(prev => {
+      const updated = {
+        ...prev,
+        [subKey]: !prev[subKey]
+      };
+
+      // Save to localStorage immediately
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(updated));
+      } catch (err) {
+        console.warn('Erro ao salvar no localStorage:', err);
+      }
+
+      // Save to Firestore asynchronously
+      if (user?.uid) {
+        setDoc(doc(db, 'cronogramaProgress', user.uid), {
+          uid: user.uid,
+          completedTopicIds: updated,
+          updatedAt: new Date().toISOString()
+        }, { merge: true }).catch(err => {
+          console.warn('Erro ao salvar progresso do cronograma no Firestore:', err);
+        });
+      }
+
+      return updated;
+    });
   };
 
   // Total leaf subtopics across all days

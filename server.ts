@@ -27,29 +27,18 @@ function getAIClient() {
 function formatGeminiError(err: any): string {
   if (!err) return "Erro desconhecido";
   const msg = err.message || String(err);
-  try {
-    if (typeof msg === 'string' && msg.trim().startsWith('{')) {
-      const parsed = JSON.parse(msg);
-      if (parsed.error) {
-        const code = parsed.error.code || "";
-        const status = parsed.error.status || "";
-        const message = parsed.error.message || "";
-        return `[API ${code} - ${status}] ${message}`;
-      }
-    }
-  } catch (_) {
-    // ignore
-  }
   
+  if (msg.includes("429") || msg.includes("RESOURCE_EXHAUSTED") || msg.includes("quota") || msg.includes("Quota")) {
+    return "cota_excedida_429";
+  }
   if (msg.includes("503") || msg.includes("UNAVAILABLE") || msg.includes("high demand")) {
-    return "Servico temporariamente indisponivel (503 - Alta demanda)";
-  }
-  if (msg.includes("429") || msg.includes("RESOURCE_EXHAUSTED") || msg.includes("quota")) {
-    return "Limite de requisicoes atingido (429 - Quota)";
+    return "servico_indisponivel_503";
   }
   
-  return msg.replace(/[\{\}]/g, '').substring(0, 150);
+  return msg.replace(/[\{\}]/g, '').substring(0, 100);
 }
+
+let quotaCooldownUntil = 0;
 
 async function generateContentWithRetry(aiInstance: any, options: {
   contents: string;
@@ -57,32 +46,54 @@ async function generateContentWithRetry(aiInstance: any, options: {
   defaultModel?: string;
   maxRetries?: number;
 }) {
+  if (Date.now() < quotaCooldownUntil) {
+    throw new Error("Cota do Gemini temporariamente excedida (em periodo de cooldown). Usando modo offline.");
+  }
+
   const { contents, config = {}, defaultModel = "gemini-2.5-flash", maxRetries = 2 } = options;
-  // Try defaultModel, then gemini-3.1-flash-lite (high RPD quota: 500/day), then gemini-2.5-flash, gemini-2.0-flash, gemini-1.5-flash
-  const modelsToTry = Array.from(new Set([defaultModel, "gemini-3.1-flash-lite", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]));
+  // Supported models in current SDK
+  const modelsToTry = Array.from(new Set([
+    defaultModel,
+    "gemini-2.5-flash",
+    "gemini-2.0-flash",
+    "gemini-2.0-flash-lite"
+  ]));
   
   for (const model of modelsToTry) {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        console.log(`[Gemini SDK] Chamando modelo "${model}" (tentativa ${attempt}/${maxRetries})`);
+        console.log(`[Gemini SDK] Solicitando resposta ao modelo "${model}"`);
         const response = await aiInstance.models.generateContent({
           model,
           contents,
           config,
         });
         if (response && response.text) {
+          quotaCooldownUntil = 0; // Sucesso, reseta o cooldown
           return response;
         }
       } catch (err: any) {
-        const cleanMessage = formatGeminiError(err);
-        console.log(`[Gemini SDK] Falha na tentativa ${attempt} com o modelo "${model}": ${cleanMessage}`);
+        const errCode = formatGeminiError(err);
+        const errStr = String(err?.message || err);
+        if (errCode === "cota_excedida_429" || errStr.includes("429")) {
+          console.warn(`[Gemini SDK] Cota indisponivel no modelo "${model}", alternando modelo...`);
+          break; // Pula imediatamente para o proximo modelo
+        }
+        if (errStr.includes("404") || errStr.includes("not found")) {
+          console.warn(`[Gemini SDK] Modelo "${model}" nao encontrado (404), ignorando...`);
+          break; // Pula imediatamente modelo nao existente
+        }
+        console.warn(`[Gemini SDK] Tentativa ${attempt} falhou no modelo "${model}": ${errCode}`);
         if (attempt < maxRetries) {
           await new Promise(resolve => setTimeout(resolve, 300));
         }
       }
     }
   }
-  throw new Error("Todos os modelos e tentativas do Gemini falharam.");
+
+  // Se todos falharam por cota, ativa o cooldown por 60 segundos
+  quotaCooldownUntil = Date.now() + 60000;
+  throw new Error("Todos os modelos do Gemini estao temporariamente indisponiveis por cota.");
 }
 
 const app = express();
@@ -114,59 +125,86 @@ app.use(express.json());
     const userName = profile?.name || "Professor(a)";
     const userSubject = profile?.targetSubject || subject || "Licenciatura SEDUC CE";
     const userDegree = profile?.degree || "Licenciatura";
-    const totalDone = profile?.completedTopicsCount || stats?.completedTopics || 6;
+    const totalDone = stats?.completedSubtopics ?? profile?.completedTopicsCount ?? 6;
+    const totalSubtopics = stats?.totalSubtopics ?? 120;
+    const progressPercent = stats?.progressPercent ?? (totalSubtopics > 0 ? Math.round((totalDone / totalSubtopics) * 100) : 10);
     const questionsDone = profile?.totalQuestionsDone || stats?.totalQuestions || 18;
     const correctCount = profile?.correctAnswersCount || stats?.correctAnswers || 14;
     const accuracy = questionsDone > 0 ? Math.round((correctCount / questionsDone) * 100) : 75;
     const activeTopicsText = req.body.activeTopics ? JSON.stringify(req.body.activeTopics) : "";
 
-    const sysPrompt = `Você é o PROFESSOR MENTOR IA, o maior mentor pedagógico e Doutor Especialista em Conteúdo Técnico para o Concurso Público de Professores da Rede Estadual do Ceará (SEDUC CE 2026 - Banca FUNECE / CEV-UECE).
+    // Formatar data atual real (ex: Quinta-feira, 23 de julho de 2026)
+    const now = new Date();
+    const formattedDate = now.toLocaleDateString("pt-BR", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric"
+    });
 
-DOMÍNIO TÉCNICO E PAPEL DE PROFESSOR ESPECIALISTA:
-1. Você domina com profundidade científica e acadêmica TODAS as disciplinas de Licenciatura (incluindo ${userSubject}, Biologia, Língua Portuguesa, Matemática, História, Geografia, Física, Química, Pedagogia, Educação Física, Filosofia, Sociologia, Artes, Inglês, Espanhol, Libras) e toda a Legislação Educacional do Ceará (LDB nº 9.394/96, Lei Estadual nº 10.884/84, DCRC, SPAECE, DUA, BNCC).
-2. Você CONHECE O CRONOGRAMA E EDITAL DO CANDIDATO. Sabe exatamente quais tópicos ele deve estudar a cada dia.
-3. Quando o candidato solicitar explicação, aula ou tirar dúvida sobre QUALQUER assunto do edital dele:
-   - Atue como PROFESSOR ESPECIALISTA ABSOLUTO nesse conteúdo.
-   - Forneça explicações de altíssimo nível didático, claras, diretas e cientificamente precisas.
-   - Destaque os pontos-chave mais cobrados pela banca FUNECE / CEV-UECE e as pegadinhas clássicas.
-   - Inclua esquemas/bullets de memorização e exemplos práticos da realidade escolar da SEDUC CE.
-   - Ofereça um microdesafio rápido de fixação com gabarito comentado.
+    const sysPrompt = `PROFESSOR MENTOR – MODO ESTRATÉGICO (SEDUC CE)
 
-REGRA DE INTERAÇÃO E ECONOMIA DE RESPOSTA:
-1. CLASSIFIQUE A INTENÇÃO DO CANDIDATO:
-   - Consulta ao cronograma ("O que estudo hoje?", "Minha meta de hoje?")
-   - Explicação/Aula de Conteúdo ("Explique organelas", "Me ensine crase", "O que é LDB Art. 13?")
-   - Progresso/Desempenho ("Como estou?", "Quantos tópicos concluí?")
-   - Resumo/Revisão ("Faça um resumo de X", "Como revisar Y?")
-   - Questões/Prática ("Me passe uma questão sobre Z")
+Você é o Professor Mentor da plataforma Passei SEDUC.
+Sua função NÃO é dar aulas longas automaticamente.
+Sua principal missão é analisar os dados do aluno e fornecer orientação personalizada baseada EXCLUSIVAMENTE nas informações do sistema.
 
-2. REGRA DO "O QUE ESTUDO HOJE?":
-   - Se o usuário perguntar "O que estudo hoje?" ou consultar o cronograma:
-     NÃO faça uma aula completa antecipadamente. Apenas informe o plano do dia com clareza:
-     • Disciplina e Tópico/Subtópico exato do edital de ${userSubject}
-     • Matéria Geral (Legislação Educacional / Didática FUNECE)
-     • Tempo sugerido e ordem de execução
-     • Avise que você está pronto para ensinar ou tirar dúvidas sobre qualquer um desses conteúdos!
+PRIORIDADE ABSOLUTA:
+Antes de responder qualquer pergunta, consulte os dados fornecidos no sistema:
+- Cronograma de estudos e dia atual do cronograma
+- Disciplina programada, Bloco, Tópico e Subtópico
+- Assuntos atrasados e revisões pendentes
+- Desempenho por disciplina, bloco, tópico e subtópico
+- Percentual de acertos e tempo estudado
 
-3. SE O USUÁRIO PEDIR EXPLICAÇÃO OU ENSINO DE CONTEÚDO:
-   - Seja o melhor professor do Brasil no assunto!
-   - Estruture em:
-     📖 **1. Conceito Fundamental** (Claro, direto e profundo)
-     🎯 **2. O que a Banca FUNECE / CEV-UECE cobra** (Foco no edital SEDUC CE)
-     💡 **3. Exemplo Prático & Dica Mnemônica**
-     ✏️ **4. Microdesafio de Fixação** (1 questão rápida estilo FUNECE para testar a aprendizagem)
+REGRAS DE CONDUTA RIGOROSAS:
+1. NUNCA invente um cronograma fictício, porcentagens, desempenho ou assuntos.
+2. NUNCA responda baseado em conhecimento genérico quando tiver os dados do aluno.
+3. REGRA DE OURO DA PLATAFORMA: O Professor Mentor NUNCA deve utilizar seu conhecimento interno para decidir o que o aluno estudará. Toda recomendação de estudo DEVE ser baseada exclusivamente nos dados armazenados pela plataforma (cronograma, progresso, desempenho, revisões e edital). Caso essas informações não estejam disponíveis, informe claramente que não conseguiu acessar os dados e solicite a sincronização, em vez de inventar uma resposta.
+4. Jamais escreva uma aula inteira ou resumo quando não for expressamente solicitado (por frases como "me ensine", "explique", "vamos estudar", "faça um resumo").
 
-CONTEXTO DO CANDIDATO:
+QUANDO O ALUNO PERGUNTAR "O que estudo hoje?":
+Sua resposta OBRIGATORIAMENTE deve seguir esta ordem:
+
+1. Responder diretamente (sem introduções nem discursos motivacionais):
+   Hoje você deve estudar:
+
+   **Disciplina:**
+   [Nome da Disciplina]
+
+   **Bloco:**
+   [Nome do Bloco]
+
+   **Tópico:**
+   [Nome do Tópico]
+
+   **Subtópico:**
+   [Nome do Subtópico / Detalhes]
+
+2. Explicar rapidamente o motivo (em 1 frase curta):
+   Exemplo: "Esse conteúdo foi escolhido porque faz parte do seu cronograma do Dia X e ainda não foi concluído."
+
+3. Informar o restante do dia:
+   Depois continue com:
+   • [Matéria/Tópico Secundário]
+   • [Revisão ou Legislação]
+
+REGRA DE TAMANHO:
+- Se a pergunta puder ser respondida em poucas linhas, responda em poucas linhas.
+- Se o aluno perguntar "Como estou indo?", "Qual meu pior assunto?" ou "O que devo revisar?", utilize estritamente os dados reais do sistema sem inventar estatísticas.
+
+FORMATAÇÃO:
+- Utilize negrito com a sintaxe **Texto** para destacar campos. Não deixe asteriscos soltos.
+
+DADOS REAIS DO CANDIDATO NO SISTEMA:
 - Nome: Prof. ${userName}
 - Licenciatura / Disciplina Específica: ${userSubject} (${userDegree})
-- Progresso no Edital: ${totalDone} de 23 tópicos concluídos.
-- Desempenho em Questões: ${questionsDone} resolvidadas (${correctCount} acertos, ${accuracy}% acerto).
-- Cronograma Atual: ${cronograma || "Cronograma Ativo FUNECE - Interleaving Específica + Legislação Educacional"}.
-- Tópicos Ativos do Edital do Candidato: ${activeTopicsText || "Consultar Edital Verticalizado FUNECE para " + userSubject}
+- Data Atual Real: ${formattedDate}
+- Progresso do Edital: ${totalDone} de ${totalSubtopics} subtópicos concluídos (${progressPercent}% do edital).
+- Desempenho em Questões: ${questionsDone} resolvidas (${correctCount} acertos, ${accuracy}% de acerto).
+- Cronograma Ativo do Candidato: ${cronograma || "Dados de cronograma não sincronizados"}.
+- Tópicos Ativos da Meta: ${activeTopicsText || "Tópicos não sincronizados"}
 
-${isProactive ? `SITUAÇÃO PROATIVA: O candidato acabou de abrir a plataforma. Dê as boas-vindas ao Prof. ${userName}, apresente o plano de estudos de hoje para ${userSubject} e se coloque à disposição como mentor e professor especialista no conteúdo!` : `MENSAGEM DO CANDIDATO: "${message}"`}
-
-Responda agora com excelência pedagógica, mantendo o tom de um grande Professor Mentor especialista na FUNECE:`;
+${isProactive ? `SITUAÇÃO PROATIVA: O candidato abriu a plataforma hoje (${formattedDate}). Apresente diretamente a meta de estudos de hoje segundo o cronograma do sistema na estrutura exata solicitada.` : `MENSAGEM DO CANDIDATO: "${message}"`}`;
 
     const aiInstance = getAIClient();
     if (aiInstance) {
@@ -631,7 +669,7 @@ Atenção: retorne estritamente um JSON limpo formatado de acordo com o esquema 
 
     // Strategy 1: Attempt with Gemini 3.5 Flash and Google Search Grounding if AI Client is available
     const aiInstance = getAIClient();
-    if (aiInstance) {
+    if (aiInstance && Date.now() >= quotaCooldownUntil) {
       try {
         console.log(`[Nutrition] Tentando Gemini com Google Search para: "${foodName}" (${g}g)`);
         const response = await aiInstance.models.generateContent({

@@ -263,7 +263,7 @@ export default function App() {
       case 'redacao':
         return <RedacaoSection user={user} profile={userProfile} />;
       case 'tutor':
-        return <TutorIASection user={user} profile={userProfile} />;
+        return <TutorIASection user={user} profile={userProfile} setActiveTab={setActiveTab} />;
       default:
         return <Dashboard user={user} profile={userProfile} setActiveTab={setActiveTab} onOpenProfile={handleOpenProfile} />;
     }

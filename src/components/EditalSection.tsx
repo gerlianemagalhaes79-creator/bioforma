@@ -44,7 +44,17 @@ export default function EditalSection({ user, profile, setActiveTab }: EditalSec
   const [expandedTopics, setExpandedTopics] = useState<Record<string, boolean>>({});
 
   // Progresso individual dos tópicos/subtópicos armazenado no componente
-  const [statusMap, setStatusMap] = useState<Record<string, TopicStatus>>({});
+  const uid = user?.uid || profile?.uid || 'guest';
+  const storageKey = `studyProgress_${uid}`;
+
+  const [statusMap, setStatusMap] = useState<Record<string, TopicStatus>>(() => {
+    try {
+      const local = localStorage.getItem(storageKey);
+      return local ? JSON.parse(local) : {};
+    } catch {
+      return {};
+    }
+  });
   const [searchTerm, setSearchTerm] = useState('');
 
   const userDegree = profile?.degree || profile?.targetSubject || 'Licenciatura em Língua Portuguesa / Letras';
@@ -52,28 +62,42 @@ export default function EditalSection({ user, profile, setActiveTab }: EditalSec
   // Carregar progresso salvo do Firestore / LocalStorage no carregamento
   useEffect(() => {
     const loadProgress = async () => {
-      if (!user?.uid) return;
+      // 1. Try local storage first
       try {
-        const q = query(collection(db, 'studyProgress'), where('uid', '==', user.uid));
-        const querySnapshot = await getDocs(q);
-        const newStatusMap: Record<string, TopicStatus> = {};
-        querySnapshot.forEach((docSnap) => {
-          const data = docSnap.data();
-          if (data.itemId && data.status) {
-            newStatusMap[data.itemId] = data.status as TopicStatus;
-          }
-        });
-        setStatusMap(newStatusMap);
-      } catch (err) {
-        console.warn('Erro ao carregar progresso:', err);
+        const local = localStorage.getItem(storageKey);
+        if (local) {
+          setStatusMap(JSON.parse(local));
+        }
+      } catch (_) {}
+
+      // 2. Fetch from Firestore if user.uid exists
+      if (user?.uid) {
         try {
-          const local = localStorage.getItem(`studyProgress_${user.uid}`);
-          if (local) setStatusMap(JSON.parse(local));
-        } catch (_) {}
+          const q = query(collection(db, 'studyProgress'), where('uid', '==', user.uid));
+          const querySnapshot = await getDocs(q);
+          const newStatusMap: Record<string, TopicStatus> = {};
+          querySnapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            if (data.itemId && data.status) {
+              newStatusMap[data.itemId] = data.status as TopicStatus;
+            }
+          });
+          if (Object.keys(newStatusMap).length > 0) {
+            setStatusMap(prev => {
+              const merged = { ...prev, ...newStatusMap };
+              try {
+                localStorage.setItem(storageKey, JSON.stringify(merged));
+              } catch (_) {}
+              return merged;
+            });
+          }
+        } catch (err) {
+          console.warn('Erro ao carregar progresso:', err);
+        }
       }
     };
     loadProgress();
-  }, [user?.uid]);
+  }, [user?.uid, storageKey]);
 
   const toggleBlock = (blockId: string) => {
     setExpandedBlocks(prev => ({ ...prev, [blockId]: !prev[blockId] }));
@@ -87,28 +111,28 @@ export default function EditalSection({ user, profile, setActiveTab }: EditalSec
     setStatusMap(prev => {
       const updated = { ...prev, [id]: newStatus };
       try {
-        if (user?.uid) {
-          localStorage.setItem(`studyProgress_${user.uid}`, JSON.stringify(updated));
-        }
+        localStorage.setItem(storageKey, JSON.stringify(updated));
       } catch (_) {}
       return updated;
     });
 
-    try {
-      const userProgressRef = doc(db, 'studyProgress', `${user.uid}_${id}`);
-      await setDoc(userProgressRef, {
-        uid: user.uid,
-        itemId: id,
-        status: newStatus,
-        updatedAt: new Date().toISOString()
-      });
-    } catch (err) {
-      console.warn('Erro ao atualizar progresso do tópico:', err);
+    if (user?.uid) {
+      try {
+        const userProgressRef = doc(db, 'studyProgress', `${user.uid}_${id}`);
+        await setDoc(userProgressRef, {
+          uid: user.uid,
+          itemId: id,
+          status: newStatus,
+          updatedAt: new Date().toISOString()
+        });
+      } catch (err) {
+        console.warn('Erro ao atualizar progresso do tópico:', err);
+      }
     }
   };
 
-  const getItemStatus = (id: string, defaultStatus: TopicStatus = 'not_started'): TopicStatus => {
-    return statusMap[id] || defaultStatus;
+  const getItemStatus = (id: string): TopicStatus => {
+    return statusMap[id] || 'not_started';
   };
 
   const handleToggleGrifarSubtopic = (id: string, currentStatus: TopicStatus) => {
@@ -122,7 +146,7 @@ export default function EditalSection({ user, profile, setActiveTab }: EditalSec
       ? topic.subtopics 
       : [{ id: topic.id, name: topic.name, status: topic.status || 'not_started' }];
 
-    const allGrifado = subList.every(s => ['mastered', 'reviewed'].includes(getItemStatus(s.id, s.status)));
+    const allGrifado = subList.every(s => ['mastered', 'reviewed'].includes(getItemStatus(s.id)));
     const targetStatus: TopicStatus = allGrifado ? 'not_started' : 'mastered';
 
     subList.forEach(s => {
@@ -158,7 +182,7 @@ export default function EditalSection({ user, profile, setActiveTab }: EditalSec
   // Cálculo de Porcentagem de Tópico
   const getTopicStats = (topic: EditalTopicItem) => {
     if (!topic.subtopics || topic.subtopics.length === 0) {
-      const st = getItemStatus(topic.id, topic.status || 'not_started');
+      const st = getItemStatus(topic.id);
       const weight = getStatusWeight(st);
       const isDone = st === 'mastered' || st === 'reviewed';
       return { total: 1, completed: isDone ? 1 : 0, percentage: Math.round(weight * 100) };
@@ -167,7 +191,7 @@ export default function EditalSection({ user, profile, setActiveTab }: EditalSec
     let weightSum = 0;
     let completedCount = 0;
     topic.subtopics.forEach(s => {
-      const st = getItemStatus(s.id, s.status || 'not_started');
+      const st = getItemStatus(s.id);
       weightSum += getStatusWeight(st);
       if (st === 'mastered' || st === 'reviewed') {
         completedCount++;
@@ -186,13 +210,13 @@ export default function EditalSection({ user, profile, setActiveTab }: EditalSec
     block.topics.forEach(t => {
       if (!t.subtopics || t.subtopics.length === 0) {
         totalSubtopics += 1;
-        const st = getItemStatus(t.id, t.status || 'not_started');
+        const st = getItemStatus(t.id);
         weightSum += getStatusWeight(st);
         if (st === 'mastered' || st === 'reviewed') completedCount++;
       } else {
         totalSubtopics += t.subtopics.length;
         t.subtopics.forEach(s => {
-          const st = getItemStatus(s.id, s.status || 'not_started');
+          const st = getItemStatus(s.id);
           weightSum += getStatusWeight(st);
           if (st === 'mastered' || st === 'reviewed') completedCount++;
         });
@@ -215,10 +239,10 @@ export default function EditalSection({ user, profile, setActiveTab }: EditalSec
       globalCompleted += stats.completed;
       b.topics.forEach(t => {
         if (!t.subtopics || t.subtopics.length === 0) {
-          globalWeightSum += getStatusWeight(getItemStatus(t.id, t.status));
+          globalWeightSum += getStatusWeight(getItemStatus(t.id));
         } else {
           t.subtopics.forEach(s => {
-            globalWeightSum += getStatusWeight(getItemStatus(s.id, s.status));
+            globalWeightSum += getStatusWeight(getItemStatus(s.id));
           });
         }
       });
@@ -244,10 +268,10 @@ export default function EditalSection({ user, profile, setActiveTab }: EditalSec
     areaCompleted += bStats.completed;
     b.topics.forEach(t => {
       if (!t.subtopics || t.subtopics.length === 0) {
-        areaWeightSum += getStatusWeight(getItemStatus(t.id, t.status));
+        areaWeightSum += getStatusWeight(getItemStatus(t.id));
       } else {
         t.subtopics.forEach(s => {
-          areaWeightSum += getStatusWeight(getItemStatus(s.id, s.status));
+          areaWeightSum += getStatusWeight(getItemStatus(s.id));
         });
       }
     });
@@ -490,7 +514,7 @@ export default function EditalSection({ user, profile, setActiveTab }: EditalSec
                       // TÓPICOS FECHADOS POR PADRÃO: só abre se estiver explicitamente em expandedTopics
                       const isTopicOpen = !!expandedTopics[topic.id];
                       const topicStats = getTopicStats(topic);
-                      const topicStatus = getItemStatus(topic.id, topic.status || 'not_started');
+                      const topicStatus = getItemStatus(topic.id);
 
                       return (
                         <div key={topic.id} className="pt-2.5 first:pt-0 space-y-2">
@@ -528,7 +552,7 @@ export default function EditalSection({ user, profile, setActiveTab }: EditalSec
                           {isTopicOpen && (
                             <div className="pl-3 sm:pl-5 border-l-2 border-emerald-200 space-y-2 pt-1 pb-1">
                               {topic.subtopics.map((subtopic) => {
-                                const stStatus = getItemStatus(subtopic.id, subtopic.status || 'not_started');
+                                const stStatus = getItemStatus(subtopic.id);
                                 const isGrifado = stStatus === 'mastered' || stStatus === 'reviewed' || stStatus === 'in_progress';
 
                                 return (

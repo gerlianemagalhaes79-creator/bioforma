@@ -83,19 +83,19 @@ export const OFFICIAL_EDITAL_TREE: {
           {
             id: 'top-eb-1-1',
             name: '1. História do Pensamento Pedagógico Brasileiro',
-            status: 'in_progress',
+            status: 'not_started',
             subtopics: [
-              { id: 'sub-eb-1-1-1', name: '1.1 Teoria da Educação e Diferentes Correntes do Pensamento Pedagógico Brasileiro', status: 'mastered' },
-              { id: 'sub-eb-1-1-2', name: '1.2 Projeto Político Pedagógico (PPP)', status: 'reviewed' }
+              { id: 'sub-eb-1-1-1', name: '1.1 Teoria da Educação e Diferentes Correntes do Pensamento Pedagógico Brasileiro', status: 'not_started' },
+              { id: 'sub-eb-1-1-2', name: '1.2 Projeto Político Pedagógico (PPP)', status: 'not_started' }
             ]
           },
           {
             id: 'top-eb-1-2',
             name: '2. A Didática e o Processo de Ensino e Aprendizagem',
-            status: 'in_progress',
+            status: 'not_started',
             subtopics: [
-              { id: 'sub-eb-1-2-1', name: '2.1 Organização do Processo Didático: Planejamento, Estratégias e Metodologias, Avaliação', status: 'in_progress' },
-              { id: 'sub-eb-1-2-2', name: '2.2 A Sala de Aula como Espaço de Aprendizagem e Interação', status: 'reviewed' },
+              { id: 'sub-eb-1-2-1', name: '2.1 Organização do Processo Didático: Planejamento, Estratégias e Metodologias, Avaliação', status: 'not_started' },
+              { id: 'sub-eb-1-2-2', name: '2.2 A Sala de Aula como Espaço de Aprendizagem e Interação', status: 'not_started' },
               { id: 'sub-eb-1-2-3', name: '2.3 A Didática como Fundamento Epistemológico do Fazer Docente', status: 'not_started' }
             ]
           }
@@ -108,13 +108,13 @@ export const OFFICIAL_EDITAL_TREE: {
           {
             id: 'top-eb-2-1',
             name: '3. Principais Teorias da Aprendizagem e Desenvolvimento',
-            status: 'reviewed',
+            status: 'not_started',
             subtopics: [
-              { id: 'sub-eb-2-1-1', name: '3.1 Inatismo, Comportamentalismo, Behaviorismo, Interacionismo, Cognitivismo', status: 'reviewed' },
-              { id: 'sub-eb-2-1-2', name: '3.2 As Bases Empíricas, Metodológicas e Epistemológicas das Diversas Teorias de Aprendizagem', status: 'reviewed' },
-              { id: 'sub-eb-2-1-3', name: '3.3 Contribuições de Piaget, Vygotsky e Wallon para a Psicologia e Pedagogia', status: 'mastered' },
-              { id: 'sub-eb-2-1-4', name: '3.4 Teoria das Inteligências Múltiplas de Gardner', status: 'reviewed' },
-              { id: 'sub-eb-2-1-5', name: '3.5 Psicologia do Desenvolvimento: Aspectos Históricos e Biopsicossociais', status: 'in_progress' },
+              { id: 'sub-eb-2-1-1', name: '3.1 Inatismo, Comportamentalismo, Behaviorismo, Interacionismo, Cognitivismo', status: 'not_started' },
+              { id: 'sub-eb-2-1-2', name: '3.2 As Bases Empíricas, Metodológicas e Epistemológicas das Diversas Teorias de Aprendizagem', status: 'not_started' },
+              { id: 'sub-eb-2-1-3', name: '3.3 Contribuições de Piaget, Vygotsky e Wallon para a Psicologia e Pedagogia', status: 'not_started' },
+              { id: 'sub-eb-2-1-4', name: '3.4 Teoria das Inteligências Múltiplas de Gardner', status: 'not_started' },
+              { id: 'sub-eb-2-1-5', name: '3.5 Psicologia do Desenvolvimento: Aspectos Históricos e Biopsicossociais', status: 'not_started' },
               { id: 'sub-eb-2-1-6', name: '3.6 Temas Contemporâneos: Bullying, Papel da Escola, Escolha da Profissão, Transtornos Alimentares na Adolescência, Família, Escolhas Sexuais', status: 'not_started' }
             ]
           }
@@ -127,15 +127,15 @@ export const OFFICIAL_EDITAL_TREE: {
           {
             id: 'top-eb-3-1',
             name: '4. Teorias do Currículo, Gestão e Pesquisa Docente',
-            status: 'in_progress',
+            status: 'not_started',
             subtopics: [
-              { id: 'sub-eb-3-1-1', name: '4.1 Acesso, Permanência e Sucesso do Aluno na Escola', status: 'in_progress' },
+              { id: 'sub-eb-3-1-1', name: '4.1 Acesso, Permanência e Sucesso do Aluno na Escola', status: 'not_started' },
               { id: 'sub-eb-3-1-2', name: '4.2 Gestão da Aprendizagem', status: 'not_started' },
               { id: 'sub-eb-3-1-3', name: '4.3 Planejamento e Gestão Educacional', status: 'not_started' },
-              { id: 'sub-eb-3-1-4', name: '4.4 Avaliação Institucional, de Desempenho e de Aprendizagem', status: 'in_progress' },
-              { id: 'sub-eb-3-1-5', name: '4.5 O Professor: Formação e Profissão', status: 'reviewed' },
+              { id: 'sub-eb-3-1-4', name: '4.4 Avaliação Institucional, de Desempenho e de Aprendizagem', status: 'not_started' },
+              { id: 'sub-eb-3-1-5', name: '4.5 O Professor: Formação e Profissão', status: 'not_started' },
               { id: 'sub-eb-3-1-6', name: '4.6 A Pesquisa na Prática Docente', status: 'not_started' },
-              { id: 'sub-eb-3-1-7', name: '4.7 A Dimensão Ética da Profissão', status: 'mastered' }
+              { id: 'sub-eb-3-1-7', name: '4.7 A Dimensão Ética da Profissão', status: 'not_started' }
             ]
           },
           {
@@ -160,7 +160,7 @@ export const OFFICIAL_EDITAL_TREE: {
               { id: 'sub-eb-4-1-1', name: '6.1 Ensino Médio: 6.1.1 Diretrizes, Parâmetros Curriculares, Currículo e Avaliação', status: 'not_started' },
               { id: 'sub-eb-4-1-2', name: '6.1.2 Interdisciplinaridade e Contextualização no Ensino Médio', status: 'not_started' },
               { id: 'sub-eb-4-1-3', name: '6.1.3 Ensino Médio Integrado: Fundamentação Legal e Curricular', status: 'not_started' },
-              { id: 'sub-eb-4-1-4', name: '6.2 Educação Inclusiva na Educação Básica', status: 'in_progress' },
+              { id: 'sub-eb-4-1-4', name: '6.2 Educação Inclusiva na Educação Básica', status: 'not_started' },
               { id: 'sub-eb-4-1-5', name: '6.3 Educação, Trabalho, Formação Profissional e as Transformações do Ensino Médio', status: 'not_started' },
               { id: 'sub-eb-4-1-6', name: '6.4 Protagonismo Juvenil e Cidadania', status: 'not_started' }
             ]
@@ -176,11 +176,11 @@ export const OFFICIAL_EDITAL_TREE: {
           {
             id: 'top-adm-1-1',
             name: '1 a 5. Conceito, Princípios e Responsabilidades',
-            status: 'in_progress',
+            status: 'not_started',
             subtopics: [
-              { id: 'sub-adm-1-1-1', name: '1. Conceito de Administração Pública e 2. Conceito de Servidor Público', status: 'mastered' },
-              { id: 'sub-adm-1-1-2', name: '3. Princípios da Administração Pública', status: 'reviewed' },
-              { id: 'sub-adm-1-1-3', name: '4. Direitos e Deveres dos Servidores Públicos', status: 'in_progress' },
+              { id: 'sub-adm-1-1-1', name: '1. Conceito de Administração Pública e 2. Conceito de Servidor Público', status: 'not_started' },
+              { id: 'sub-adm-1-1-2', name: '3. Princípios da Administração Pública', status: 'not_started' },
+              { id: 'sub-adm-1-1-3', name: '4. Direitos e Deveres dos Servidores Públicos', status: 'not_started' },
               { id: 'sub-adm-1-1-4', name: '5. Responsabilidade dos Servidores Públicos', status: 'not_started' }
             ]
           }
@@ -193,13 +193,13 @@ export const OFFICIAL_EDITAL_TREE: {
           {
             id: 'top-adm-2-1',
             name: '6. Servidor Estadual do Ceará e Estatuto Civil (Lei nº 9.826/1974)',
-            status: 'in_progress',
+            status: 'not_started',
             subtopics: [
-              { id: 'sub-adm-2-1-1', name: '6.1 Estatuto dos Funcionários Públicos Civis do CE (Lei nº 9.826/1974): 6.1.1 Do provimento dos cargos (Cap. I a X)', status: 'in_progress' },
-              { id: 'sub-adm-2-1-2', name: '6.1.2 Dos direitos, vantagens e autorizações (Cap. I a VI)', status: 'in_progress' },
+              { id: 'sub-adm-2-1-1', name: '6.1 Estatuto dos Funcionários Públicos Civis do CE (Lei nº 9.826/1974): 6.1.1 Do provimento dos cargos (Cap. I a X)', status: 'not_started' },
+              { id: 'sub-adm-2-1-2', name: '6.1.2 Dos direitos, vantagens e autorizações (Cap. I a VI)', status: 'not_started' },
               { id: 'sub-adm-2-1-3', name: '6.1.3 Do regime disciplinar (Título VI - Cap. I a VII)', status: 'not_started' },
               { id: 'sub-adm-2-1-4', name: '6.2 Lei nº 15.243/2012 (Disciplina o Art. 3º da Lei nº 15.064/2011)', status: 'not_started' },
-              { id: 'sub-adm-2-1-5', name: '6.3 Estágio Probatório Servidor Estadual (Lei nº 9.826/74, Lei nº 13.092/01, Lei nº 15.744/14 e Lei nº 15.909/15)', status: 'in_progress' }
+              { id: 'sub-adm-2-1-5', name: '6.3 Estágio Probatório Servidor Estadual (Lei nº 9.826/74, Lei nº 13.092/01, Lei nº 15.744/14 e Lei nº 15.909/15)', status: 'not_started' }
             ]
           },
           {
@@ -207,7 +207,7 @@ export const OFFICIAL_EDITAL_TREE: {
             name: '6.4 a 6.7 Carreira, Carga Horária, Promoção e Remuneração do Magistério (Grupo MAG)',
             status: 'not_started',
             subtopics: [
-              { id: 'sub-adm-2-2-1', name: '6.4 Carreira do Magistério: Concurso, Provimento, Carga Horária e Jornada (Lei nº 10.884/1984, Lei nº 12.066/1993, Lei nº 14.404/2009)', status: 'in_progress' },
+              { id: 'sub-adm-2-2-1', name: '6.4 Carreira do Magistério: Concurso, Provimento, Carga Horária e Jornada (Lei nº 10.884/1984, Lei nº 12.066/1993, Lei nº 14.404/2009)', status: 'not_started' },
               { id: 'sub-adm-2-2-2', name: '6.5 Ampliação da Carga Horária de Trabalho do Grupo MAG (Lei nº 15.451/2013 e Decreto nº 31.458/2014)', status: 'not_started' },
               { id: 'sub-adm-2-2-3', name: '6.6 Promoção dos Profissionais do Grupo MAG (Lei nº 15.901/2015, Decreto nº 32.103/2016)', status: 'not_started' },
               { id: 'sub-adm-2-2-4', name: '6.7 Sistema Remuneratório dos Profissionais MAG de Nível Superior (Leis nº 15.243/12, nº 15.901/15, nº 16.104/16, nº 16.513/18 e nº 16.536/18)', status: 'not_started' }
@@ -222,13 +222,13 @@ export const OFFICIAL_EDITAL_TREE: {
           {
             id: 'top-adm-3-1',
             name: 'Legislação Nacional Básica da Educação',
-            status: 'in_progress',
+            status: 'not_started',
             subtopics: [
-              { id: 'sub-adm-3-1-1', name: '1. Lei nº 9.394/1996 e alterações (Lei de Diretrizes e Bases da Educação Nacional - LDB)', status: 'mastered' },
-              { id: 'sub-adm-3-1-2', name: '2. Lei nº 8.069/1990 e alterações (Estatuto da Criança e do Adolescente - ECA)', status: 'reviewed' },
-              { id: 'sub-adm-3-1-3', name: '3. Constituição da República Federativa do Brasil (Art. 205 a 214)', status: 'mastered' },
-              { id: 'sub-adm-3-1-4', name: '4. Emenda Constitucional nº 53/2006 e 5. Lei nº 11.494/2007 e alterações (FUNDEB)', status: 'reviewed' },
-              { id: 'sub-adm-3-1-5', name: '6. Lei nº 11.114/2005, 7. Lei nº 11.274/2006 e 8. Lei nº 13.415/2017 (Reforma do Ensino Médio)', status: 'in_progress' }
+              { id: 'sub-adm-3-1-1', name: '1. Lei nº 9.394/1996 e alterações (Lei de Diretrizes e Bases da Educação Nacional - LDB)', status: 'not_started' },
+              { id: 'sub-adm-3-1-2', name: '2. Lei nº 8.069/1990 e alterações (Estatuto da Criança e do Adolescente - ECA)', status: 'not_started' },
+              { id: 'sub-adm-3-1-3', name: '3. Constituição da República Federativa do Brasil (Art. 205 a 214)', status: 'not_started' },
+              { id: 'sub-adm-3-1-4', name: '4. Emenda Constitucional nº 53/2006 e 5. Lei nº 11.494/2007 e alterações (FUNDEB)', status: 'not_started' },
+              { id: 'sub-adm-3-1-5', name: '6. Lei nº 11.114/2005, 7. Lei nº 11.274/2006 e 8. Lei nº 13.415/2017 (Reforma do Ensino Médio)', status: 'not_started' }
             ]
           },
           {
@@ -251,20 +251,20 @@ export const OFFICIAL_EDITAL_TREE: {
           {
             id: 'top-lp-1-1',
             name: 'Compreensão, Tipologia e Semântica',
-            status: 'in_progress',
+            status: 'not_started',
             subtopics: [
-              { id: 'sub-lp-1-1-1', name: '1. Compreensão e Interpretação de Textos', status: 'in_progress' },
-              { id: 'sub-lp-1-1-2', name: '2. Tipologia Textual', status: 'reviewed' },
-              { id: 'sub-lp-1-1-3', name: '11. Significação das Palavras', status: 'reviewed' }
+              { id: 'sub-lp-1-1-1', name: '1. Compreensão e Interpretação de Textos', status: 'not_started' },
+              { id: 'sub-lp-1-1-2', name: '2. Tipologia Textual', status: 'not_started' },
+              { id: 'sub-lp-1-1-3', name: '11. Significação das Palavras', status: 'not_started' }
             ]
           },
           {
             id: 'top-lp-1-2',
             name: 'Ortografia e Acentuação',
-            status: 'reviewed',
+            status: 'not_started',
             subtopics: [
-              { id: 'sub-lp-1-2-1', name: '3. Ortografia Oficial', status: 'mastered' },
-              { id: 'sub-lp-1-2-2', name: '4. Acentuação Gráfica', status: 'mastered' }
+              { id: 'sub-lp-1-2-1', name: '3. Ortografia Oficial', status: 'not_started' },
+              { id: 'sub-lp-1-2-2', name: '4. Acentuação Gráfica', status: 'not_started' }
             ]
           }
         ]
@@ -276,11 +276,11 @@ export const OFFICIAL_EDITAL_TREE: {
           {
             id: 'top-lp-2-1',
             name: 'Morfossintaxe, Regência e Crase',
-            status: 'in_progress',
+            status: 'not_started',
             subtopics: [
-              { id: 'sub-lp-2-1-1', name: '5. Emprego das Classes de Palavras', status: 'in_progress' },
-              { id: 'sub-lp-2-1-2', name: '6. Emprego do Sinal Indicativo de Crase', status: 'in_progress' },
-              { id: 'sub-lp-2-1-3', name: '10. Regência Nominal e Verbal', status: 'in_progress' }
+              { id: 'sub-lp-2-1-1', name: '5. Emprego das Classes de Palavras', status: 'not_started' },
+              { id: 'sub-lp-2-1-2', name: '6. Emprego do Sinal Indicativo de Crase', status: 'not_started' },
+              { id: 'sub-lp-2-1-3', name: '10. Regência Nominal e Verbal', status: 'not_started' }
             ]
           },
           {
@@ -288,8 +288,8 @@ export const OFFICIAL_EDITAL_TREE: {
             name: 'Sintaxe, Concordância e Pontuação',
             status: 'not_started',
             subtopics: [
-              { id: 'sub-lp-2-2-1', name: '7. Sintaxe da Oração e do Período', status: 'in_progress' },
-              { id: 'sub-lp-2-2-2', name: '8. Pontuação', status: 'reviewed' },
+              { id: 'sub-lp-2-2-1', name: '7. Sintaxe da Oração e do Período', status: 'not_started' },
+              { id: 'sub-lp-2-2-2', name: '8. Pontuação', status: 'not_started' },
               { id: 'sub-lp-2-2-3', name: '9. Concordância Nominal e Verbal', status: 'not_started' }
             ]
           }
@@ -304,10 +304,10 @@ export const OFFICIAL_EDITAL_TREE: {
           {
             id: 'top-dad-1-1',
             name: 'Estatísticas de Atendimento e Escolarização',
-            status: 'in_progress',
+            status: 'not_started',
             subtopics: [
-              { id: 'sub-dad-1-1-1', name: 'Leitura e Interpretação de Dados Referentes à Matrícula e Taxa de Atendimento Escolar', status: 'in_progress' },
-              { id: 'sub-dad-1-1-2', name: 'Taxas de Escolarização Líquida e Bruta', status: 'in_progress' }
+              { id: 'sub-dad-1-1-1', name: 'Leitura e Interpretação de Dados Referentes à Matrícula e Taxa de Atendimento Escolar', status: 'not_started' },
+              { id: 'sub-dad-1-1-2', name: 'Taxas de Escolarização Líquida e Bruta', status: 'not_started' }
             ]
           },
           {
@@ -340,7 +340,7 @@ export const OFFICIAL_EDITAL_TREE: {
             name: 'Representação de Dados e Cálculo de Porcentagem',
             status: 'not_started',
             subtopics: [
-              { id: 'sub-dad-2-2-1', name: 'Leitura e Interpretação de Dados Apresentados em Tabelas, Gráficos e Mapas', status: 'in_progress' },
+              { id: 'sub-dad-2-2-1', name: 'Leitura e Interpretação de Dados Apresentados em Tabelas, Gráficos e Mapas', status: 'not_started' },
               { id: 'sub-dad-2-2-2', name: 'Resolução de Problemas que Envolvam o Cálculo de Porcentagem com Dados Fornecidos em Diferentes Formatos', status: 'not_started' }
             ]
           }
