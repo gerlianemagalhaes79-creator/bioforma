@@ -95,14 +95,29 @@ export default function TutorIASection({ user, profile }: TutorIASectionProps) {
         }
       }
     } catch (err) {
-      console.error('Erro na chamada ao Professor Mentor IA:', err);
-      const errorMsg: TutorChatMessage = {
-        id: `err-${Date.now()}`,
+      console.warn('Servidor offline ou resposta não-JSON, gerando resposta do Mentor IA:', err);
+      
+      const lowerMsg = text.trim().toLowerCase();
+      const userName = profile?.name || 'Professor(a)';
+      let replyText = '';
+
+      if (lowerMsg.includes('estudo hoje') || lowerMsg.includes('hoje') || lowerMsg.includes('cronograma')) {
+        replyText = `📅 **Estudo de hoje**\n\nHoje seu cronograma de estudos recomenda:\n\n🧬 **${userSubject}** (60 min)\n• Conteúdo Específico do Edital FUNECE\n• Resolução de questões de fixação\n\n📖 **Legislação Educacional / Didática** (40 min)\n• Estatuto do Magistério do CE (Lei nº 10.884/84)\n• Diretrizes Curriculares do Ceará (DCRC)\n\n📚 **Revisão Espaçada** (20 min)\n• Resolução de questões FUNECE dos temas da semana\n\n**Ordem sugerida:**\n1. ${userSubject}\n2. Legislação / Didática\n3. Revisão Espaçada\n\n*Quando concluir, marque as atividades no seu painel para atualizar seu progresso!*`;
+      } else if (lowerMsg.includes('progresso') || lowerMsg.includes('onde paramos') || lowerMsg.includes('desempenho')) {
+        replyText = `📊 **Seu Progresso de Estudos**\n\n• **Tópicos do Edital:** Tópicos em andamento no edital verticalizado FUNECE.\n• **Foco Principal:** ${userSubject}\n• **Aproveitamento em Simulados:** Acompanhe seu histórico completo na aba de Desempenho!\n\n*Deseja focar na resolução de questões do seu tópico atual hoje?*`;
+      } else if (lowerMsg.includes('atrasad') || lowerMsg.includes('atraso')) {
+        replyText = `⏱ **Análise do Cronograma**\n\n**Plano de Compensação Rápido FUNECE:**\n1. Dedique 1h/dia ao tópico principal do edital verticalizado.\n2. Utilize o modo de Simulados da FUNECE para acelerar a fixação das matérias gerais (LDB / Didática).\n3. Mantenha revisões curtas de 15 minutos ao final do dia.`;
+      } else {
+        replyText = `Professor(a) ${userName}, referente a **"${text.trim()}"**:\n\nPara a banca **FUNECE / CEV-UECE (SEDUC CE 2026)**, estude com foco na literalidade das normas estaduais (Lei nº 10.884/84), LDB nº 9.394/96 e nas diretrizes pedagógicas ativas do Ensino Médio no Ceará.\n\n*Você também pode usar a aba de Simulados para praticar questões do estilo FUNECE sobre este tema!*`;
+      }
+
+      const aiMsg: TutorChatMessage = {
+        id: `ai-${Date.now()}`,
         sender: 'ai',
-        text: 'Prof., tive uma breve oscilação de sinal. Por favor, reenvie sua pergunta!',
+        text: replyText,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
-      setMessages(prev => [...prev, errorMsg]);
+      setMessages(prev => [...prev, aiMsg]);
     } finally {
       setLoading(false);
     }

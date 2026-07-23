@@ -7,9 +7,9 @@ let aiClient: any = null;
 
 function getAIClient() {
   if (!aiClient) {
-    const key = process.env.GEMINI_API_KEY;
+    const key = process.env.GEMINI_API_KEY || process.env.API_KEY || process.env.VITE_GEMINI_API_KEY;
     if (!key) {
-      console.warn("[Nutrition] GEMINI_API_KEY is not defined. Will fall back directly to offline diet dictionary.");
+      console.warn("[SEDUC] GEMINI_API_KEY is not defined in environment. Fallback responses enabled.");
       return null;
     }
     aiClient = new GoogleGenAI({
@@ -57,9 +57,9 @@ async function generateContentWithRetry(aiInstance: any, options: {
   defaultModel?: string;
   maxRetries?: number;
 }) {
-  const { contents, config = {}, defaultModel = "gemini-3.5-flash", maxRetries = 2 } = options;
-  // Try defaultModel, then the lightweight gemini-3.1-flash-lite, then gemini-flash-latest
-  const modelsToTry = Array.from(new Set([defaultModel, "gemini-3.1-flash-lite", "gemini-flash-latest"]));
+  const { contents, config = {}, defaultModel = "gemini-2.5-flash", maxRetries = 2 } = options;
+  // Try defaultModel, then gemini-3.1-flash-lite (high RPD quota: 500/day), then gemini-2.5-flash, gemini-2.0-flash, gemini-1.5-flash
+  const modelsToTry = Array.from(new Set([defaultModel, "gemini-3.1-flash-lite", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]));
   
   for (const model of modelsToTry) {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -100,12 +100,9 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 
-async function startServer() {
-  const PORT = 3000;
-
-  // ===============================================================
-  // PASSEISEDUC - ENDPOINTS DE INTELIGÊNCIA ARTIFICIAL PARA CONCURSO
-  // ===============================================================
+// ===============================================================
+// PASSEISEDUC - ENDPOINTS DE INTELIGÊNCIA ARTIFICIAL PARA CONCURSO
+// ===============================================================
   // Professor Mentor IA - Especialista em Aprovação SEDUC CE 2026 (FUNECE / CEV-UECE)
   app.post("/api/seduc/tutor", async (req, res) => {
     const { message, subject, profile, cronograma, stats, isProactive, mode } = req.body;
@@ -209,7 +206,7 @@ Responda agora obedecendo estritamente à intenção identificada, economia de r
       try {
         const response = await generateContentWithRetry(aiInstance, {
           contents: sysPrompt,
-          defaultModel: "gemini-3.5-flash",
+          defaultModel: "gemini-2.5-flash",
           maxRetries: 2
         });
         if (response && response.text) {
@@ -270,7 +267,7 @@ Forneça um comentário explicativo completo no estilo FUNECE contendo:
       try {
         const response = await generateContentWithRetry(aiInstance, {
           contents: prompt,
-          defaultModel: "gemini-3.5-flash",
+          defaultModel: "gemini-2.5-flash",
           maxRetries: 2
         });
         if (response && response.text) {
@@ -375,7 +372,7 @@ Retorne um objeto JSON contendo a chave "questions" com um array de ${requestedC
         console.log(`[Simulado Motor] Gerando ${requestedCount} questões com Gemini para: "${discipline}" - ${selectedTopics.length} tópicos`);
         const response = await generateContentWithRetry(aiInstance, {
           contents: prompt,
-          defaultModel: "gemini-3.5-flash",
+          defaultModel: "gemini-2.5-flash",
           maxRetries: 2,
           config: {
             responseMimeType: "application/json",
@@ -502,7 +499,7 @@ Retorne EXCLUSIVAMENTE um objeto JSON válido com este formato exato:
       try {
         const response = await generateContentWithRetry(aiInstance, {
           contents: evaluationPrompt,
-          defaultModel: "gemini-3.5-flash",
+          defaultModel: "gemini-2.5-flash",
           maxRetries: 2,
           config: {
             responseMimeType: "application/json",
@@ -671,7 +668,7 @@ Atenção: retorne estritamente um JSON limpo formatado de acordo com o esquema 
       try {
         console.log(`[Nutrition] Tentando Gemini com Google Search para: "${foodName}" (${g}g)`);
         const response = await aiInstance.models.generateContent({
-          model: "gemini-3.5-flash",
+          model: "gemini-2.5-flash",
           contents: prompt,
           config: {
             tools: [{ googleSearch: {} }],
@@ -715,7 +712,7 @@ Atenção: retorne estritamente um JSON limpo formatado de acordo com o esquema 
         console.log(`[Nutrition] Tentando Gemini normal (com retries) para: "${foodName}" (${g}g)`);
         const responseWithoutSearch = await generateContentWithRetry(aiInstance, {
           contents: prompt,
-          defaultModel: "gemini-3.5-flash",
+          defaultModel: "gemini-2.5-flash",
           maxRetries: 2,
           config: {
             responseMimeType: "application/json",
@@ -876,7 +873,7 @@ Atenção: retorne estritamente um JSON limpo formatado de acordo com o esquema 
         console.log(`[Aerobics] Tentando calcular calorias com Gemini (com retries) para: ${type}, ${min}min, intensidade: ${intensity}`);
         const response = await generateContentWithRetry(aiInstance, {
           contents: gptPrompt,
-          defaultModel: "gemini-3.5-flash",
+          defaultModel: "gemini-2.5-flash",
           maxRetries: 2,
           config: {
             responseMimeType: "application/json",
@@ -992,7 +989,7 @@ Escreva a resposta estritamente em português brasileiro de forma profissional, 
         console.log(`[Exam Analysis] Analisando exame com Gemini (com retries) para: "${type}" (valor: ${value})`);
         const response = await generateContentWithRetry(aiInstance, {
           contents: prompt,
-          defaultModel: "gemini-3.5-flash",
+          defaultModel: "gemini-2.5-flash",
           maxRetries: 2,
           config: {
             responseMimeType: "application/json",
@@ -1190,7 +1187,7 @@ Use um tom de "coach" de alto nível, dinâmico e focado em resultados reais, se
         console.log(`[Motivation] Gerando mensagem motivacional com Gemini (com retries) para: "${name || 'Atleta'}"`);
         const response = await generateContentWithRetry(aiInstance, {
           contents: prompt,
-          defaultModel: "gemini-3.5-flash",
+          defaultModel: "gemini-2.5-flash",
           maxRetries: 2
         });
         if (response && response.text) {
@@ -1249,7 +1246,7 @@ Atenção: retorne estritamente um JSON limpo e válido formatado de acordo com 
         console.log(`[Workout Feedback] Gerando feedback com Gemini para treino: "${workoutType}" (volume: ${totalVolume}kg)`);
         const response = await generateContentWithRetry(aiInstance, {
           contents: prompt,
-          defaultModel: "gemini-3.5-flash",
+          defaultModel: "gemini-2.5-flash",
           maxRetries: 2,
           config: {
             responseMimeType: "application/json",
@@ -1329,6 +1326,9 @@ Atenção: retorne estritamente um JSON limpo e válido formatado de acordo com 
       return res.status(500).json({ error: "Erro interno ao processar o feedback do treino." });
     }
   });
+
+async function startServer() {
+  const PORT = 3000;
 
   // Serve static files in production or delegate to Vite in development (when running standalone Node server)
   if (process.env.NODE_ENV !== "production") {
