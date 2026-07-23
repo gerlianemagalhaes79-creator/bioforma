@@ -40,6 +40,11 @@ export default function RedacaoSection({ user, profile }: RedacaoSectionProps) {
         })
       });
 
+      const contentType = response.headers.get('content-type') || '';
+      if (!response.ok || !contentType.includes('application/json')) {
+        throw new Error('Serviço de correção temporariamente indisponível. Tente novamente em instantes.');
+      }
+
       const resData = await response.json();
       if (resData.success) {
         setResult(resData.data);

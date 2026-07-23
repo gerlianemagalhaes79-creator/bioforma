@@ -67,6 +67,11 @@ export default function TutorIASection({ user, profile }: TutorIASectionProps) {
         })
       });
 
+      const contentType = response.headers.get('content-type') || '';
+      if (!response.ok || !contentType.includes('application/json')) {
+        throw new Error('Serviço do tutor temporariamente indisponível. Tente novamente.');
+      }
+
       const data = await response.json();
       if (data.success) {
         const aiMsg: TutorChatMessage = {
