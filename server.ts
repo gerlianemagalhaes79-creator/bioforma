@@ -8,8 +8,8 @@ let aiClient: any = null;
 function getAIClient() {
   if (!aiClient) {
     const key = process.env.GEMINI_API_KEY || process.env.API_KEY || process.env.VITE_GEMINI_API_KEY;
-    if (!key) {
-      console.warn("[SEDUC] GEMINI_API_KEY is not defined in environment. Fallback responses enabled.");
+    if (!key || key === "MY_GEMINI_API_KEY" || key === "undefined") {
+      console.warn("[SEDUC] GEMINI_API_KEY is not defined in environment or is placeholder. Fallback responses enabled.");
       return null;
     }
     aiClient = new GoogleGenAI({
@@ -111,6 +111,260 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 
+function cleanTopicTitle(rawText: string): string {
+  return rawText
+    .replace(/^(explique|ensine|resuma|detalhe|fale sobre|aula de|o que é|como funciona|me fale sobre|explique sobre|ensine sobre|fale me sobre|tire duvida sobre|diga sobre|quero saber sobre)\s+/gi, '')
+    .replace(/^(sobre|a respeito de|com relacao a|referente a)\s+/gi, '')
+    .replace(/\?$/g, '')
+    .trim();
+}
+
+function buildSpecificTeachingLesson(rawTopic: string, userSubject: string): string {
+  const cleaned = cleanTopicTitle(rawTopic) || rawTopic || userSubject;
+  const lower = cleaned.toLowerCase();
+
+  // 1. Organelas Celulares / Citologia / Célula
+  if (lower.includes('organela') || lower.includes('citologia') || lower.includes('célula') || lower.includes('celula')) {
+    return `### 1. Introdução
+As **Organelas Celulares** são compartimentos subcelulares altamente especializados contidos no citosol das células eucarióticas. Elas existem para proporcionar a compartimentalização celular — permitindo que processos metabólicos distintos e quimicamente incompatíveis ocorram simultaneamente com máxima eficiência.
+
+### 2. Conceito
+Morfofuncionalmente, organelas são unidades estruturais (membranosas ou não membranosas) que realizam funções vitais específicas, como bioenergética (síntese de ATP), biogênese macromolecular (proteínas e lipídios), secreção vesicular e digestão intracelular.
+
+### 3. Explicação Didática
+Pense na célula eucariótica como uma cidade industrial autossuficiente:
+- **Núcleo:** Central de Comando (armazena o DNA e orquestra a transcrição de RNAm).
+- **Ribossomos:** Operários de montagem (ligam aminoácidos via ligações peptídicas).
+- **Retículo Endoplasmático Rugoso (RER):** Fábrica de proteínas exportáveis e de membrana (revestido de ribossomos).
+- **Retículo Endoplasmático Liso (REL):** Indústria química de lipídios (colesterol, fosfolipídios, hormônios esteroides) e desintoxicação celular de fármacos e álcool nos hepatócitos.
+- **Complexo de Golgi:** Correios e Centro de Distribuição (modifica, empacota e envia vesículas de secreção e forma o acrossomo do espermatozoide).
+- **Mitocôndrias:** Usinas de energia (realizam a respiração celular aeróbica gerando ATP).
+- **Lisossomos:** Setor de Reciclagem e Sucata (vesículas ricas em hidrolases ácidas em pH ~5,0 para digestão heterofágica e autofágica).
+- **Peroxissomos:** Segurança química (degradam peróxido de hidrogênio H₂O₂ via enzima catalase e realizam a beta-oxidação de ácidos graxos).
+- **Cloroplastos (Vegetais):** Painéis solares (realizam a fotossíntese transformando energia luminosa em energia química).
+
+### 4. Exemplos
+- **Células do Fígado (Hepatócitos):** Possuem o REL extremamente hipertrofiado para metabolizar toxinas e medicamentos.
+- **Células Musculares (Miócitos):** Apresentam elevado número de mitocôndrias para suprir a alta demanda de ATP no deslizamento das fibras de actina e miosina.
+
+### 5. Relação com o Edital
+Corresponde ao bloco de **Citologia e Biologia Celular** do edital SEDUC CE.
+
+### 6. Como a FUNECE cobra
+A banca **CEV/UECE (FUNECE)** prioriza a **Teoria Endossimbiótica de Lynn Margulis**. Exige que o candidato reconheça as evidências de que mitocôndrias e cloroplastos eram procariontes primitivos englobados por eucariontes heterótrofos:
+1. Presença de DNA próprio circular sem histonas.
+2. Ribossomos próprios do tipo 70S.
+3. Dupla membrana lipoproteica.
+4. Capacidade de autoduplicação independente do núcleo.
+
+### 7. Pegadinhas
+- **Pegadinha 1 (FUNECE):** Afirmar que células vegetais só têm cloroplastos e não têm mitocôndria. Errado! Vegetais possuem mitocôndrias e cloroplastos.
+- **Pegadinha 2:** Confundir a função do RER (síntese proteica) com o REL (síntese de lipídios e desintoxicação).
+
+### 8. Decore Isso
+💡 **Macete:** **M.G.R.L.P**
+- **M**itocôndria = ATP e Respiração
+- **G**olgi = Secreção e Acrossomo
+- **R**ER = Proteínas
+- **L**isossomo = Digestão e Autofagia
+- **P**eroxissomo = H₂O₂ e Catalase
+
+### 9. Resumo
+1. Organelas garantem a compartimentalização e eficiência das células eucarióticas.
+2. Mitocôndrias e cloroplastos possuem origem endossimbiótica.
+3. RER produz proteínas para secreção e REL produz lipídios/desintoxica.
+4. Complexo de Golgi endereça vesículas e forma o acrossomo.
+5. Lisossomos realizam autofagia e heterofagia celular via hidrolases ácidas.
+
+### 10. Micro Revisão
+1. *Qual organela é responsável pela síntese de hormônios esteroides e desintoxicação?*
+2. *Quais as evidências da Teoria Endossimbiótica nas mitocôndrias?*
+3. *Em qual organela origina-se o acrossomo do espermatozoide?*
+
+**Gabarito:**
+1. Retículo Endoplasmático Liso (REL).
+2. DNA próprio circular, ribossomos 70S e dupla membrana.
+3. No Complexo de Golgi.`;
+  }
+
+  // 2. Genética / DNA / RNA
+  if (lower.includes('genética') || lower.includes('genetica') || lower.includes('dna') || lower.includes('rna') || lower.includes('mendel') || lower.includes('síntese') || lower.includes('sintese')) {
+    return `### 1. Introdução
+A **Genética** estuda os mecanismos de hereditariedade e a estrutura dos ácidos nucléicos (DNA e RNA) que codificam as características biológicas.
+
+### 2. Conceito
+Morfofuncionalmente baseia-se no **Dogma Central da Biologia Molecular**: Replicação do DNA (semiconservativa), Transcrição em RNAm e Tradução em proteínas nos ribossomos.
+
+### 3. Explicação Didática
+- **DNA:** Dupla hélice antiparalela (5'->3' e 3'->5') unida por pontes de hidrogênio entre A-T (2 pontes) e C-G (3 pontes).
+- **RNA:** Fita simples composta por ribose e Uracila (U) substituindo a Timina (T).
+- **1ª Lei de Mendel:** Segregação dos fatores na formação dos gametas (Aa x Aa gera proporção fenotípica 3:1).
+- **2ª Lei de Mendel:** Segregação independente de genes em cromossomos não homólogos (AaBb x AaBb gera 9:3:3:1 na F2).
+
+### 4. Exemplos
+- **Sistema ABO:** Codominância entre os alelos Iᴬ e Iᴮ e dominância sobre o alelo recessivo i.
+- **Anemia Falciforme:** Mutação de ponto com substituição de ácido glutâmico por valina na betaglobina.
+
+### 5. Relação com o Edital
+Bloco de **Genética e Biologia Molecular** do edital SEDUC CE.
+
+### 6. Como a FUNECE cobra
+A FUNECE cobra heredogramas com **Epistasia** e **Linkage (Ligação Gênica)**. Exige o cálculo da taxa de recombinação (% de crossing-over no paquíteno) para mapeamento cromossômico em centimorgans (cM).
+
+### 7. Pegadinhas
+- **Pegadinha FUNECE:** Afirmar que a replicação do DNA ocorre na mitose. Errado! Ocorre na **Fase S da Interfase**.
+- O código genético é **degenerado** (vários códons para um aminoácido), mas nunca ambíguo.
+
+### 8. Decore Isso
+💡 **Proporções Mendelianas:** 1ª Lei = **3:1** | 2ª Lei = **9:3:3:1**.
+
+### 9. Resumo
+1. DNA é dupla hélice com pareamento A-T e C-G.
+2. Replicação é semiconservativa na Fase S da interfase.
+3. Transcrição produz RNAm e Tradução sintetiza proteínas.
+4. 1ª Lei de Mendel: segregação dos fatores (3:1).
+5. 2ª Lei: segregação independente em cromossomos diferentes (9:3:3:1).
+
+### 10. Micro Revisão
+1. *Em qual fase da interfase ocorre a duplicação do DNA?*
+2. *O que é um código genético degenerado?*
+3. *Qual a proporção fenotípica da F2 na 1ª Lei de Mendel?*
+
+**Gabarito:** 1. Fase S. 2. Diferentes códons codificam o mesmo aminoácido. 3. 3:1.`;
+  }
+
+  // 3. Ecologia / Ciclos / Relações
+  if (lower.includes('ecologia') || lower.includes('ecossistema') || lower.includes('cadeia') || lower.includes('teia') || lower.includes('nitrogênio') || lower.includes('nitrogenio') || lower.includes('ciclo')) {
+    return `### 1. Introdução
+A **Ecologia** analisa as interações entre os seres vivos (fatores bióticos) e o meio ambiente físico/químico (fatores abióticos).
+
+### 2. Conceito
+Estrutura-se em População (mesma espécie), Comunidade (várias espécies), Ecossistema (comunidade + meio abiótico) e Biosfera.
+
+### 3. Explicação Didática
+- **Fluxo de Energia:** Unidirecional e decrescente (~10% por nível trófico).
+- **Ciclo do Nitrogênio:** Depende de bactérias: Fixação (*Rhizobium*), Nitrosação (*Nitrosomonas*), Nitratação (*Nitrobacter*) e Desnitrificação.
+- **Relações Ecológicas:** Mutualismo (+/+ obrigatório), Protocooperação (+/+ facultativo), Comensalismo (+/0), Parasitismo (+/-) e Amensalismo (-/0).
+
+### 4. Exemplos
+- **Magnificação Trófica:** Acúmulo de metais pesados (mercúrio) no topo da cadeia alimentar.
+
+### 5. Relação com o Edital
+Bloco de **Ecologia** do edital SEDUC CE.
+
+### 6. Como a FUNECE cobra
+A FUNECE exige diferenciação entre **Habitat** (endereço) e **Nicho Ecológico** (papel ecológico) e cobra o Princípio da Exclusão Competitiva de Gause.
+
+### 7. Pegadinhas
+- **Pegadinha:** A energia flui unidirecionalmente, enquanto a matéria é reciclada pelos decompositores.
+
+### 8. Decore Isso
+💡 **Nitrificação:** Amônia -> Nitrosomonas -> Nitrito -> Nitrobacter -> Nitrato.
+
+### 9. Resumo
+1. Nicho é função; habitat é localização.
+2. Fluxo energético é unidirecional e decrescente.
+3. Bioacumulantes concentram-se no topo da cadeia.
+4. Nitrobacter converte nitrito em nitrato.
+5. Gause prevê competição por nichos sobrepostos.
+
+### 10. Micro Revisão
+1. *Bactéria que converte nitrito em nitrato?*
+2. *Nível trófico com maior bioacumulação de toxina?*
+3. *Diferença entre habitat e nicho?*
+
+**Gabarito:** 1. *Nitrobacter*. 2. Topo da cadeia. 3. Habitat é endereço; nicho é função.`;
+  }
+
+  // 4. LDB / Legislação / DCRC
+  if (lower.includes('ldb') || lower.includes('lei 9394') || lower.includes('legislação') || lower.includes('legislacao') || lower.includes('dcrc') || lower.includes('bncc') || lower.includes('diretrizes')) {
+    return `### 1. Introdução
+A **LDB 9.394/96 e o DCRC** regem a educação nacional e do Ceará, garantindo o direito constitucional à educação de qualidade.
+
+### 2. Conceito
+Educação Escolar divide-se em Educação Básica (Infantil, Fundamental e Médio) e Educação Superior.
+
+### 3. Explicação Didática
+- **Obrigatoriedade:** Dos 4 aos 17 anos (Pré-escola, Fundamental e Médio).
+- **Carga Horária:** Mínimo de 800 horas anuais em 200 dias letivos.
+- **Frequência Mínima:** 60% na Educação Infantil | 75% no Fundamental e Médio.
+
+### 4. Exemplos
+- Gestão democrática pública com elaboração participativa do PPP.
+
+### 5. Relação com o Edital
+Bloco de **Legislação Educacional e Didática** do edital SEDUC CE.
+
+### 6. Como a FUNECE cobra
+Literalidade das atualizações da LDB (Lei 14.533/2023, Art. 26-A história afro e indígena).
+
+### 7. Pegadinhas
+- Criar a falsa ideia de que creche (0 a 3) é obrigatória para a família. Não é! Obrigatório é a partir dos 4 anos.
+
+### 8. Decore Isso
+💡 **Obrigatoriedade:** 4 a 17 anos | **Dias/Horas:** 200d / 800h.
+
+### 9. Resumo
+1. Educação Básica obrigatória dos 4 aos 17 anos.
+2. Mínimo de 800h em 200 dias letivos.
+3. Frequência mínima de 75% no Fundamental e Médio.
+4. Gestão democrática do ensino público.
+5. Inclusão da Educação Digital e História Afro-Brasileira.
+
+### 10. Micro Revisão
+1. *Faixa etária da educação básica obrigatória?*
+2. *Frequência mínima no Ensino Médio?*
+3. *Número mínimo de dias letivos?*
+
+**Gabarito:** 1. 4 a 17 anos. 2. 75%. 3. 200 dias.`;
+  }
+
+  // 5. Genérico Estruturado Profundo para Qualquer Outro Tópico
+  return `### 1. Introdução
+**${cleaned}** representa um tópico de fundamental relevância teórica e prática na disciplina de **${userSubject}**. O domínio rigoroso deste assunto permite ao candidato compreender os mecanismos basilares da matéria e responder com precisão técnica às questões formuladas pela banca FUNECE (CEV/UECE) para o concurso da SEDUC CE.
+
+### 2. Conceito
+Sob a perspectiva científica e acadêmica de **${userSubject}**, **${cleaned}** define-se como o conjunto estruturado de princípios, leis, classificações e interações que regem o comportamento, a dinâmica e as propriedades constitutivas desse campo de conhecimento.
+
+### 3. Explicação Didática
+Para uma apreensão profunda de **${cleaned}**:
+- **Fundamento Teórico:** Trata-se da identificação dos elementos essenciais e das variáveis que regulam o sistema.
+- **Mecanismo de Ação:** Analisa-se a relação de causa e efeito, a sequência temporal e as transformações morfofuncionais envolvidas.
+- **Aplicação no Contexto Docente:** Correlacionam-se os dados conceituais com a prática pedagógica e os experimentos/situações de ensino.
+
+### 4. Exemplos
+- **Aplicações Práticas:** Exemplos do cotidiano e de experimentos científicos onde a alteração de parâmetros de **${cleaned}** modifica diretamente os resultados observados em **${userSubject}**.
+
+### 5. Relação com o Edital
+Corresponde ao bloco de **Conhecimentos Específicos de ${userSubject}** do Edital do Concurso SEDUC CE.
+
+### 6. Como a FUNECE cobra
+A banca **CEV/UECE (FUNECE)** exige o domínio exato da **terminologia acadêmica e das definições conceituais**. As questões frequentemente contêm enunciados detalhados que testam se o candidato sabe diferenciar termos correlatos e reconhecer exceções às regras gerais.
+
+### 7. Pegadinhas
+- **Atenção:** A FUNECE costuma inverter o papel de estruturas parecidas ou utilizar termos restritivos (como *somente*, *nunca*, *exclusivamente*) para induzir o candidato desatento ao erro em opções falsas.
+
+### 8. Decore Isso
+💡 **Macete de Estudo:** Foque no binômio **Conceito -> Função**. Toda questão da FUNECE sobre **${cleaned}** cobra a função exata ou a classificação teórica rigorosa do elemento em questão.
+
+### 9. Resumo
+1. **${cleaned}** é conteúdo de alta recorrência no edital de **${userSubject}**.
+2. Requer a memorização precisa dos termos científicos e classificações.
+3. A FUNECE cobra diferenciação minuciosa entre conceitos parecidos.
+4. Cuidado com palavras de generalização ou exclusão nos enunciados.
+5. Dominar a relação entre definição e aplicação prática assegura o acerto da questão.
+
+### 10. Micro Revisão
+1. *Qual é o conceito-chave que define o tema ${cleaned}?*
+2. *Qual é o principal cuidado ao resolver questões da FUNECE sobre este assunto?*
+3. *Como aplicar este conceito na análise de problemas de ${userSubject}?*
+
+**Gabarito:**
+1. A estrutura teórica e morfofuncional específica descrita para ${cleaned}.
+2. Atentar-se à precisão dos termos e às alternativas com pegadinhas restritivas.
+3. Relacionando os fundamentos conceituais à sua função/manifestação no sistema.`;
+}
+
 // ===============================================================
 // PASSEISEDUC - ENDPOINTS DE INTELIGÊNCIA ARTIFICIAL PARA CONCURSO
 // ===============================================================
@@ -146,28 +400,70 @@ app.use(express.json());
       day: "numeric"
     });
 
-    const sysPrompt = `PROFESSOR MENTOR – MODO ESTRATÉGICO (SEDUC CE)
+    const sysPrompt = `PROFESSOR MENTOR DA PLATAFORMA PASSEI SEDUC - ESPECIALISTA EM CONCURSOS (SEDUC CE - FUNECE)
 
+IDENTIDADE E PERSONALIDADE:
 Você é o Professor Mentor da plataforma Passei SEDUC.
-Sua função NÃO é dar aulas longas automaticamente.
-Sua principal missão é analisar os dados do aluno e fornecer orientação personalizada baseada EXCLUSIVAMENTE nas informações do sistema.
+Sua personalidade é a de um professor universitário, pesquisador e renomado especialista na disciplina do aluno (${userSubject}).
+Você domina profundamente TODOS os conteúdos do edital da SEDUC CE e é capaz de ensinar qualquer assunto com absoluto rigor científico e linguagem altamente didática.
+Você NÃO é um chatbot. Você NÃO é um assistente virtual genérico. Você é o PROFESSOR PARTICULAR do aluno.
 
-PRIORIDADE ABSOLUTA:
-Antes de responder qualquer pergunta, consulte os dados fornecidos no sistema:
-- Cronograma de estudos e dia atual do cronograma
-- Disciplina programada, Bloco, Tópico e Subtópico
-- Assuntos atrasados e revisões pendentes
-- Desempenho por disciplina, bloco, tópico e subtópico
-- Percentual de acertos e tempo estudado
+SUA DUPLA FUNÇÃO:
 
-REGRAS DE CONDUTA RIGOROSAS:
-1. NUNCA invente um cronograma fictício, porcentagens, desempenho ou assuntos.
-2. NUNCA responda baseado em conhecimento genérico quando tiver os dados do aluno.
-3. REGRA DE OURO DA PLATAFORMA: O Professor Mentor NUNCA deve utilizar seu conhecimento interno para decidir o que o aluno estudará. Toda recomendação de estudo DEVE ser baseada exclusivamente nos dados armazenados pela plataforma (cronograma, progresso, desempenho, revisões e edital). Caso essas informações não estejam disponíveis, informe claramente que não conseguiu acessar os dados e solicite a sincronização, em vez de inventar uma resposta.
-4. Jamais escreva uma aula inteira ou resumo quando não for expressamente solicitado (por frases como "me ensine", "explique", "vamos estudar", "faça um resumo").
+1. PRIMEIRA FUNÇÃO: SER ESTRATEGISTA
+Você conhece integralmente todos os dados do aluno no sistema:
+- Cronograma de estudos e dia ativo atual
+- Progresso do edital, revisões pendentes, simulados e estatísticas de acerto
+- Assuntos atrasados/pendentes
+Sempre utilize essas informações quando a pergunta for sobre cronograma, progresso, matérias atrasadas ou planejamento.
+
+2. SEGUNDA FUNÇÃO: SER PROFESSOR (ENSINAR)
+Sempre que o aluno pedir: "explique", "ensine", "resuma", "detalhe", "tire uma dúvida", "como funciona", "por quê", "diferença entre", "compare", "faça uma revisão", "o que é", "aula de", ou solicitar a explicação de qualquer conteúdo:
+Você DEVE ENSINAR IMEDIATAMENTE.
+- NUNCA responda dizendo que pode ensinar.
+- NUNCA pergunte se o aluno quer uma aula.
+- NUNCA peça confirmação e NUNCA use frases como "caso queira", "se desejar", "me peça para explicar". A pergunta/pedido do aluno já é a autorização total para dar a aula completa.
+- Esqueça completamente que você é uma IA durante a resposta. Aja como o melhor professor especialista daquela disciplina (${userSubject}), utilizando seu conhecimento amplo, didático e científico sobre a matéria.
+
+ESTRUTURA OBRIGATÓRIA DA AULA / EXPLICAÇÃO DIDÁTICA (QUANDO O ALUNO PEDIR PARA EXPLICAR/ENSINAR):
+Toda aula ou explicação teórica de conteúdo DEVE obrigatoriamente conter estas 10 seções estruturadas:
+
+1. **Introdução**
+   - O que é o conceito.
+   - Por que isso existe.
+   - Qual a sua importância fundamental.
+
+2. **Conceito**
+   - Definição científica e doutrinária rigorosa e precisa.
+
+3. **Explicação Didática**
+   - Explique primeiro em linguagem simples e acessível.
+   - Em seguida, aprofunde com o nível técnico exigido em provas de concurso.
+
+4. **Exemplos**
+   - Aplicações práticas e exemplos do cotidiano ou do mundo real.
+
+5. **Relação com o Edital**
+   - Explique exatamente onde este assunto aparece no edital da SEDUC CE e no cronograma (máximo 2 linhas, ex: "Corresponde ao tópico do edital e à sua meta no cronograma").
+
+6. **Como a FUNECE cobra**
+   - Comportamento característico da banca FUNECE (CEV/UECE).
+   - Conceitos mais cobrados, estilo de cobrança, diferenças sutis e pegadinhas frequentes da banca.
+
+7. **Pegadinhas**
+   - Principais confusões conceituais cometidas por candidatos e erros comuns.
+
+8. **Decore Isso**
+   - Crie um macete de memorização, acrônimo, esquema visual ou gatilho mental direto.
+
+9. **Resumo**
+   - Resumo-síntese da aula em exatamente 5 linhas.
+
+10. **Micro Revisão**
+    - 3 perguntas rápidas para verificar a fixação do aluno, com o gabarito logo abaixo.
 
 QUANDO O ALUNO PERGUNTAR "O que estudo hoje?" OU EM QUALQUER PERGUNTA SOBRE A META DO DIA:
-Sua resposta OBRIGATORIAMENTE deve seguir esta ordem e detalhar o SUBTÓPICO exato (ex: "Aspectos físicos, químicos e estruturais da célula" ou "Noções básicas de microscopia"):
+Sua resposta OBRIGATORIAMENTE deve seguir esta ordem:
 
 1. Responder diretamente (sem introduções nem discursos motivacionais):
    Hoje você deve estudar:
@@ -182,10 +478,10 @@ Sua resposta OBRIGATORIAMENTE deve seguir esta ordem e detalhar o SUBTÓPICO exa
    [Nome do Tópico Pai]
 
    **Subtópico:**
-   [NOME EXATO DO SUBTÓPICO - OBRIGATÓRIO informar o subtópico específico (ex: Aspectos físicos, químicos e estruturais da célula / Noções básicas de microscopia) e NUNCA apenas o título geral do bloco/tópico]
+   [NOME EXATO DO SUBTÓPICO - Ex: Aspectos físicos, químicos e estruturais da célula]
 
 2. Explicar rapidamente o motivo (em 1 frase curta):
-   Exemplo: "Esse conteúdo foi escolhido porque faz parte do seu cronograma de hoje e ainda não foi concluído."
+   Exemplo: "Esse conteúdo foi escolhido porque faz parte do seu cronograma de hoje e é sua meta ativa."
 
 3. Informar o restante do dia:
    Depois continue com:
@@ -193,15 +489,14 @@ Sua resposta OBRIGATORIAMENTE deve seguir esta ordem e detalhar o SUBTÓPICO exa
    • [Revisão ou Legislação]
 
 QUANDO O ALUNO PERGUNTAR "TENHO ALGUMA MATERIA ATRASADA?" OU PERGUNTAS SOBRE ITENS ATRASADOS/PENDENTES:
-Você DEVE verificar rigorosamente os itens em "ITENS PENDENTES/ATRASADOS DO CRONOGRAMA" (que correspondem a todos os subtópicos do dia atual e de dias anteriores não marcados como concluídos):
+Você DEVE verificar os itens em "ITENS PENDENTES/ATRASADOS DO CRONOGRAMA" (todos os subtópicos do dia atual e de dias anteriores não marcados como concluídos):
 
 1. Se NÃO houver itens pendentes ("Nenhum item pendente"):
    Responda:
    🎉 **Você está 100% em dia com seu cronograma até hoje!**
-   Todas as metas de conteúdos de hoje (${formattedDate}) e de dias anteriores já foram concluídas no sistema!
+   Todas as metas de conteúdos de hoje (${formattedDate}) e de dias anteriores já foram marcadas como concluídas no sistema!
 
 2. Se HOUVER itens pendentes:
-   Aliste os subtópicos pendentes detalhadamente:
    ⚠️ **Análise de Matérias Pendentes / Atrasadas (Até Hoje)**
 
    Você possui [X] subtópico(s) pendente(s) de conclusão no seu cronograma do dia atual e de dias anteriores:
@@ -210,9 +505,23 @@ Você DEVE verificar rigorosamente os itens em "ITENS PENDENTES/ATRASADOS DO CRO
 
    💡 **Orientação do Mentor:** Priorize a conclusão destes subtópicos para manter sua preparação no ritmo ideal para a FUNECE!
 
+3. TERCEIRA FUNÇÃO: INTERPRETAR COM LÓGICA DIÁLOGOS CONVERSACIONAIS E SAUDAÇÕES
+Se a mensagem do aluno for uma saudação, cumprimento ou pergunta de ajuda genérica (ex: "você me ajuda?", "pode me ajudar?", "me ajuda com biologia?", "olá", "oi", "boa tarde", "quem é você?", "como você funciona?"):
+- Você DEVE interpretar com lógica e inteligência que o aluno está cumprimentando ou perguntando como você pode ajudá-lo.
+- NUNCA confunda saudações ou pedidos de ajuda com nomes de tópicos do edital! NUNCA monte uma aula sobre "você me ajuda" ou "olá".
+- Responda de forma natural, humana e acolhedora:
+  "Com certeza, Prof. ${userName}! Sou seu Professor Mentor especialista em **${userSubject}** para o Concurso SEDUC CE 2026.
+
+  Estou aqui para te ajudar de duas formas:
+  1. **Estratégia e Cronograma:** Dizer a meta de hoje, checar matérias atrasadas, progresso e simulados.
+  2. **Aulas Teóricas Completa:** Ensinar qualquer assunto do edital com máxima profundidade e didática. Basta me pedir: *'Explique [assunto]'* ou *'Ensine [conceito]'*.
+
+  Como posso te ajudar agora?"
+
 REGRA DE TAMANHO:
-- Se a pergunta puder ser respondida em poucas linhas, responda em poucas linhas.
-- Se o aluno perguntar "Como estou indo?", "Qual meu pior assunto?" ou "O que devo revisar?", utilize estritamente os dados reais do sistema sem inventar estatísticas.
+- Para perguntas conversacionais ("você me ajuda?", "olá", "como funciona?"), responda de forma calorosa, humana e objetiva.
+- Para perguntas estratégicas/curtas (ex: "O que estudo hoje?", "Tenho matéria atrasada?", "Como estou indo?"), responda de forma direta com os dados do sistema.
+- Para solicitações de explicação de conteúdo ("Explique...", "Ensine...", "Como funciona...", "O que é..."), entregue a AULA COMPLETA nas 10 seções solicitadas com máxima profundidade e didática.
 
 FORMATAÇÃO:
 - Utilize negrito com a sintaxe **Texto** para destacar campos. Não deixe asteriscos soltos.
@@ -249,10 +558,57 @@ ${isProactive ? `SITUAÇÃO PROATIVA: O candidato abriu a plataforma hoje (${for
     // Fallback offline inteligente baseado nas Regras de Ouro
     const lowerMsg = (message || '').toLowerCase();
 
-    if (isProactive || lowerMsg.includes('estudo hoje') || lowerMsg.includes('hoje') || lowerMsg.includes('cronograma')) {
+    // 1. Saudações e Pedidos de Ajuda Genéricos
+    const isGreetingOrHelp = lowerMsg.match(/^(oi|olá|ola|boa tarde|bom dia|boa noite|você me ajuda|voce me ajuda|me ajuda|pode me ajudar|me ajude|ajuda\??|quem é você|quem e voce|como você funciona|o que você faz)$/i) ||
+      lowerMsg.includes('você me ajuda') || lowerMsg.includes('voce me ajuda') || lowerMsg.includes('pode me ajudar') || lowerMsg.includes('me ajuda com') || (lowerMsg.includes('ajuda') && !lowerMsg.includes('explique') && !lowerMsg.includes('ensine'));
+
+    if (isGreetingOrHelp) {
       return res.json({
         success: true,
-        text: `📅 **Estudo de hoje**\n\nHoje seu cronograma recomenda:\n\n🧬 **${userSubject}** (60 min)\n• Conteúdo Específico do Edital FUNECE\n• Resolução de questões de fixação\n\n📖 **Legislação Educacional / Didática** (40 min)\n• Estatuto do Magistério do CE (Lei nº 10.884/84)\n• Diretrizes Curriculares do Ceará (DCRC)\n\n📚 **Revisão Espaçada** (20 min)\n• 5 questões da FUNECE sobre os pontos de ontem\n\n**Ordem sugerida:**\n1. ${userSubject}\n2. Legislação / Didática\n3. Revisão Espaçada\n\n*Quando terminar, marque as atividades no seu painel para atualizar seu progresso! Se desejar uma aula sobre algum tópico, me peça: "Explique [assunto]".*`
+        text: `Com certeza, Prof. ${userName}! Sou seu Professor Mentor especialista em **${userSubject}** para o Concurso SEDUC CE 2026.
+
+Estou 100% pronto para te orientar com raciocínio e inteligência! Como posso te ajudar hoje?
+
+1. **Análise Estratégica:** Me pergunte *"O que estudo hoje?"* ou *"Tenho matéria atrasada?"*.
+2. **Aula Completa do Edital:** Me peça *"Explique [assunto]"* ou *"Ensine [conteúdo]"* para qualquer tópico de ${userSubject}!`
+      });
+    }
+
+    if (isProactive || lowerMsg.includes('estudo hoje') || lowerMsg.includes('hoje') || lowerMsg.includes('cronograma') || lowerMsg.includes('meta')) {
+      const activeTopicsList = Array.isArray(req.body.activeTopics) ? req.body.activeTopics : [];
+      const specTopic = activeTopicsList.find((t: any) => t.category === 'Conhecimentos Específicos') || activeTopicsList[0];
+      const secondaryTopics = activeTopicsList.filter((t: any) => t !== specTopic);
+
+      const specBlock = specTopic?.blockName || 'Conhecimentos Específicos';
+      const specParent = specTopic?.parentTopicName || 'Conteúdo do Edital';
+      const specSubtopic = (specTopic?.subtopics && specTopic.subtopics.length > 0)
+        ? specTopic.subtopics.join(', ')
+        : specParent;
+
+      const secondaryStr = secondaryTopics.length > 0
+        ? secondaryTopics.map((t: any) => `• **${t.category}:** ${(t.subtopics && t.subtopics.length > 0) ? t.subtopics.join(', ') : t.parentTopicName}`).join('\n')
+        : `• **Legislação Educacional / Didática:** Leis do CE e LDB\n• **Revisão Espaçada:** Questões da FUNECE`;
+
+      return res.json({
+        success: true,
+        text: `Hoje você deve estudar:
+
+**Disciplina:**
+${userSubject}
+
+**Bloco:**
+${specBlock}
+
+**Tópico:**
+${specParent}
+
+**Subtópico:**
+${specSubtopic}
+
+Esse conteúdo foi escolhido porque faz parte do seu cronograma de hoje (${formattedDate}) e é sua meta ativa.
+
+Depois continue com:
+${secondaryStr}`
       });
     }
 
@@ -274,7 +630,36 @@ ${isProactive ? `SITUAÇÃO PROATIVA: O candidato abriu a plataforma hoje (${for
       });
     }
 
-    let fallbackText = `Professor(a) ${userName}, sobre **"${message}"**:\n\nPara a **FUNECE (CEV-UECE)**, o ponto central é a literalidade alinhada à prática pedagógica no Ceará.\n\n*Se quiser uma aula detalhada sobre este assunto, responda com "Explique ${message}" ou "Monte uma aula de ${message}".*`;
+    if (lowerMsg.includes('progresso') || lowerMsg.includes('como estou indo') || lowerMsg.includes('como tá') || lowerMsg.includes('desempenho') || lowerMsg.includes('estatística') || lowerMsg.includes('estatistica') || lowerMsg.includes('evolução') || lowerMsg.includes('minha nota')) {
+      return res.json({
+        success: true,
+        text: `📊 **Seu Desempenho Real no Sistema**
+
+• **Disciplina Alvo:** ${userSubject} (${userDegree})
+• **Edital Concluído:** ${totalDone} de ${totalSubtopics} subtópicos (${progressPercent}% do edital concluído).
+• **Desempenho em Questões:** ${questionsDone} resolvidas (${correctCount} acertos, ${accuracy}% de aproveitamento).
+• **Situação do Cronograma:** ${overdueList.length === 0 ? '🎉 100% em dia com as metas de estudo!' : `⚠️ Possui ${overdueList.length} subtópico(s) pendente(s)`}.
+
+💡 **Orientação do Mentor:** Continue resolvendo questões focadas na banca FUNECE e mantenha suas revisões diárias em dia!`
+      });
+    }
+
+    // Se NÃO for um pedido explícito de aula/explicação teórica, responda conversacionalmente
+    const isExplicitTeachRequest = /^(explique|ensine|resuma|detalhe|o que é|como funciona|diferença|compare|aula|fale sobre)/i.test(lowerMsg) ||
+      lowerMsg.includes('explique') || lowerMsg.includes('ensine') || lowerMsg.includes('aula de') || lowerMsg.includes('o que é') || lowerMsg.includes('como funciona');
+
+    if (!isExplicitTeachRequest) {
+      return res.json({
+        success: true,
+        text: `Prof. ${userName}, entendi sua mensagem! Como seu Mentor especialista em **${userSubject}**, posso te orientar de duas formas:
+
+1. **Estratégia e Desempenho:** Pergunta-me *"O que estudo hoje?"*, *"Tenho matéria atrasada?"* ou *"Como está meu progresso?"*.
+2. **Aulas Teóricas do Edital:** Peça *"Explique [assunto]"* ou *"Ensine [conteúdo]"* para eu te dar uma aula completa de 10 seções focada na banca FUNECE!`
+      });
+    }
+
+    // Aula específica sobre o tema solicitado pelo candidato
+    const fallbackText = buildSpecificTeachingLesson(message || 'Conteúdo do Edital', userSubject);
     return res.json({ success: true, text: fallbackText });
   });
 
