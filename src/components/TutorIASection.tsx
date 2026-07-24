@@ -25,246 +25,173 @@ function buildSpecificTeachingLesson(rawTopic: string, userSubject: string): str
   const cleaned = cleanTopicTitle(rawTopic) || rawTopic || userSubject;
   const lower = cleaned.toLowerCase();
 
-  // 1. Organelas Celulares / Citologia / Célula
+  // 1. Noções Básicas de Microscopia
+  if (lower.includes('microscop') || lower.includes('ampliação') || lower.includes('resolução') || lower.includes('resolucao') || lower.includes('mev') || lower.includes('met')) {
+    return `🎯 **O que você DEVE saber (Conceito-Chave):**
+A **Microscopia** é a ferramenta base da Citologia. O parâmetro mais crítico em microscopia não é a **Ampliação** (aumento da imagem), mas sim o **Poder de Resolução** (a capacidade do sistema óptico/eletrônico de distinguir dois pontos distintos e muito próximos como estruturas separadas). O limite de resolução do microscópio óptico fotônico (MO) é de aproximadamente **0,2 µm (200 nm)**, determinado pelo comprimento de onda da luz visível, enquanto os microscópios eletrônicos utilizam feixes de elétrons com comprimento de onda subnanométrico, alcançando resoluções abaixo de **0,1 a 0,2 nm**.
+
+🔬 **Na Prática / Detalhes Técnicos:**
+- **Ampliação vs. Resolução:** Aumentar a imagem sem aumentar a resolução gera apenas uma "ampliação vazia" (imagem maior, porém desfocada).
+- **Limite de Resolução (Fórmula de Abbe):** O limite de resolução ($d$) é inversamente proporcional à Abertura Numérica (AN) da objetiva ($d = \\frac{0,61 \\cdot \\lambda}{AN}$). Quanto menor o valor de $d$, maior a capacidade de distinguir detalhes.
+- **Microscópio Óptico de Luz (MO):** Utiliza lentes de vidro e luz visível. Exige coloração histológica (ex: Hematoxilina, de caráter básico, que cora estruturas ácidas/basófilas como o DNA do núcleo em azul/roxo; e Eosina, de caráter ácido, que cora estruturas básicas/acidófilas como o citoplasma em rosa).
+- **Microscópio Eletrônico de Transmissão (MET):** O feixe de elétrons atravessa cortes ultra-finos da amostra. Utilizado para visualizar a **ultraestrutura interna celular** (cristas mitocondriais, envelope nuclear, ribossomos). Exige fixação com glutaraldeído e tetróxido de ósmio.
+- **Microscópio Eletrônico de Varredura (MEV):** O feixe de elétrons varre a superfície da amostra recoberta por uma fina camada de metal pesado (ouro). Fornece imagens tridimensionais (3D) de alta profundidade de campo da **superfície externa**.
+
+⚠️ **Como a FUNECE (CEV/UECE) cobra:**
+1. **Inversão MEV vs. MET:** A FUNECE adora afirmar que o MEV analisa a estrutura interna e o MET analisa a superfície 3D. **Inverta mentalmente:** MET = Transmite (atravessa -> estrutura interna 2D); MEV = Varre (superfície 3D).
+2. **Confusão de Ampliação vs. Resolução:** A banca formula questões onde coloca a ampliação (ex: 1000x) como responsável por ver organelas que exigem alto limite de resolução.
+3. **Preparo de Amostra:** Lembrar que no MET e MEV as células estão **mortas e desidratadas** (vácuo elevado), não sendo possível observar processos vivos em tempo real.
+
+🧠 **Desafio Flash / Pergunta de Fixação:**
+*(FUNECE - Adaptada SEDUC CE)* Em um laboratório de biologia celular, um pesquisador deseja analisar a topografia e a morfologia tridimensional da superfície externa de um grão de pólen. Qual modalidade de microscopia e qual princípio técnico devem ser empregados?
+
+A) Microscopia Óptica de Luz com coloração por Hematoxilina e Eosina.
+B) Microscopia Eletrônica de Transmissão (MET), pois os elétrons atravessam a amostra.
+C) Microscopia Eletrônica de Varredura (MEV), pois os elétrons secundários varrem a superfície recoberta por metal.
+D) Microscopia de Campo Escuro sem fixação prévia da amostra.
+
+---
+**Gabarito Comentado:**
+**Resposta Incontestável: C.** O MEV varre a superfície recoberta de metal gerando imagens 3D da topografia externa. O MET seria para estrutura interna e o MO não possui limite de resolução suficiente para topografia fina.`;
+  }
+
+  // 2. Organelas Celulares / Citologia
   if (lower.includes('organela') || lower.includes('citologia') || lower.includes('célula') || lower.includes('celula')) {
-    return `### 1. Introdução
-As **Organelas Celulares** são compartimentos subcelulares altamente especializados contidos no citosol das células eucarióticas. Elas existem para proporcionar a compartimentalização celular — permitindo que processos metabólicos distintos e quimicamente incompatíveis ocorram simultaneamente com máxima eficiência.
+    return `🎯 **O que você DEVE saber (Conceito-Chave):**
+As **Organelas Celulares** são estruturas especializadas contidas no citoplasma de células eucarióticas que asseguram a compartimentalização metabólica. Essa divisão de trabalho permite que reações quimicamente incompatíveis ocorram simultaneamente com alta eficiência microambiental.
 
-### 2. Conceito
-Morfofuncionalmente, organelas são unidades estruturais (membranosas ou não membranosas) que realizam funções vitais específicas, como bioenergética (síntese de ATP), biogênese macromolecular (proteínas e lipídios), secreção vesicular e digestão intracelular.
+🔬 **Na Prática / Detalhes Técnicos:**
+- **Mitocôndrias:** Biogênese de ATP via Respiração Celular (Glicólise no citosol; Ciclo de Krebs na matriz; Cadeia Respiratória e Fosforilação Oxidativa nas cristas mitocondriais). Possuem DNA circular próprio, ribossomos 70S e autoduplicação.
+- **Retículo Endoplasmático Rugoso (RER/Ergastoplasma):** Revestido por ribossomos; sintetiza proteínas destinadas à secreção, membranas ou lisossomos.
+- **Retículo Endoplasmático Liso (REL):** Isento de ribossomos; síntese de lipídios (colesterol, fosfolipídios, hormônios esteroides) e desintoxicação de drogas/álcool nos hepatócitos.
+- **Complexo Golgiense:** Modificação pós-traducional (glicosilação), empacotamento em vesículas de secreção, formação de lisossomos e formação do **acrossomo** do espermatozoide.
+- **Lisossomos:** Digestive organelles com hidrolases ácidas (pH ~5,0) para heterofagia e autofagia (reciclagem celular).
 
-### 3. Explicação Didática
-Pense na célula eucariótica como uma cidade industrial autossuficiente:
-- **Núcleo:** Central de Comando (armazena o DNA e orquestra a transcrição de RNAm).
-- **Ribossomos:** Operários de montagem (ligam aminoácidos via ligações peptídicas).
-- **Retículo Endoplasmático Rugoso (RER):** Fábrica de proteínas exportáveis e de membrana (revestido de ribossomos).
-- **Retículo Endoplasmático Liso (REL):** Indústria química de lipídios (colesterol, fosfolipídios, hormônios esteroides) e desintoxicação celular de fármacos e álcool nos hepatócitos.
-- **Complexo de Golgi:** Correios e Centro de Distribuição (modifica, empacota e envia vesículas de secreção e forma o acrossomo do espermatozoide).
-- **Mitocôndrias:** Usinas de energia (realizam a respiração celular aeróbica gerando ATP).
-- **Lisossomos:** Setor de Reciclagem e Sucata (vesículas ricas em hidrolases ácidas em pH ~5,0 para digestão heterofágica e autofágica).
-- **Peroxissomos:** Segurança química (degradam peróxido de hidrogênio H₂O₂ via enzima catalase e realizam a beta-oxidação de ácidos graxos).
-- **Cloroplastos (Vegetais):** Painéis solares (realizam a fotossíntese transformando energia luminosa em energia química).
+⚠️ **Como a FUNECE (CEV/UECE) cobra:**
+1. **Teoria Endossimbiótica de Lynn Margulis:** A FUNECE cobra as 4 evidências clássicas da origem procariótica de mitocôndrias e cloroplastos: (1) DNA circular sem histonas, (2) Ribossomos 70S, (3) Dupla membrana, (4) Autoduplicação por fissão binária.
+2. **Vegetal tem Mitocôndria?** Pegadinha clássica da FUNECE: afirmar que plantas só têm cloroplastos. Plantas possuem cloroplastos E mitocôndrias!
 
-### 4. Exemplos
-- **Células do Fígado (Hepatócitos):** Possuem o REL extremamente hipertrofiado para metabolizar toxinas e medicamentos.
-- **Células Musculares (Miócitos):** Apresentam elevado número de mitocôndrias para suprir a alta demanda de ATP no deslizamento das fibras de actina e miosina.
+🧠 **Desafio Flash / Pergunta de Fixação:**
+*(FUNECE - Adaptada SEDUC CE)* As células do córtex da glândula suprarrenal produzem elevados níveis de hormônios esteroides (como cortisol e aldosterona), enquanto os hepatócitos do fígado atuam na metabolização de barbitúricos. Qual organela celular encontra-se hipertrofiada nessas células?
 
-### 5. Relação com o Edital
-Corresponde ao bloco de **Citologia e Biologia Celular** do edital SEDUC CE.
+A) Retículo Endoplasmático Rugoso.
+B) Retículo Endoplasmático Liso.
+C) Complexo de Golgi.
+D) Peroxissomo.
 
-### 6. Como a FUNECE cobra
-A banca **CEV/UECE (FUNECE)** prioriza a **Teoria Endossimbiótica de Lynn Margulis**. Exige que o candidato reconheça as evidências de que mitocôndrias e cloroplastos eram procariontes primitivos englobados por eucariontes heterótrofos:
-1. Presença de DNA próprio circular sem histonas.
-2. Ribossomos próprios do tipo 70S.
-3. Dupla membrana lipoproteica.
-4. Capacidade de autoduplicação independente do núcleo.
-
-### 7. Pegadinhas
-- **Pegadinha 1 (FUNECE):** Afirmar que células vegetais só têm cloroplastos e não têm mitocôndria. Errado! Vegetais possuem mitocôndrias e cloroplastos.
-- **Pegadinha 2:** Confundir a função do RER (síntese proteica) com o REL (síntese de lipídios e desintoxicação).
-
-### 8. Decore Isso
-💡 **Macete:** **M.G.R.L.P**
-- **M**itocôndria = ATP e Respiração
-- **G**olgi = Secreção e Acrossomo
-- **R**ER = Proteínas
-- **L**isossomo = Digestão e Autofagia
-- **P**eroxissomo = H₂O₂ e Catalase
-
-### 9. Resumo
-1. Organelas garantem a compartimentalização e eficiência das células eucarióticas.
-2. Mitocôndrias e cloroplastos possuem origem endossimbiótica.
-3. RER produz proteínas para secreção e REL produz lipídios/desintoxica.
-4. Complexo de Golgi endereça vesículas e forma o acrossomo.
-5. Lisossomos realizam autofagia e heterofagia celular via hidrolases ácidas.
-
-### 10. Micro Revisão
-1. *Qual organela é responsável pela síntese de hormônios esteroides e desintoxicação?*
-2. *Quais as evidências da Teoria Endossimbiótica nas mitocôndrias?*
-3. *Em qual organela origina-se o acrossomo do espermatozoide?*
-
-**Gabarito:**
-1. Retículo Endoplasmático Liso (REL).
-2. DNA próprio circular, ribossomos 70S e dupla membrana.
-3. No Complexo de Golgi.`;
+---
+**Gabarito Comentado:**
+**Resposta Incontestável: B.** O Retículo Endoplasmático Liso (REL) é responsável pela síntese de lipídios/esteroides e pela desintoxicação celular.`;
   }
 
-  // 2. Genética / DNA / RNA
+  // 3. Genética / DNA / RNA / Mendel
   if (lower.includes('genética') || lower.includes('genetica') || lower.includes('dna') || lower.includes('rna') || lower.includes('mendel') || lower.includes('síntese') || lower.includes('sintese')) {
-    return `### 1. Introdução
-A **Genética** estuda os mecanismos de hereditariedade e a estrutura dos ácidos nucléicos (DNA e RNA) que codificam as características biológicas.
+    return `🎯 **O que você DEVE saber (Conceito-Chave):**
+A **Genética e Biologia Molecular** baseiam-se no **Dogma Central**: Duplicação semiconservativa do DNA $\\rightarrow$ Transcrição em RNA $\\rightarrow$ Tradução em proteínas nos ribossomos. A 1ª Lei de Mendel trata da segregação dos alelos na meiose (1:2:1 genotípica, 3:1 fenotípica na F2) e a 2ª Lei da segregação independente de genes em cromossomos não homólogos (9:3:3:1 na F2).
 
-### 2. Conceito
-Morfofuncionalmente baseia-se no **Dogma Central da Biologia Molecular**: Replicação do DNA (semiconservativa), Transcrição em RNAm e Tradução em proteínas nos ribossomos.
+🔬 **Na Prática / Detalhes Técnicos:**
+- **Estrutura do DNA:** Dupla hélice antiparalela (5'$\rightarrow$3' e 3'$\rightarrow$5') unida por pontes de hidrogênio (A=T com 2 pontes; C$\equiv$G com 3 pontes).
+- **Código Genético:** Degenerado/Redundante (mais de um códon codifica o mesmo aminoácido), universal, porém NÃO ambíguo.
+- **Linkage (Ligação Gênica):** Genes no mesmo cromossomo não seguem a 2ª Lei de Mendel. A taxa de recombinação (% de crossing-over) mede a distância em centimorgans (cM) ou unidades de mapa (u.m.).
 
-### 3. Explicação Didática
-- **DNA:** Dupla hélice antiparalela (5'->3' e 3'->5') unida por pontes de hidrogênio entre A-T (2 pontes) e C-G (3 pontes).
-- **RNA:** Fita simples composta por ribose e Uracila (U) substituindo a Timina (T).
-- **1ª Lei de Mendel:** Segregação dos fatores na formação dos gametas (Aa x Aa gera proporção fenotípica 3:1).
-- **2ª Lei de Mendel:** Segregação independente de genes em cromossomos não homólogos (AaBb x AaBb gera 9:3:3:1 na F2).
+⚠️ **Como a FUNECE (CEV/UECE) cobra:**
+1. **Fase da Replicação:** A FUNECE afirma que a duplicação do DNA ocorre na mitose ou mecânica meiótica. FALSO! Ocorre na **Fase S da Interfase**.
+2. **Cálculo de Linkage:** A banca exige montar mapas genéticos a partir das frequências de gametas recombinantes.
 
-### 4. Exemplos
-- **Sistema ABO:** Codominância entre os alelos Iᴬ e Iᴮ e dominância sobre o alelo recessivo i.
-- **Anemia Falciforme:** Mutação de ponto com substituição de ácido glutâmico por valina na betaglobina.
+🧠 **Desafio Flash / Pergunta de Fixação:**
+*(FUNECE - Adaptada SEDUC CE)* Sabendo-se que a adenina constitui 30% das bases nitrogenadas de uma molécula de DNA de fita dupla, qual a porcentagem esperada de citosina?
 
-### 5. Relação com o Edital
-Bloco de **Genética e Biologia Molecular** do edital SEDUC CE.
+A) 20%
+B) 30%
+C) 40%
+D) 60%
 
-### 6. Como a FUNECE cobra
-A FUNECE cobra heredogramas com **Epistasia** e **Linkage (Ligação Gênica)**. Exige o cálculo da taxa de recombinação (% de crossing-over no paquíteno) para mapeamento cromossômico em centimorgans (cM).
-
-### 7. Pegadinhas
-- **Pegadinha FUNECE:** Afirmar que a replicação do DNA ocorre na mitose. Errado! Ocorre na **Fase S da Interfase**.
-- O código genético é **degenerado** (vários códons para um aminoácido), mas nunca ambíguo.
-
-### 8. Decore Isso
-💡 **Proporções Mendelianas:** 1ª Lei = **3:1** | 2ª Lei = **9:3:3:1**.
-
-### 9. Resumo
-1. DNA é dupla hélice com pareamento A-T e C-G.
-2. Replicação é semiconservativa na Fase S da interfase.
-3. Transcrição produz RNAm e Tradução sintetiza proteínas.
-4. 1ª Lei de Mendel: segregação dos fatores (3:1).
-5. 2ª Lei: segregação independente em cromossomos diferentes (9:3:3:1).
-
-### 10. Micro Revisão
-1. *Em qual fase da interfase ocorre a duplicação do DNA?*
-2. *O que é um código genético degenerado?*
-3. *Qual a proporção fenotípica da F2 na 1ª Lei de Mendel?*
-
-**Gabarito:** 1. Fase S. 2. Diferentes códons codificam o mesmo aminoácido. 3. 3:1.`;
+---
+**Gabarito Comentado:**
+**Resposta Incontestável: A.** Pela Regra de Chargaff ($A=T$ e $C=G$): Se $A=30\\%$, então $T=30\\%$ ($A+T=60\\%$). Restam $40\\%$ para $C+G$. Como $C=G$, temos $C=20\\%$ e $G=20\\%$.`;
   }
 
-  // 3. Ecologia / Ciclos / Relações
+  // 4. Ecologia / Ciclos / Relações
   if (lower.includes('ecologia') || lower.includes('ecossistema') || lower.includes('cadeia') || lower.includes('teia') || lower.includes('nitrogênio') || lower.includes('nitrogenio') || lower.includes('ciclo')) {
-    return `### 1. Introdução
-A **Ecologia** analisa as interações entre os seres vivos (fatores bióticos) e o meio ambiente físico/químico (fatores abióticos).
+    return `🎯 **O que você DEVE saber (Conceito-Chave):**
+A **Ecologia** estuda as relações bióticas e abióticas. O fluxo de energia é **unidirecional e decrescente** ao longo dos níveis tróficos (~10% repassado), enquanto a matéria é **cíclica** (reciclada por decompositores).
 
-### 2. Conceito
-Estrutura-se em População (mesma espécie), Comunidade (várias espécies), Ecossistema (comunidade + meio abiótico) e Biosfera.
+🔬 **Na Prática / Detalhes Técnicos:**
+- **Ciclo do Nitrogênio:**
+  1. Fixação: $N_2 \\rightarrow NH_3$ (*Rhizobium* / *Azotobacter*).
+  2. Nitrosação: $NH_3 \\rightarrow NO_2^-$ (*Nitrosomonas*).
+  3. Nitratação: $NO_2^- \\rightarrow NO_3^-$ (*Nitrobacter*).
+  4. Desnitrificação: $NO_3^- \\rightarrow N_2$ (*Pseudomonas denitrificans*).
+- **Magnificação Trófica (Bioacumulação):** Substâncias não biodegradáveis (DDT, mercúrio) acumulam-se em maior concentração nos organismos do **topo da cadeia alimentar**.
 
-### 3. Explicação Didática
-- **Fluxo de Energia:** Unidirecional e decrescente (~10% por nível trófico).
-- **Ciclo do Nitrogênio:** Depende de bactérias: Fixação (*Rhizobium*), Nitrosação (*Nitrosomonas*), Nitratação (*Nitrobacter*) e Desnitrificação.
-- **Relações Ecológicas:** Mutualismo (+/+ obrigatório), Protocooperação (+/+ facultativo), Comensalismo (+/0), Parasitismo (+/-) e Amensalismo (-/0).
+⚠️ **Como a FUNECE (CEV/UECE) cobra:**
+1. **Nicho vs. Habitat:** Habitat é o "endereço" e Nicho Ecológico é o "papel ecológico/profissão".
+2. **Princípio de Gause:** Duas espécies com nichos ecológicos idênticos no mesmo habitat entram em competição e uma é exterminada ou migra.
 
-### 4. Exemplos
-- **Magnificação Trófica:** Acúmulo de metais pesados (mercúrio) no topo da cadeia alimentar.
+🧠 **Desafio Flash / Pergunta de Fixação:**
+*(FUNECE - Adaptada SEDUC CE)* No processo de nitrificação do solo, a conversão do nitrito ($NO_2^-$) em nitrato ($NO_3^-$) é realizada por bactérias quimioautotróficas do gênero:
 
-### 5. Relação com o Edital
-Bloco de **Ecologia** do edital SEDUC CE.
+A) *Rhizobium*.
+B) *Nitrosomonas*.
+C) *Nitrobacter*.
+D) *Pseudomonas*.
 
-### 6. Como a FUNECE cobra
-A FUNECE exige diferenciação entre **Habitat** (endereço) e **Nicho Ecológico** (papel ecológico) e cobra o Princípio da Exclusão Competitiva de Gause.
-
-### 7. Pegadinhas
-- **Pegadinha:** A energia flui unidirecionalmente, enquanto a matéria é reciclada pelos decompositores.
-
-### 8. Decore Isso
-💡 **Nitrificação:** Amônia -> Nitrosomonas -> Nitrito -> Nitrobacter -> Nitrato.
-
-### 9. Resumo
-1. Nicho é função; habitat é localização.
-2. Fluxo energético é unidirecional e decrescente.
-3. Bioacumulantes concentram-se no topo da cadeia.
-4. Nitrobacter converte nitrito em nitrato.
-5. Gause prevê competição por nichos sobrepostos.
-
-### 10. Micro Revisão
-1. *Bactéria que converte nitrito em nitrato?*
-2. *Nível trófico com maior bioacumulação de toxina?*
-3. *Diferença entre habitat e nicho?*
-
-**Gabarito:** 1. *Nitrobacter*. 2. Topo da cadeia. 3. Habitat é endereço; nicho é função.`;
+---
+**Gabarito Comentado:**
+**Resposta Incontestável: C.** A nitratação ($NO_2^- \\rightarrow NO_3^-$) é efetuada especificamente por bactérias do gênero *Nitrobacter*.`;
   }
 
-  // 4. LDB / Legislação / DCRC
+  // 5. LDB e Legislação Educacional
   if (lower.includes('ldb') || lower.includes('lei 9394') || lower.includes('legislação') || lower.includes('legislacao') || lower.includes('dcrc') || lower.includes('bncc') || lower.includes('diretrizes')) {
-    return `### 1. Introdução
-A **LDB 9.394/96 e o DCRC** regem a educação nacional e do Ceará, garantindo o direito constitucional à educação de qualidade.
+    return `🎯 **O que você DEVE saber (Conceito-Chave):**
+A **LDB (Lei nº 9.394/1996)** e o **DCRC (Documento Curricular Referencial do Ceará)** estruturam a Educação Básica em: Educação Infantil, Ensino Fundamental e Ensino Médio. A educação básica é **obrigatória e gratuita dos 4 aos 17 anos de idade**.
 
-### 2. Conceito
-Educação Escolar divide-se em Educação Básica (Infantil, Fundamental e Médio) e Educação Superior.
+🔬 **Na Prática / Detalhes Técnicos:**
+- **Carga Horária Mínima:** 800 horas distribuídas em no mínimo 200 dias de efetivo trabalho escolar no Fundamental e Médio.
+- **Frequência Mínima:** 60% na Educação Infantil; 75% no Ensino Fundamental e Ensino Médio para aprovação.
+- **Gestão Democrática:** Princípio do ensino público (Art. 3º e 14 da LDB), garantindo a participação dos profissionais da educação na elaboração do Projeto Político Pedagógico (PPP).
 
-### 3. Explicação Didática
-- **Obrigatoriedade:** Dos 4 aos 17 anos (Pré-escola, Fundamental e Médio).
-- **Carga Horária:** Mínimo de 800 horas anuais em 200 dias letivos.
-- **Frequência Mínima:** 60% na Educação Infantil | 75% no Fundamental e Médio.
+⚠️ **Como a FUNECE (CEV/UECE) cobra:**
+1. **Creche é obrigatória?** A FUNECE adora colocar que a creche (0 a 3 anos) é obrigatória para as famílias. Falso! A obrigatoriedade inicia aos 4 anos (Pré-escola).
+2. **Atualizações Recentes:** Art. 26-A (história e cultura afro-brasileira e indígena) e Educação Digital (Lei nº 14.533/2023).
 
-### 4. Exemplos
-- Gestão democrática pública com elaboração participativa do PPP.
+🧠 **Desafio Flash / Pergunta de Fixação:**
+*(FUNECE - Adaptada SEDUC CE)* De acordo com a Lei de Diretrizes e Bases da Educação Nacional (LDB 9.394/96), a educação básica obrigatória e gratuita compreende:
 
-### 5. Relação com o Edital
-Bloco de **Legislação Educacional e Didática** do edital SEDUC CE.
+A) Da creche ao Ensino Médio (0 a 17 anos).
+B) Da Pré-Escola ao Ensino Médio (4 aos 17 anos).
+C) Do Ensino Fundamental ao Ensino Médio (6 aos 17 anos).
+D) Exclusivamente o Ensino Fundamental de 9 anos.
 
-### 6. Como a FUNECE cobra
-Literalidade das atualizações da LDB (Lei 14.533/2023, Art. 26-A história afro e indígena).
-
-### 7. Pegadinhas
-- Criar a falsa ideia de que creche (0 a 3) é obrigatória para a família. Não é! Obrigatório é a partir dos 4 anos.
-
-### 8. Decore Isso
-💡 **Obrigatoriedade:** 4 a 17 anos | **Dias/Horas:** 200d / 800h.
-
-### 9. Resumo
-1. Educação Básica obrigatória dos 4 aos 17 anos.
-2. Mínimo de 800h em 200 dias letivos.
-3. Frequência mínima de 75% no Fundamental e Médio.
-4. Gestão democrática do ensino público.
-5. Inclusão da Educação Digital e História Afro-Brasileira.
-
-### 10. Micro Revisão
-1. *Faixa etária da educação básica obrigatória?*
-2. *Frequência mínima no Ensino Médio?*
-3. *Número mínimo de dias letivos?*
-
-**Gabarito:** 1. 4 a 17 anos. 2. 75%. 3. 200 dias.`;
+---
+**Gabarito Comentado:**
+**Resposta Incontestável: B.** Art. 4º, I da LDB: educação básica obrigatória e gratuita dos 4 aos 17 anos de idade (Pré-escola, Fundamental e Médio).`;
   }
 
-  // 5. Genérico Estruturado Profundo para Qualquer Outro Tópico
-  return `### 1. Introdução
-**${cleaned}** representa um tópico de fundamental relevância teórica e prática na disciplina de **${userSubject}**. O domínio rigoroso deste assunto permite ao candidato compreender os mecanismos basilares da matéria e responder com precisão técnica às questões formuladas pela banca FUNECE (CEV/UECE) para o concurso da SEDUC CE.
+  // 6. Genérico Estruturado Profundo para Qualquer Outro Tópico
+  return `🎯 **O que você DEVE saber (Conceito-Chave):**
+**${cleaned}** é um conteúdo de elevada recorrência e relevância no edital de **${userSubject}** para o Concurso da SEDUC CE. O domínio desse tópico exige compreender com exatidão a fundamentação teórica e as definições acadêmicas rigorosas adotadas pela banca FUNECE (CEV/UECE).
 
-### 2. Conceito
-Sob a perspectiva científica e acadêmica de **${userSubject}**, **${cleaned}** define-se como o conjunto estruturado de princípios, leis, classificações e interações que regem o comportamento, a dinâmica e as propriedades constitutivas desse campo de conhecimento.
+🔬 **Na Prática / Detalhes Técnicos:**
+- **Mecanismos e Funcionamento:** Analisa-se a relação estrutural entre causa e efeito, a terminologia científica correta e as variáveis operacionais relativas a **${cleaned}**.
+- **Fundamento Acadêmico:** Identificam-se os elementos essenciais, taxonomias, reações ou normas legais que regem a matéria em **${userSubject}**.
+- **Aplicações Didático-Científicas:** Correlação direta entre o referencial teórico e os problemas/exercícios práticos cobrados nas provas recentes da UECE.
 
-### 3. Explicação Didática
-Para uma apreensão profunda de **${cleaned}**:
-- **Fundamento Teórico:** Trata-se da identificação dos elementos essenciais e das variáveis que regulam o sistema.
-- **Mecanismo de Ação:** Analisa-se a relação de causa e efeito, a sequência temporal e as transformações morfofuncionais envolvidas.
-- **Aplicação no Contexto Docente:** Correlacionam-se os dados conceituais com a prática pedagógica e os experimentos/situações de ensino.
+⚠️ **Como a FUNECE (CEV/UECE) cobra:**
+1. **Terminologia Científica Exata:** A FUNECE não aceita definições genéricas; exige o uso do termo técnico preciso.
+2. **Distratores com Troca de Conceitos Correlatos:** A banca costuma criar alternativas trocando características de dois processos vizinhos ou utilizando advérbios restritivos (*exclusivamente, sempre, jamais*).
 
-### 4. Exemplos
-- **Aplicações Práticas:** Exemplos do cotidiano e de experimentos científicos onde a alteração de parâmetros de **${cleaned}** modifica diretamente os resultados observados em **${userSubject}**.
+🧠 **Desafio Flash / Pergunta de Fixação:**
+*(FUNECE - Adaptada SEDUC CE)* Sobre os aspectos teóricos e funcionais de **${cleaned}**, assinale a alternativa que apresenta a proposição CORRETA segundo a literatura de referência de **${userSubject}**:
 
-### 5. Relação com o Edital
-Corresponde ao bloco de **Conhecimentos Específicos de ${userSubject}** do Edital do Concurso SEDUC CE.
+A) Trata-se de um processo isolado sem aplicação nas interações do sistema.
+B) Apresenta fundamentação rigorosa baseada na correspondência exata entre estrutura e função técnica.
+C) É um conceito obsoleto não contemplado no edital da SEDUC CE.
+D) Depende exclusivamente de fatores externos de forma aleatória.
 
-### 6. Como a FUNECE cobra
-A banca **CEV/UECE (FUNECE)** exige o domínio exato da **terminologia acadêmica e das definições conceituais**. As questões frequentemente contêm enunciados detalhados que testam se o candidato sabe diferenciar termos correlatos e reconhecer exceções às regras gerais.
-
-### 7. Pegadinhas
-- **Atenção:** A FUNECE costuma inverter o papel de estruturas parecidas ou utilizar termos restritivos (como *somente*, *nunca*, *exclusivamente*) para induzir o candidato desatento ao erro em opções falsas.
-
-### 8. Decore Isso
-💡 **Macete de Estudo:** Foque no binômio **Conceito -> Função**. Toda questão da FUNECE sobre **${cleaned}** cobra a função exata ou a classificação teórica rigorosa do elemento em questão.
-
-### 9. Resumo
-1. **${cleaned}** é conteúdo de alta recorrência no edital de **${userSubject}**.
-2. Requer a memorização precisa dos termos científicos e classificações.
-3. A FUNECE cobra diferenciação minuciosa entre conceitos parecidos.
-4. Cuidado com palavras de generalização ou exclusão nos enunciados.
-5. Dominar a relação entre definição e aplicação prática assegura o acerto da questão.
-
-### 10. Micro Revisão
-1. *Qual é o conceito-chave que define o tema ${cleaned}?*
-2. *Qual é o principal cuidado ao resolver questões da FUNECE sobre este assunto?*
-3. *Como aplicar este conceito na análise de problemas de ${userSubject}?*
-
-**Gabarito:**
-1. A estrutura teórica e morfofuncional específica descrita para ${cleaned}.
-2. Atentar-se à precisão dos termos e às alternativas com pegadinhas restritivas.
-3. Relacionando os fundamentos conceituais à sua função/manifestação no sistema.`;
+---
+**Gabarito Comentado:**
+**Resposta Incontestável: B.** A FUNECE fundamenta suas questões na correspondência exata entre os postulados científicos/legais e suas funções técnicas operacionais.`;
 }
 
 export default function TutorIASection({ user, profile, setActiveTab }: TutorIASectionProps) {
@@ -554,17 +481,11 @@ export default function TutorIASection({ user, profile, setActiveTab }: TutorIAS
       const lowerMsg = text.trim().toLowerCase();
       let replyText = '';
 
-      const isGreetingOrHelp = lowerMsg.match(/^(oi|olá|ola|boa tarde|bom dia|boa noite|você me ajuda|voce me ajuda|me ajuda|pode me ajudar|me ajude|ajuda\??|quem é você|quem e voce|como você funciona|o que você faz)$/i) ||
-        lowerMsg.includes('você me ajuda') || lowerMsg.includes('voce me ajuda') || lowerMsg.includes('pode me ajudar') || lowerMsg.includes('me ajuda com') || (lowerMsg.includes('ajuda') && !lowerMsg.includes('explique') && !lowerMsg.includes('ensine'));
+      const isStrictGreeting = /^(oi|olá|ola|boa tarde|bom dia|boa noite)$/i.test(lowerMsg);
 
-      if (isGreetingOrHelp) {
-        replyText = `Com certeza, Prof. ${userName}! Sou seu Professor Mentor especialista em **${userSubject}** para o Concurso SEDUC CE 2026.
-
-Estou 100% pronto para te orientar com raciocínio e inteligência! Como posso te ajudar hoje?
-
-1. **Análise Estratégica:** Me pergunte *"O que estudo hoje?"* ou *"Tenho matéria atrasada?"*.
-2. **Aula Completa do Edital:** Me peça *"Explique [assunto]"* ou *"Ensine [conteúdo]"* para qualquer tópico de ${userSubject}!`;
-      } else if (lowerMsg.includes('estudo hoje') || lowerMsg.includes('hoje') || lowerMsg.includes('cronograma') || lowerMsg.includes('meta')) {
+      if (isStrictGreeting) {
+        replyText = `Olá, Prof. ${userName}! Sou seu Professor Mentor especialista em **${userSubject}** para o Concurso SEDUC CE 2026 (FUNECE).\n\nEstou pronto! Qual assunto do edital vamos dominar agora? Digite o tópico e iniciaremos a aula imediatamente!`;
+      } else if (lowerMsg.includes('estudo hoje') || lowerMsg.includes('meta de hoje') || lowerMsg.includes('cronograma de hoje')) {
         const specTopic = currentDay?.topics.find(t => t.category === 'Conhecimentos Específicos') || currentDay?.topics[0];
         const secondaryTopics = currentDay?.topics.filter(t => t !== specTopic) || [];
 
@@ -603,23 +524,13 @@ ${secondaryTopics.length > 0 ? secondaryTopics.map(t => {
           
           replyText = `⚠️ **Análise de Matérias Pendentes / Atrasadas (Até Hoje)**\n\nVocê possui **${overdueItems.length} subtópicos pendentes** de conclusão no seu cronograma do dia atual e de dias anteriores:\n\n${formattedOverdue}\n\n💡 **Orientação do Mentor:** Finalize estes subtópicos para manter sua preparação no ritmo ideal para a FUNECE!`;
         }
-      } else if (lowerMsg.includes('progresso') || lowerMsg.includes('como estou indo') || lowerMsg.includes('desempenho') || lowerMsg.includes('como tá') || lowerMsg.includes('estatística')) {
+      } else if (lowerMsg.includes('progresso') || lowerMsg.includes('como estou indo') || lowerMsg.includes('desempenho') || lowerMsg.includes('estatística')) {
         const metaSubtopics = currentDay?.topics.map(t => t.subtopicNames?.length ? t.subtopicNames.join(', ') : t.parentTopicName).join(' • ');
         replyText = `📊 **Seu Desempenho Real no Sistema**\n\n• **Disciplina Alvo:** ${userSubject}\n• **Edital Concluído:** ${completedCount} de ${totalSubtopics} subtópicos (${progressPercent}%)\n• **Dia Atual no Cronograma:** Dia ${currentDay?.dayNumber || 1} (${currentDay?.displayDate || 'Hoje'})\n• **Meta de Subtópicos de Hoje:** ${metaSubtopics}`;
-      } else if (lowerMsg.includes('pior assunto') || lowerMsg.includes('dificuldade')) {
-        const firstSubtopic = currentDay?.topics[0]?.subtopicNames?.[0] || currentDay?.topics[0]?.parentTopicName || 'Conteúdos Específicos';
-        replyText = `🎯 **Análise de Desempenho**\n\nCom base nos dados do sistema, o subtópico priorizado no seu cronograma ativo de **${userSubject}** é: **${firstSubtopic}**.\n\nSua prioridade hoje (${currentDay?.displayDate || `Dia ${currentDay?.dayNumber || 1}`}) é concluir esta meta!`;
-      } else if (lowerMsg.includes('revisar') || lowerMsg.includes('revisão')) {
-        replyText = `📚 **Revisão Pendente do Cronograma**\n\nSua revisão pendente de hoje (${currentDay?.displayDate || `Dia ${currentDay?.dayNumber || 1}`}) engloba os subtópicos:\n${currentDay?.topics.map(t => `• **${t.parentTopicName}:** ${t.subtopicNames?.length ? t.subtopicNames.join(', ') : t.parentTopicName}`).join('\n')}\n\nDeseja realizar questões sobre essa meta agora?`;
       } else {
-        const isExplicitTeachRequest = /^(explique|ensine|resuma|detalhe|o que é|como funciona|diferença|compare|aula|fale sobre)/i.test(lowerMsg) ||
-          lowerMsg.includes('explique') || lowerMsg.includes('ensine') || lowerMsg.includes('aula de') || lowerMsg.includes('o que é') || lowerMsg.includes('como funciona');
-
-        if (!isExplicitTeachRequest) {
-          replyText = `Prof. ${userName}, entendi sua mensagem! Como seu Mentor especialista em **${userSubject}**, posso te orientar de duas formas:\n\n1. **Estratégia e Desempenho:** Pergunta-me *"O que estudo hoje?"*, *"Tenho matéria atrasada?"* ou *"Como está meu progresso?"*.\n2. **Aulas Teóricas do Edital:** Peça *"Explique [assunto]"* ou *"Ensine [conteúdo]"* para eu te dar uma aula completa de 10 seções focada na banca FUNECE!`;
-        } else {
-          replyText = buildSpecificTeachingLesson(text.trim(), userSubject);
-        }
+        // Para qualquer outra mensagem (ex: "quero estudar sobre noções básicas de microscopia"):
+        // Inicia a aula completa imediatamente sem menus!
+        replyText = buildSpecificTeachingLesson(text.trim(), userSubject);
       }
 
       const aiMsg: TutorChatMessage = {
