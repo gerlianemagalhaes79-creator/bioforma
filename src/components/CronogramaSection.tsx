@@ -32,7 +32,7 @@ export default function CronogramaSection({ user, profile, setActiveTab }: Crono
 
   const [completedTopicIds, setCompletedTopicIds] = useState<Record<string, boolean>>(() => {
     try {
-      const saved = localStorage.getItem(storageKey);
+      const saved = localStorage.getItem(storageKey) || localStorage.getItem('cronogramaProgress_guest') || localStorage.getItem('cronogramaProgress_default');
       return saved ? JSON.parse(saved) : {};
     } catch {
       return {};
@@ -44,27 +44,58 @@ export default function CronogramaSection({ user, profile, setActiveTab }: Crono
   // Sync / Load saved cronograma completion progress from localStorage & Firestore
   useEffect(() => {
     const loadSavedCronogramaProgress = async () => {
-      // 1. Try local storage first for speed
+      let currentLocalMap: Record<string, boolean> = {};
+
+      // 1. Try local storage first for speed and merge fallback keys
       try {
-        const savedLocal = localStorage.getItem(storageKey);
-        if (savedLocal) {
-          setCompletedTopicIds(JSON.parse(savedLocal));
+        const primary = localStorage.getItem(storageKey);
+        const guest = localStorage.getItem('cronogramaProgress_guest');
+        const def = localStorage.getItem('cronogramaProgress_default');
+        
+        currentLocalMap = {
+          ...(def ? JSON.parse(def) : {}),
+          ...(guest ? JSON.parse(guest) : {}),
+          ...(primary ? JSON.parse(primary) : {})
+        };
+
+        if (Object.keys(currentLocalMap).length > 0) {
+          setCompletedTopicIds(currentLocalMap);
         }
       } catch (err) {
         console.warn('Erro ao carregar do localStorage:', err);
       }
 
       // 2. Sync from Firestore if user UID is present
-      if (user?.uid) {
+      const activeUid = user?.uid || profile?.uid;
+      if (activeUid) {
         try {
-          const docRef = doc(db, 'cronogramaProgress', user.uid);
+          const docRef = doc(db, 'cronogramaProgress', activeUid);
           const snap = await getDoc(docRef);
           if (snap.exists()) {
             const data = snap.data();
             if (data && data.completedTopicIds) {
-              setCompletedTopicIds(data.completedTopicIds);
-              localStorage.setItem(storageKey, JSON.stringify(data.completedTopicIds));
+              // MERGE local + firestore so no completed items are ever lost!
+              const merged = { ...currentLocalMap, ...data.completedTopicIds };
+              setCompletedTopicIds(merged);
+              
+              localStorage.setItem(storageKey, JSON.stringify(merged));
+              localStorage.setItem(`cronogramaProgress_${activeUid}`, JSON.stringify(merged));
+              localStorage.setItem('cronogramaProgress_guest', JSON.stringify(merged));
+
+              if (Object.keys(merged).length > Object.keys(data.completedTopicIds).length) {
+                await setDoc(docRef, {
+                  uid: activeUid,
+                  completedTopicIds: merged,
+                  updatedAt: new Date().toISOString()
+                }, { merge: true });
+              }
             }
+          } else if (Object.keys(currentLocalMap).length > 0) {
+            await setDoc(docRef, {
+              uid: activeUid,
+              completedTopicIds: currentLocalMap,
+              updatedAt: new Date().toISOString()
+            }, { merge: true });
           }
         } catch (err) {
           console.warn('Erro ao carregar do Firestore:', err);
@@ -73,7 +104,7 @@ export default function CronogramaSection({ user, profile, setActiveTab }: Crono
     };
 
     loadSavedCronogramaProgress();
-  }, [user?.uid, storageKey]);
+  }, [user?.uid, profile?.uid, storageKey]);
 
   const activeDegree = profile?.degree || profile?.targetSubject || 'Licenciatura em Biologia / Ciências Biológicas';
 
@@ -94,22 +125,30 @@ export default function CronogramaSection({ user, profile, setActiveTab }: Crono
         [subKey]: !prev[subKey]
       };
 
-      // Save to localStorage immediately
+      // Save to localStorage immediately under all fallbacks
       try {
         localStorage.setItem(storageKey, JSON.stringify(updated));
+        localStorage.setItem('cronogramaProgress_guest', JSON.stringify(updated));
+        localStorage.setItem('cronogramaProgress_default', JSON.stringify(updated));
       } catch (err) {
         console.warn('Erro ao salvar no localStorage:', err);
       }
 
       // Save to Firestore asynchronously
-      if (user?.uid) {
-        setDoc(doc(db, 'cronogramaProgress', user.uid), {
-          uid: user.uid,
+      const activeUid = user?.uid || profile?.uid;
+      if (activeUid) {
+        setDoc(doc(db, 'cronogramaProgress', activeUid), {
+          uid: activeUid,
           completedTopicIds: updated,
           updatedAt: new Date().toISOString()
         }, { merge: true }).catch(err => {
           console.warn('Erro ao salvar progresso do cronograma no Firestore:', err);
         });
+
+        const count = Object.values(updated).filter(Boolean).length;
+        setDoc(doc(db, 'users', activeUid), {
+          completedTopicsCount: count
+        }, { merge: true }).catch(() => {});
       }
 
       return updated;

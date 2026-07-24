@@ -22,6 +22,7 @@ interface IntelligenceCenterProps {
 
 export default function IntelligenceCenter({ user, profile, setActiveTab, onOpenTutorWithContext }: IntelligenceCenterProps) {
   const [logs, setLogs] = useState<QuestionAnswerLog[]>([]);
+  const [isDetailedBoxOpen, setIsDetailedBoxOpen] = useState(false);
   const [expandedDiscipline, setExpandedDiscipline] = useState<string | null>(null);
   const [expandedBlock, setExpandedBlock] = useState<string | null>(null);
   const [evolutionFilter, setEvolutionFilter] = useState<'7d' | '30d' | 'all'>('30d');
@@ -301,15 +302,15 @@ export default function IntelligenceCenter({ user, profile, setActiveTab, onOpen
 
   // Helper for status badge colors
   const getBadgeColor = (pct: number) => {
-    if (pct >= 80) return 'bg-emerald-100 text-emerald-900 border-emerald-300 font-extrabold';
-    if (pct >= 60) return 'bg-amber-100 text-amber-900 border-amber-300 font-extrabold';
-    return 'bg-rose-100 text-rose-900 border-rose-300 font-extrabold';
+    if (pct >= 80) return 'bg-emerald-50 text-emerald-900 border-emerald-200/80 font-bold';
+    if (pct >= 60) return 'bg-amber-50 text-amber-900 border-amber-200/80 font-bold';
+    return 'bg-rose-50 text-rose-900 border-rose-200/80 font-bold';
   };
 
   const getBarBg = (pct: number) => {
-    if (pct >= 80) return 'bg-emerald-600';
-    if (pct >= 60) return 'bg-amber-500';
-    return 'bg-rose-500';
+    if (pct >= 80) return 'bg-emerald-700';
+    if (pct >= 60) return 'bg-amber-600';
+    return 'bg-rose-600';
   };
 
   const formatSeconds = (sec: number) => {
@@ -322,54 +323,53 @@ export default function IntelligenceCenter({ user, profile, setActiveTab, onOpen
   return (
     <div className="space-y-5 animate-fade-in pb-12">
       {/* ========================================================= */}
-      {/* TOP HEADER: ULTRA-COMPACT CENTRAL DE APROVEITAMENTO        */}
+      {/* TOP HEADER: ULTRA-COMPACT & MINIMALIST CENTRAL DE APROVEITAMENTO */}
       {/* ========================================================= */}
-      <div className="bg-white rounded-2xl p-3.5 sm:p-4 border border-emerald-200/80 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="bg-white rounded-xl p-2.5 sm:p-3 border border-zinc-200/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
         {/* Left: Clean Titles & Quick Stats */}
-        <div className="space-y-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="p-1.5 bg-emerald-100 text-emerald-900 rounded-lg">
-              <BrainCircuit size={16} className="text-emerald-700" />
+        <div className="space-y-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <div className="p-1 bg-emerald-50 text-emerald-800 rounded-md border border-emerald-200/60">
+              <BrainCircuit size={14} className="text-emerald-700" />
             </div>
-            <h1 className="text-base font-black text-zinc-900 tracking-tight flex items-center gap-2">
+            <h1 className="text-sm font-black text-zinc-900 tracking-tight">
               Central de Aproveitamento
-              <span className="text-xs font-semibold text-zinc-500 font-normal">| Banca FUNECE</span>
             </h1>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2.5 text-xs text-zinc-600 pl-8">
-            <span className="font-extrabold text-zinc-800 flex items-center gap-1">
-              <CheckCircle2 size={13} className="text-emerald-600" />
+          <div className="flex flex-wrap items-center gap-2 text-[11px] text-zinc-600 pl-6">
+            <span className="font-bold text-zinc-800 flex items-center gap-1">
+              <CheckCircle2 size={12} className="text-emerald-600" />
               {totalQuestions} Questões Respondidas
             </span>
             <span className="text-zinc-300">•</span>
-            <span className="font-extrabold text-emerald-800 flex items-center gap-1">
-              <Target size={13} className="text-emerald-700" />
+            <span className="font-bold text-emerald-900 flex items-center gap-1">
+              <Target size={12} className="text-emerald-700" />
               {overallAccuracy}% Aproveitamento Geral
             </span>
           </div>
         </div>
 
         {/* Right: Ultra Compact Índice de Preparação */}
-        <div className="bg-emerald-50/70 rounded-xl px-3 py-2 border border-emerald-200/90 flex items-center gap-3 shrink-0 self-start sm:self-auto">
-          <div className="text-center shrink-0 border-r border-emerald-200/80 pr-3">
-            <span className="text-[10px] font-black uppercase tracking-wider text-emerald-900 block flex items-center gap-1">
-              <Award size={12} className="text-emerald-700" />
+        <div className="bg-zinc-50 rounded-lg px-2.5 py-1.5 border border-zinc-200/80 flex items-center gap-2.5 shrink-0 self-start sm:self-auto">
+          <div className="text-center shrink-0 border-r border-zinc-200 pr-2.5">
+            <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-600 flex items-center gap-1 justify-center">
+              <Award size={11} className="text-emerald-700" />
               Índice
             </span>
             <div className="flex items-baseline justify-center gap-0.5">
-              <span className="text-base font-black text-emerald-950">{aprovaçãoIndex.score}</span>
-              <span className="text-[10px] font-bold text-emerald-700">/100</span>
+              <span className="text-sm font-black text-zinc-900">{aprovaçãoIndex.score}</span>
+              <span className="text-[9px] font-bold text-zinc-500">/100</span>
             </div>
           </div>
 
-          <div className="text-[11px] space-y-1">
+          <div className="text-[10px] space-y-0.5">
             <span className={`text-[9px] px-1.5 py-0.5 rounded font-extrabold border block text-center ${aprovaçãoIndex.color}`}>
               {aprovaçãoIndex.label}
             </span>
-            <div className="flex items-center gap-2 text-[10px] text-zinc-600 font-bold">
-              <span>Esp: <strong className="text-emerald-900">{aprovaçãoIndex.especPct}%</strong></span>
-              <span>Ger: <strong className="text-emerald-900">{aprovaçãoIndex.generalAvg}%</strong></span>
+            <div className="flex items-center gap-2 text-[9px] text-zinc-500 font-semibold">
+              <span>Esp: <strong className="text-zinc-800">{aprovaçãoIndex.especPct}%</strong></span>
+              <span>Ger: <strong className="text-zinc-800">{aprovaçãoIndex.generalAvg}%</strong></span>
             </div>
           </div>
         </div>
@@ -378,159 +378,186 @@ export default function IntelligenceCenter({ user, profile, setActiveTab, onOpen
       {/* ========================================================= */}
       {/* MAIN GRID: DRILL DOWN + RADAR DE DIFICULDADES             */}
       {/* ========================================================= */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
         
         {/* LEFT COLUMN (8 COLS): DISCIPLINE -> BLOCO -> SUBTÓPICO DRILL-DOWN */}
-        <div className="lg:col-span-8 bg-white rounded-2xl p-5 border border-emerald-100 shadow-xs space-y-5">
-          <div className="flex items-center justify-between pb-3 border-b border-zinc-100">
-            <div>
-              <h3 className="text-sm font-black text-zinc-900 flex items-center gap-2">
-                <BarChart3 size={18} className="text-emerald-700" />
-                Desempenho Detalhado por Disciplina, Bloco e Subtópico
-              </h3>
-              <p className="text-[11px] text-zinc-500">Clique na disciplina ou bloco para expandir o raio-X completo</p>
+        <div className="lg:col-span-8 bg-white rounded-xl border border-zinc-200/80 shadow-2xs overflow-hidden h-fit">
+          {/* Main Collapsible Header */}
+          <button
+            onClick={() => setIsDetailedBoxOpen(!isDetailedBoxOpen)}
+            className="w-full p-3.5 sm:p-4 flex items-center justify-between gap-3 text-left hover:bg-zinc-50/80 transition cursor-pointer group"
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="p-1.5 bg-emerald-50 text-emerald-800 rounded-lg border border-emerald-200/60 shrink-0">
+                <BarChart3 size={16} />
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-xs sm:text-sm font-black text-zinc-900 group-hover:text-emerald-900 transition">
+                  Desempenho Detalhado por Disciplina, Bloco e Subtópico
+                </h3>
+                <p className="text-[11px] text-zinc-500 font-medium truncate">
+                  Clique na disciplina ou bloco para expandir o raio-X completo
+                </p>
+              </div>
             </div>
 
-            <span className="text-[11px] font-extrabold text-emerald-900 bg-emerald-50 px-3 py-1 rounded-xl border border-emerald-200">
-              {disciplineStats.length} Módulos
-            </span>
-          </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-[10px] font-bold text-zinc-700 bg-zinc-100 px-2.5 py-1 rounded-md border border-zinc-200">
+                {disciplineStats.length} Módulos
+              </span>
+              <div className="p-1 bg-zinc-100 rounded-md text-zinc-600 group-hover:bg-zinc-200/80 transition">
+                {isDetailedBoxOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+              </div>
+            </div>
+          </button>
 
-          {/* Discipline List */}
-          <div className="space-y-3">
-            {disciplineStats.map((d) => {
-              const isExpanded = expandedDiscipline === d.discipline;
+          {/* Collapsible Content */}
+          <AnimatePresence>
+            {isDetailedBoxOpen && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="border-t border-zinc-100 p-3.5 sm:p-4 space-y-3 bg-zinc-50/40"
+              >
+                {/* Discipline List */}
+                <div className="space-y-2.5">
+                  {disciplineStats.map((d) => {
+                    const isExpanded = expandedDiscipline === d.discipline;
 
-              return (
-                <div key={d.discipline} className="border border-zinc-200 rounded-xl overflow-hidden bg-white shadow-2xs">
-                  {/* Discipline Header Row */}
-                  <button
-                    onClick={() => setExpandedDiscipline(isExpanded ? null : d.discipline)}
-                    className="w-full p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-left hover:bg-zinc-50 transition cursor-pointer"
-                  >
-                    <div className="space-y-1.5 flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-black text-zinc-900">{d.discipline}</span>
-                        {d.discipline === targetSubject && (
-                          <span className="bg-emerald-800 text-white text-[9px] font-black px-2 py-0.5 rounded-md uppercase">
-                            Específica (Peso 62.5%)
-                          </span>
-                        )}
-                      </div>
+                    return (
+                      <div key={d.discipline} className="border border-zinc-200/80 rounded-lg overflow-hidden bg-white shadow-2xs">
+                        {/* Discipline Header Row */}
+                        <button
+                          onClick={() => setExpandedDiscipline(isExpanded ? null : d.discipline)}
+                          className="w-full p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-left hover:bg-zinc-50 transition cursor-pointer"
+                        >
+                          <div className="space-y-1 flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-bold text-zinc-900">{d.discipline}</span>
+                              {d.discipline === targetSubject && (
+                                <span className="bg-emerald-900 text-white text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider">
+                                  Específica (Peso 62.5%)
+                                </span>
+                              )}
+                            </div>
 
-                      {/* Progress Bar */}
-                      <div className="w-full bg-zinc-100 rounded-full h-2 overflow-hidden flex items-center">
-                        <div 
-                          className={`h-full rounded-full transition-all duration-500 ${getBarBg(d.pct)}`}
-                          style={{ width: `${d.pct}%` }}
-                        />
-                      </div>
-                    </div>
+                            {/* Progress Bar */}
+                            <div className="w-full bg-zinc-100 rounded-full h-1.5 overflow-hidden flex items-center">
+                              <div 
+                                className={`h-full rounded-full transition-all duration-500 ${getBarBg(d.pct)}`}
+                                style={{ width: `${d.pct}%` }}
+                              />
+                            </div>
+                          </div>
 
-                    <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
-                      <div className="text-right">
-                        <span className={`inline-block text-xs px-2 py-0.5 rounded-lg border ${getBadgeColor(d.pct)}`}>
-                          {d.pct}%
-                        </span>
-                        <span className="block text-[10px] text-zinc-500 font-extrabold mt-0.5">
-                          {d.total} questões
-                        </span>
-                      </div>
+                          <div className="flex items-center justify-between sm:justify-end gap-2.5 shrink-0">
+                            <div className="text-right">
+                              <span className={`inline-block text-[11px] px-2 py-0.5 rounded-md border ${getBadgeColor(d.pct)}`}>
+                                {d.pct}%
+                              </span>
+                              <span className="block text-[10px] text-zinc-500 font-medium mt-0.5">
+                                {d.total} questões
+                              </span>
+                            </div>
 
-                      <div className="p-1 bg-zinc-100 rounded-lg text-zinc-500">
-                        {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-                      </div>
-                    </div>
-                  </button>
+                            <div className="p-1 bg-zinc-100 rounded-md text-zinc-500">
+                              {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                            </div>
+                          </div>
+                        </button>
 
-                  {/* DRILL-DOWN LEVEL 1 & 2: BLOCKS & SUBTOPICS */}
-                  <AnimatePresence>
-                    {isExpanded && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="bg-zinc-50/80 border-t border-zinc-200 p-3.5 space-y-3"
-                      >
-                        <p className="text-[11px] font-extrabold text-zinc-500 uppercase tracking-wider">
-                          Blocos do Edital de {d.discipline}
-                        </p>
+                        {/* DRILL-DOWN LEVEL 1 & 2: BLOCKS & SUBTOPICS */}
+                        <AnimatePresence>
+                          {isExpanded && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: 'auto' }}
+                              exit={{ opacity: 0, height: 0 }}
+                              className="bg-zinc-50/80 border-t border-zinc-200/80 p-3 space-y-2.5"
+                            >
+                              <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">
+                                Blocos do Edital de {d.discipline}
+                              </p>
 
-                        {Object.keys(d.blocks).length === 0 ? (
-                          <p className="text-xs text-zinc-500 italic">Sem questões respondidas para este módulo ainda.</p>
-                        ) : (
-                          Object.entries(d.blocks).map(([blockName, bData]) => {
-                            const bPct = bData.total > 0 ? Math.round((bData.correct / bData.total) * 100) : 0;
-                            const isBlockExpanded = expandedBlock === blockName;
+                              {Object.keys(d.blocks).length === 0 ? (
+                                <p className="text-xs text-zinc-500 italic">Sem questões respondidas para este módulo ainda.</p>
+                              ) : (
+                                Object.entries(d.blocks).map(([blockName, bData]) => {
+                                  const bPct = bData.total > 0 ? Math.round((bData.correct / bData.total) * 100) : 0;
+                                  const isBlockExpanded = expandedBlock === blockName;
 
-                            return (
-                              <div key={blockName} className="bg-white rounded-lg border border-zinc-200 p-2.5 space-y-2 shadow-2xs">
-                                {/* Block Row */}
-                                <div 
-                                  onClick={() => setExpandedBlock(isBlockExpanded ? null : blockName)}
-                                  className="flex items-center justify-between gap-2 cursor-pointer group"
-                                >
-                                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                                    <ChevronRight size={14} className={`text-zinc-400 transition-transform ${isBlockExpanded ? 'rotate-90 text-emerald-700' : ''}`} />
-                                    <span className="text-xs font-extrabold text-zinc-800 group-hover:text-emerald-800 transition">
-                                      {blockName}
-                                    </span>
-                                  </div>
-
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-[11px] text-zinc-500 font-medium">{bData.total} quest.</span>
-                                    <span className={`text-[11px] px-2 py-0.5 rounded-md border font-extrabold ${getBadgeColor(bPct)}`}>
-                                      {bPct}%
-                                    </span>
-                                  </div>
-                                </div>
-
-                                {/* DRILL-DOWN LEVEL 2: SUBTOPICS */}
-                                {isBlockExpanded && (
-                                  <div className="pt-2 pl-5 border-t border-zinc-100 space-y-1.5">
-                                    <span className="text-[10px] font-extrabold text-zinc-400 uppercase block mb-1">
-                                      Aproveitamento por Subtópico
-                                    </span>
-                                    {Object.entries(bData.subtopics).map(([subName, sData]) => {
-                                      const sPct = sData.total > 0 ? Math.round((sData.correct / sData.total) * 100) : 0;
-                                      return (
-                                        <div key={subName} className="flex items-center justify-between text-xs py-1 border-b border-zinc-50 last:border-0">
-                                          <span className="font-medium text-zinc-700">{subName}</span>
-                                          <div className="flex items-center gap-2">
-                                            <span className="text-[10px] text-zinc-400">{sData.correct}/{sData.total} acertos</span>
-                                            <span className={`text-[10px] font-black px-1.5 py-0.2 rounded border ${getBadgeColor(sPct)}`}>
-                                              {sPct}%
-                                            </span>
-                                          </div>
+                                  return (
+                                    <div key={blockName} className="bg-white rounded-lg border border-zinc-200/80 p-2.5 space-y-2 shadow-2xs">
+                                      {/* Block Row */}
+                                      <div 
+                                        onClick={() => setExpandedBlock(isBlockExpanded ? null : blockName)}
+                                        className="flex items-center justify-between gap-2 cursor-pointer group"
+                                      >
+                                        <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                                          <ChevronRight size={13} className={`text-zinc-400 transition-transform ${isBlockExpanded ? 'rotate-90 text-emerald-800' : ''}`} />
+                                          <span className="text-xs font-bold text-zinc-800 group-hover:text-emerald-900 transition">
+                                            {blockName}
+                                          </span>
                                         </div>
-                                      );
-                                    })}
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })
-                        )}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+
+                                        <div className="flex items-center gap-2">
+                                          <span className="text-[10px] text-zinc-500 font-medium">{bData.total} quest.</span>
+                                          <span className={`text-[10px] px-1.5 py-0.5 rounded border font-bold ${getBadgeColor(bPct)}`}>
+                                            {bPct}%
+                                          </span>
+                                        </div>
+                                      </div>
+
+                                      {/* DRILL-DOWN LEVEL 2: SUBTOPICS */}
+                                      {isBlockExpanded && (
+                                        <div className="pt-2 pl-4 border-t border-zinc-100 space-y-1">
+                                          <span className="text-[9px] font-bold text-zinc-400 uppercase block mb-1">
+                                            Aproveitamento por Subtópico
+                                          </span>
+                                          {Object.entries(bData.subtopics).map(([subName, sData]) => {
+                                            const sPct = sData.total > 0 ? Math.round((sData.correct / sData.total) * 100) : 0;
+                                            return (
+                                              <div key={subName} className="flex items-center justify-between text-xs py-1 border-b border-zinc-50 last:border-0">
+                                                <span className="font-medium text-zinc-700 text-[11px]">{subName}</span>
+                                                <div className="flex items-center gap-2">
+                                                  <span className="text-[10px] text-zinc-400">{sData.correct}/{sData.total} acertos</span>
+                                                  <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded border ${getBadgeColor(sPct)}`}>
+                                                    {sPct}%
+                                                  </span>
+                                                </div>
+                                              </div>
+                                            );
+                                          })}
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })
+                              )}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    );
+                  })}
                 </div>
-              );
-            })}
-          </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* RIGHT COLUMN (4 COLS): RADAR DE DIFICULDADES */}
-        <div className="lg:col-span-4 bg-white rounded-2xl p-5 border border-emerald-100 shadow-xs space-y-4 h-fit">
-          <div className="pb-3 border-b border-zinc-100">
-            <h3 className="text-sm font-black text-zinc-900 flex items-center gap-2">
-              <PieIcon size={18} className="text-emerald-700" />
+        <div className="lg:col-span-4 bg-white rounded-xl p-4 border border-zinc-200/80 shadow-2xs space-y-3.5 h-fit">
+          <div className="pb-2.5 border-b border-zinc-100">
+            <h3 className="text-xs sm:text-sm font-black text-zinc-900 flex items-center gap-2">
+              <PieIcon size={16} className="text-emerald-800" />
               Radar de Dificuldades
             </h3>
             <p className="text-[11px] text-zinc-500">Mapeamento poligonal do nível de domínio nas 5 áreas FUNECE</p>
           </div>
 
-          <div className="w-full h-60 flex items-center justify-center">
+          <div className="w-full h-56 flex items-center justify-center">
             <ResponsiveContainer width="100%" height="100%">
               <RadarChart cx="50%" cy="50%" outerRadius="68%" data={radarData}>
                 <PolarGrid stroke="#e4e4e7" />
@@ -539,20 +566,20 @@ export default function IntelligenceCenter({ user, profile, setActiveTab, onOpen
                 <Radar 
                   name="Aproveitamento %" 
                   dataKey="Aproveitamento" 
-                  stroke="#047857" 
+                  stroke="#065f46" 
                   fill="#10b981" 
-                  fillOpacity={0.35} 
+                  fillOpacity={0.3} 
                 />
               </RadarChart>
             </ResponsiveContainer>
           </div>
 
-          <div className="p-3 bg-emerald-50/80 rounded-xl border border-emerald-200 text-xs text-emerald-950 space-y-1">
-            <span className="font-black flex items-center gap-1 text-emerald-900">
-              <Sparkles size={14} className="text-emerald-700" />
+          <div className="p-2.5 bg-zinc-50 rounded-lg border border-zinc-200/80 text-xs text-zinc-800 space-y-1">
+            <span className="font-bold flex items-center gap-1 text-emerald-900 text-[11px]">
+              <Sparkles size={13} className="text-emerald-700" />
               Diagnóstico do Radar:
             </span>
-            <p className="text-[11px] leading-relaxed">
+            <p className="text-[11px] leading-relaxed text-zinc-600">
               Sua pontuação na parte Específica e em Temas Educacionais está sólida. O radar indica que dar atenção extra a Português e Indicadores SPAECE elevará sua nota final rapidamente.
             </p>
           </div>
@@ -563,24 +590,24 @@ export default function IntelligenceCenter({ user, profile, setActiveTab, onOpen
       {/* ========================================================= */}
       {/* EVOLUÇÃO TEMPORAL (LINE CHART)                           */}
       {/* ========================================================= */}
-      <div className="bg-white rounded-2xl p-5 border border-emerald-100 shadow-xs space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-zinc-100">
+      <div className="bg-white rounded-xl p-4 sm:p-5 border border-zinc-200/80 shadow-2xs space-y-3.5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2.5 border-b border-zinc-100">
           <div>
-            <h3 className="text-sm font-black text-zinc-900 flex items-center gap-2">
-              <TrendingUp size={18} className="text-emerald-700" />
+            <h3 className="text-xs sm:text-sm font-black text-zinc-900 flex items-center gap-2">
+              <TrendingUp size={16} className="text-emerald-800" />
               Evolução Temporal do Desempenho
             </h3>
             <p className="text-[11px] text-zinc-500">Histórico de porcentagem de acertos ao longo dos dias de treino</p>
           </div>
 
           {/* View Filters */}
-          <div className="flex items-center p-1 bg-zinc-100 rounded-xl">
+          <div className="flex items-center p-0.5 bg-zinc-100 rounded-lg">
             {(['7d', '30d', 'all'] as const).map((filter) => (
               <button
                 key={filter}
                 onClick={() => setEvolutionFilter(filter)}
-                className={`px-3 py-1 rounded-lg text-xs font-black transition cursor-pointer ${
-                  evolutionFilter === filter ? 'bg-emerald-800 text-white shadow-2xs' : 'text-zinc-600 hover:text-zinc-900'
+                className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition cursor-pointer ${
+                  evolutionFilter === filter ? 'bg-emerald-900 text-white shadow-2xs' : 'text-zinc-600 hover:text-zinc-900'
                 }`}
               >
                 {filter === '7d' ? '7 Dias' : filter === '30d' ? '30 Dias' : 'Geral'}

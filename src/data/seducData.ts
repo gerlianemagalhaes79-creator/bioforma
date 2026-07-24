@@ -796,7 +796,8 @@ export function generateStudySchedule(
   const specBatches = createBatchesFromLeaves(specLeaves, 'especifico');
   const genBatches = createBatchesFromLeaves(genLeaves, 'geral');
 
-  const startDateStr = profile.startDate || new Date().toISOString().split('T')[0];
+  // Ensure stable start date across sessions so topic IDs remain constant
+  const startDateStr = profile.startDate || '2026-05-01';
   const examDateStr = profile.examDate || '2026-10-18';
 
   const start = new Date(startDateStr + 'T00:00:00');

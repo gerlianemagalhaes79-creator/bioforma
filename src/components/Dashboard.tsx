@@ -72,36 +72,43 @@ export default function Dashboard({ user, profile, setActiveTab, onOpenProfile }
         />
       )}
 
-      {/* Welcome Banner */}
+      {/* Welcome Banner - Minimalist, Compact & Formal */}
       <motion.div 
-        initial={{ opacity: 0, y: 10 }}
+        initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-gradient-to-br from-emerald-900 via-teal-900 to-emerald-950 text-white rounded-2xl p-4 shadow-md border border-emerald-800/60 relative overflow-hidden space-y-2.5"
+        className="bg-white rounded-xl p-3 sm:p-3.5 border border-zinc-200/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-2.5"
       >
-        <div className="flex items-center justify-between gap-2 relative z-10">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3 min-w-0">
           <div className="flex items-center gap-2 min-w-0">
-            <h2 className="text-sm sm:text-base font-black text-white tracking-tight truncate">
+            <h2 className="text-sm font-black text-zinc-900 tracking-tight truncate">
               Olá, Prof. {userName}!
             </h2>
           </div>
 
-          <div className="px-3 py-1 bg-emerald-800/80 border border-emerald-700/60 rounded-xl text-center shrink-0 flex items-center gap-1.5 shadow-xs">
-            <span className="text-[10px] font-bold text-emerald-300 uppercase">Faltam</span>
-            <span className="text-xs sm:text-sm font-black text-amber-300 leading-none">{daysRemaining}</span>
-            <span className="text-[10px] font-bold text-emerald-200 uppercase">dias para a prova</span>
-          </div>
+          <div className="hidden sm:block text-zinc-300">•</div>
+
+          <p className="text-xs text-zinc-600 truncate">
+            <span className="text-zinc-500 font-medium">Alvo:</span>{' '}
+            <strong className="text-emerald-900 font-bold">{targetSubject}</strong>
+            {profile?.degree && (
+              <span className="text-zinc-500 font-normal ml-1">
+                ({profile.degree})
+              </span>
+            )}
+          </p>
         </div>
 
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs relative z-10 text-emerald-200/90 border-t border-emerald-800/60 pt-2">
-          <p className="truncate text-xs">
-            Alvo: <span className="font-extrabold text-amber-300">{targetSubject}</span>
-            {profile?.degree && <span className="text-xs text-emerald-200/80 block sm:inline sm:ml-1 font-medium">({profile.degree})</span>}
-          </p>
+        <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto flex-wrap">
+          <div className="px-2.5 py-1 bg-emerald-50 border border-emerald-200/80 rounded-lg text-center flex items-center gap-1.5">
+            <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">Faltam</span>
+            <span className="text-xs font-black text-emerald-950">{daysRemaining}</span>
+            <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">dias para a prova</span>
+          </div>
 
           {((user?.email || profile?.email || '').toLowerCase().trim() === 'gerlianemagalhaes79@gmail.com') && (
             <button
               onClick={() => onOpenProfile && onOpenProfile('add_user')}
-              className="px-3 py-1.5 bg-amber-400 hover:bg-amber-300 text-amber-950 font-black rounded-xl text-xs transition flex items-center gap-1.5 shrink-0 shadow-sm cursor-pointer self-start sm:self-auto"
+              className="px-2.5 py-1 bg-emerald-800 hover:bg-emerald-900 text-white font-bold rounded-lg text-xs transition flex items-center gap-1 cursor-pointer shadow-2xs"
             >
               <span>+ Cadastrar Novo Professor</span>
             </button>

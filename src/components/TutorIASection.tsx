@@ -254,7 +254,7 @@ export default function TutorIASection({ user, profile, setActiveTab }: TutorIAS
   // State for user's completed topic IDs from Cronograma
   const [completedTopicIds, setCompletedTopicIds] = useState<Record<string, boolean>>(() => {
     try {
-      const saved = localStorage.getItem(storageKey);
+      const saved = localStorage.getItem(storageKey) || localStorage.getItem('cronogramaProgress_guest') || localStorage.getItem('cronogramaProgress_default');
       return saved ? JSON.parse(saved) : {};
     } catch {
       return {};
@@ -264,24 +264,35 @@ export default function TutorIASection({ user, profile, setActiveTab }: TutorIAS
   // Load cronograma progress from localStorage and Firestore
   useEffect(() => {
     const loadSavedCronogramaProgress = async () => {
+      let currentLocalMap: Record<string, boolean> = {};
       try {
-        const savedLocal = localStorage.getItem(storageKey);
-        if (savedLocal) {
-          setCompletedTopicIds(JSON.parse(savedLocal));
+        const primary = localStorage.getItem(storageKey);
+        const guest = localStorage.getItem('cronogramaProgress_guest');
+        const def = localStorage.getItem('cronogramaProgress_default');
+        currentLocalMap = {
+          ...(def ? JSON.parse(def) : {}),
+          ...(guest ? JSON.parse(guest) : {}),
+          ...(primary ? JSON.parse(primary) : {})
+        };
+        if (Object.keys(currentLocalMap).length > 0) {
+          setCompletedTopicIds(currentLocalMap);
         }
       } catch (err) {
         console.warn('Erro ao carregar cronograma do localStorage:', err);
       }
 
-      if (user?.uid) {
+      const activeUid = user?.uid || profile?.uid;
+      if (activeUid) {
         try {
-          const docRef = doc(db, 'cronogramaProgress', user.uid);
+          const docRef = doc(db, 'cronogramaProgress', activeUid);
           const snap = await getDoc(docRef);
           if (snap.exists()) {
             const data = snap.data();
             if (data?.completedTopicIds) {
-              setCompletedTopicIds(data.completedTopicIds);
-              localStorage.setItem(storageKey, JSON.stringify(data.completedTopicIds));
+              const merged = { ...currentLocalMap, ...data.completedTopicIds };
+              setCompletedTopicIds(merged);
+              localStorage.setItem(storageKey, JSON.stringify(merged));
+              localStorage.setItem('cronogramaProgress_guest', JSON.stringify(merged));
             }
           }
         } catch (err) {
@@ -291,7 +302,7 @@ export default function TutorIASection({ user, profile, setActiveTab }: TutorIAS
     };
 
     loadSavedCronogramaProgress();
-  }, [user?.uid, storageKey]);
+  }, [user?.uid, profile?.uid, storageKey]);
 
   // Compute official schedule based on user profile
   const scheduleDays = useMemo(() => {

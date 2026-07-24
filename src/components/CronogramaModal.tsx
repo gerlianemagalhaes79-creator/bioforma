@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { db, doc, getDoc, setDoc } from '../firebase';
 import { UserProfile, EditalTopic, ScheduleDay } from '../types';
 import { generateStudySchedule, INITIAL_EDITAL_TOPICS } from '../data/seducData';
 import { Calendar, Printer, CheckCircle, Clock, BookOpen, User, GraduationCap, X, ChevronLeft, ChevronRight, Sparkles, Filter } from 'lucide-react';
@@ -12,8 +13,60 @@ interface CronogramaModalProps {
 
 export default function CronogramaModal({ profile, onClose, onOpenEditProfile }: CronogramaModalProps) {
   const [topics] = useState<EditalTopic[]>(INITIAL_EDITAL_TOPICS);
-  const [completedTopicIds, setCompletedTopicIds] = useState<Record<string, boolean>>({});
+  const uid = profile?.uid || 'guest';
+  const storageKey = `cronogramaProgress_${uid}`;
+
+  const [completedTopicIds, setCompletedTopicIds] = useState<Record<string, boolean>>(() => {
+    try {
+      const saved = localStorage.getItem(storageKey) || localStorage.getItem('cronogramaProgress_guest') || localStorage.getItem('cronogramaProgress_default');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
   const [filterCategory, setFilterCategory] = useState<'all' | 'Conhecimentos Básicos' | 'Didática e Legislação' | 'Conhecimentos Específicos'>('all');
+
+  // Load cronograma progress from localStorage and Firestore
+  useEffect(() => {
+    const loadSavedCronogramaProgress = async () => {
+      let currentLocalMap: Record<string, boolean> = {};
+      try {
+        const primary = localStorage.getItem(storageKey);
+        const guest = localStorage.getItem('cronogramaProgress_guest');
+        const def = localStorage.getItem('cronogramaProgress_default');
+        currentLocalMap = {
+          ...(def ? JSON.parse(def) : {}),
+          ...(guest ? JSON.parse(guest) : {}),
+          ...(primary ? JSON.parse(primary) : {})
+        };
+        if (Object.keys(currentLocalMap).length > 0) {
+          setCompletedTopicIds(currentLocalMap);
+        }
+      } catch (err) {
+        console.warn('Erro ao carregar cronograma do localStorage:', err);
+      }
+
+      if (profile?.uid) {
+        try {
+          const docRef = doc(db, 'cronogramaProgress', profile.uid);
+          const snap = await getDoc(docRef);
+          if (snap.exists()) {
+            const data = snap.data();
+            if (data?.completedTopicIds) {
+              const merged = { ...currentLocalMap, ...data.completedTopicIds };
+              setCompletedTopicIds(merged);
+              localStorage.setItem(storageKey, JSON.stringify(merged));
+              localStorage.setItem('cronogramaProgress_guest', JSON.stringify(merged));
+            }
+          }
+        } catch (err) {
+          console.warn('Erro ao carregar cronograma do Firestore:', err);
+        }
+      }
+    };
+
+    loadSavedCronogramaProgress();
+  }, [profile?.uid, storageKey]);
 
   // Generate schedule array based on profile data
   const scheduleDays = useMemo(() => {
@@ -21,10 +74,30 @@ export default function CronogramaModal({ profile, onClose, onOpenEditProfile }:
   }, [profile, topics]);
 
   const toggleTopicCompletion = (id: string) => {
-    setCompletedTopicIds(prev => ({
-      ...prev,
-      [id]: !prev[id]
-    }));
+    setCompletedTopicIds(prev => {
+      const updated = {
+        ...prev,
+        [id]: !prev[id]
+      };
+
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(updated));
+        localStorage.setItem('cronogramaProgress_guest', JSON.stringify(updated));
+        localStorage.setItem('cronogramaProgress_default', JSON.stringify(updated));
+      } catch (err) {
+        console.warn('Erro ao salvar no localStorage:', err);
+      }
+
+      if (profile?.uid) {
+        setDoc(doc(db, 'cronogramaProgress', profile.uid), {
+          uid: profile.uid,
+          completedTopicIds: updated,
+          updatedAt: new Date().toISOString()
+        }, { merge: true }).catch(() => {});
+      }
+
+      return updated;
+    });
   };
 
   const handlePrint = () => {
