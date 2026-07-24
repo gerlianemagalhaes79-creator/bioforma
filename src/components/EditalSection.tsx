@@ -615,7 +615,7 @@ export default function EditalSection({ user, profile, setActiveTab }: EditalSec
                                         })}
                                       </div>
 
-                                      {/* Atalhos Rápidos para Simulados / Tutor */}
+                                      {/* Atalhos Rápidos para Questões / Tutor */}
                                       <div className="flex items-center gap-1.5">
                                         <button
                                           onClick={() => setActiveTab('simulados')}

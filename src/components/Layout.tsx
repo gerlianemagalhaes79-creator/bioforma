@@ -25,7 +25,7 @@ export default function Layout({
     { id: 'dashboard', icon: LayoutDashboard, label: 'Início' },
     { id: 'cronograma', icon: Calendar, label: 'Cronograma' },
     { id: 'edital', icon: BookOpen, label: 'Edital' },
-    { id: 'simulados', icon: FileText, label: 'Simulados' },
+    { id: 'simulados', icon: FileText, label: 'Questões' },
     { id: 'redacao', icon: Sparkles, label: 'Discursiva' },
     { id: 'tutor', icon: Bot, label: 'Professor Mentor' },
   ];

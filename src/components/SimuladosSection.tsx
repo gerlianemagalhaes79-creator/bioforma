@@ -6,7 +6,7 @@ import {
   FileText, CheckCircle2, XCircle, Sparkles, Filter, ChevronRight, ChevronDown, 
   RotateCcw, BrainCircuit, Award, BookOpen, Clock, Search, CheckSquare, Square, 
   Bookmark, Strikethrough, AlertTriangle, Lightbulb, Play, Sliders, ArrowLeft, 
-  HelpCircle, Send, BarChart3, Target, Check, RefreshCw
+  HelpCircle, Send, BarChart3, Target, Check, RefreshCw, Zap
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -43,7 +43,7 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
 
   // Generator Configurations
   const [selectedBanca, setSelectedBanca] = useState<string>('FUNECE / CEV-UECE');
-  const [questionCount, setQuestionCount] = useState<number>(10);
+  const [questionCount] = useState<number>(5); // Fixed queue of questions per session
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>('Média');
   const [selectedQuestionType, setSelectedQuestionType] = useState<string>('Estilo banca');
 
@@ -559,8 +559,8 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
             <BrainCircuit size={18} className="text-emerald-700" />
           </div>
           <div>
-            <h2 className="text-base font-black text-zinc-900 tracking-tight">Motor de Simulados</h2>
-            <p className="text-xs text-zinc-500">Questões por assunto calibradas no edital SEDUC-CE (Banca FUNECE)</p>
+            <h2 className="text-base font-black text-zinc-900 tracking-tight">Treino de Questões (Questão por Questão)</h2>
+            <p className="text-xs text-zinc-500">Pratique resolução de questões com gabarito instantâneo no formato FUNECE</p>
           </div>
         </div>
 
@@ -573,7 +573,7 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
             }`}
           >
             <Sparkles size={13} />
-            Gerador por Assunto
+            Treino por Assunto
           </button>
           <button
             onClick={() => { setActiveTab('bank'); setActiveQuizQuestions(null); }}
@@ -787,30 +787,8 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
           <div className="lg:col-span-4 bg-white rounded-3xl p-5 border border-emerald-100/90 shadow-xs space-y-4 h-fit">
             <h3 className="text-sm font-extrabold text-zinc-900 flex items-center gap-2 pb-2 border-b border-zinc-100">
               <Sliders size={16} className="text-emerald-700" />
-              Parâmetros do Simulado
+              Parâmetros da Questão
             </h3>
-
-            {/* Quantity Slider/Pills */}
-            <div>
-              <label className="block text-[11px] font-extrabold text-zinc-700 mb-1">
-                Quantidade de Questões: <span className="text-emerald-800 font-black">{questionCount}</span>
-              </label>
-              <div className="grid grid-cols-5 gap-1">
-                {[5, 10, 15, 20, 30].map((num) => (
-                  <button
-                    key={num}
-                    onClick={() => setQuestionCount(num)}
-                    className={`py-1.5 rounded-xl text-xs font-black transition cursor-pointer ${
-                      questionCount === num
-                        ? 'bg-emerald-800 text-white shadow-2xs'
-                        : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200'
-                    }`}
-                  >
-                    {num}
-                  </button>
-                ))}
-              </div>
-            </div>
 
             {/* Difficulty Level */}
             <div>
@@ -832,30 +810,12 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
               </div>
             </div>
 
-            {/* Quiz Mode (Instant vs Exam) */}
-            <div>
-              <label className="block text-[11px] font-extrabold text-zinc-700 mb-1">Modo do Simulado</label>
-              <div className="grid grid-cols-2 gap-1.5">
-                <button
-                  onClick={() => setQuizMode('instant')}
-                  className={`py-2 px-2.5 rounded-2xl text-[11px] font-extrabold transition cursor-pointer text-center ${
-                    quizMode === 'instant'
-                      ? 'bg-teal-800 text-white shadow-2xs'
-                      : 'bg-zinc-50 border border-zinc-200 text-zinc-700'
-                  }`}
-                >
-                  ⚡ Gabarito Instantâneo
-                </button>
-                <button
-                  onClick={() => setQuizMode('exam')}
-                  className={`py-2 px-2.5 rounded-2xl text-[11px] font-extrabold transition cursor-pointer text-center ${
-                    quizMode === 'exam'
-                      ? 'bg-amber-800 text-white shadow-2xs'
-                      : 'bg-zinc-50 border border-zinc-200 text-zinc-700'
-                  }`}
-                >
-                  ⏱️ Modo Prova
-                </button>
+            {/* Mode Banner */}
+            <div className="p-3 bg-teal-50 border border-teal-200 rounded-2xl text-xs text-teal-950 flex items-center gap-2">
+              <Zap size={18} className="shrink-0 text-teal-700 fill-teal-600" />
+              <div>
+                <p className="font-extrabold text-[11px]">Modo Questão por Questão</p>
+                <p className="text-[10px] text-teal-800">Responda e veja o gabarito comentado imediatamente a cada questão.</p>
               </div>
             </div>
 
@@ -880,12 +840,12 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
               {isGenerating ? (
                 <>
                   <RefreshCw size={16} className="animate-spin text-emerald-200" />
-                  <span>Gerando Simulado Inteligente...</span>
+                  <span>Gerando Questão Inédita...</span>
                 </>
               ) : (
                 <>
                   <Play size={16} className="fill-white" />
-                  <span>GERAR SIMULADO ({selectedCount} ASSUNTOS)</span>
+                  <span>INICIAR QUESTÕES ({selectedCount} ASSUNTOS)</span>
                 </>
               )}
             </button>
@@ -905,7 +865,7 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
               className="flex items-center gap-1.5 text-xs font-bold text-zinc-600 hover:text-zinc-900 bg-zinc-100 px-3 py-1.5 rounded-xl cursor-pointer"
             >
               <ArrowLeft size={14} />
-              Sair do Simulado
+              Sair do Treino
             </button>
 
             <div className="flex items-center gap-3">
@@ -925,7 +885,7 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
               onClick={handleFinishQuiz}
               className="px-4 py-1.5 bg-emerald-800 hover:bg-emerald-900 text-white rounded-xl text-xs font-black shadow-xs cursor-pointer"
             >
-              Finalizar Simulado
+              Finalizar Treino
             </button>
           </div>
 
@@ -1153,7 +1113,7 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
                     }}
                     className="px-5 py-2 bg-emerald-800 hover:bg-emerald-900 text-white rounded-xl text-xs font-black shadow-xs cursor-pointer"
                   >
-                    {currentQuestionIndex < activeQuizQuestions.length - 1 ? 'Próxima Questão' : 'Finalizar Simulado'}
+                    {currentQuestionIndex < activeQuizQuestions.length - 1 ? 'Próxima Questão' : 'Finalizar Treino'}
                   </button>
                 </div>
               </div>
@@ -1172,8 +1132,8 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
           </div>
 
           <div>
-            <h3 className="text-xl font-black text-zinc-900">Simulado Concluído com Sucesso!</h3>
-            <p className="text-xs text-zinc-500 mt-1">Confira seu resultado final e seu aproveitamento nesta bateria</p>
+            <h3 className="text-xl font-black text-zinc-900">Treino Concluído com Sucesso!</h3>
+            <p className="text-xs text-zinc-500 mt-1">Confira seu resultado final e seu aproveitamento nesta bateria de questões</p>
           </div>
 
           {/* Score Calculation */}
@@ -1220,7 +1180,7 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
               }}
               className="w-full sm:w-auto px-6 py-2.5 bg-emerald-800 hover:bg-emerald-900 text-white rounded-2xl text-xs font-black shadow-xs cursor-pointer"
             >
-              Criar Novo Simulado
+              Nova Rodada de Questões
             </button>
           </div>
         </div>

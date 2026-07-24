@@ -50,13 +50,13 @@ async function generateContentWithRetry(aiInstance: any, options: {
     throw new Error("Cota do Gemini temporariamente excedida (em periodo de cooldown). Usando modo offline.");
   }
 
-  const { contents, config = {}, defaultModel = "gemini-2.5-flash", maxRetries = 2 } = options;
-  // Supported models in current SDK
+  const { contents, config = {}, defaultModel = "gemini-3.6-flash", maxRetries = 2 } = options;
+  // Supported models in current @google/genai SDK
   const modelsToTry = Array.from(new Set([
     defaultModel,
-    "gemini-2.5-flash",
-    "gemini-2.0-flash",
-    "gemini-2.0-flash-lite"
+    "gemini-3.6-flash",
+    "gemini-3.1-flash-lite",
+    "gemini-flash-latest"
   ]));
   
   for (const model of modelsToTry) {
@@ -111,184 +111,235 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 
-function cleanTopicTitle(rawText: string): string {
-  return rawText
-    .replace(/^(explique|ensine|resuma|detalhe|fale sobre|aula de|o que é|como funciona|me fale sobre|explique sobre|ensine sobre|fale me sobre|tire duvida sobre|diga sobre|quero saber sobre)\s+/gi, '')
-    .replace(/^(sobre|a respeito de|com relacao a|referente a)\s+/gi, '')
-    .replace(/\?$/g, '')
+function cleanTopicTitle(rawText: string, activeTopicName?: string, userSubject: string = 'Biologia'): string {
+  const lower = rawText.trim().toLowerCase().replace(/[?!.,;:]/g, '').trim();
+  const subjectLower = userSubject.toLowerCase();
+
+  // Frases de início, confirmação ou diálogo informal
+  const startKeywords = [
+    'vamos comecar', 'vamos começar', 'vamos la', 'vamos lá', 'vamos', 'bora',
+    'iniciar', 'comecar', 'começar', 'pode comecar', 'pode começar', 'pode ser',
+    'sim', 'ok', 'claro', 'pronto', 'pronta', 'estou pronto', 'estou pronta',
+    'quero sim', 'vamos nessa', 'manda ver', 'manda', 'pode mandar', 'com certeza',
+    'oi', 'ola', 'olá', 'bom dia', 'boa tarde', 'boa noite', 'ajuda', 'me ajuda',
+    'estou com duvida', 'estou com dúvida', 'tenho duvida', 'tenho dúvida',
+    'qual e a materia', 'qual e o assunto', 'o que estudo hoje', 'materia de hoje',
+    'assunto de hoje', 'topico de hoje', 'meta de hoje', 'vamos a ela', 'estudar',
+    'quero estudar', 'vamos estudar'
+  ];
+
+  const isStartOrConfirmation = startKeywords.some(kw => 
+    lower === kw || 
+    lower.startsWith('vamos') || 
+    lower.startsWith('pode') || 
+    lower.includes('comecar') || 
+    lower.includes('começar') ||
+    lower.includes('iniciar') ||
+    (lower.includes('estudar') && !lower.match(/(microscop|mitocô|mitoco|dna|rna|ldb|ecolog|organel|citolog|genet|ciclo|pedagog|psicolog|didat)/i))
+  );
+
+  // Verifica se há alguma palavra-chave de assunto específico do edital
+  const hasEditalKeyword = /microscop|organel|citolog|genet|dna|rna|mendel|ecolog|nitrog|ldb|bncc|dcrc|didat|psicolog|escola|avaliac|curríc|curric/i.test(lower);
+
+  if ((isStartOrConfirmation || !hasEditalKeyword) && activeTopicName) {
+    return activeTopicName;
+  }
+
+  // Se houver assunto específico, limpa prefixos
+  let cleaned = rawText
+    .replace(/^(quero|desejo|gostaria de|preciso|vamos|posso|pode)?\s*(estudar|aprender|ver|entender|revisar|começar|comecar|iniciar)?\s*/gi, '')
+    .replace(/^(o|a)\s+(tópico|topico|conteúdo|conteudo|assunto|matéria|materia|disciplina)\s+(de|da|do)?\s*/gi, '')
+    .replace(/^(tópico|topico|conteúdo|conteudo|assunto|matéria|materia|disciplina)\s+(de|da|do)?\s*/gi, '')
+    .replace(/^(explique|ensine|resuma|detalhe|fale sobre|aula de|o que é|como funciona|me fale sobre|explique sobre|ensine sobre|fale me sobre|tire duvida sobre|diga sobre|quero saber sobre|me ajuda com|me ajuda em|tenho dúvida em|tenho duvida em)\s*/gi, '')
+    .replace(/^(sobre|a respeito de|com relacao a|referente a)\s*/gi, '')
+    .replace(/[?!.,;:]/g, '')
     .trim();
+
+  const cleanedLower = cleaned.toLowerCase();
+
+  if ((!cleaned || cleanedLower === subjectLower || cleanedLower === 'biologia' || cleanedLower === 'conhecimentos específicos' || cleanedLower === 'materia' || cleanedLower === 'matéria' || cleanedLower === 'topico' || cleanedLower === 'tópico' || cleanedLower === 'disciplina' || cleanedLower === 'hoje' || cleanedLower === 'comecar' || cleanedLower === 'começar' || cleanedLower === 'iniciar' || cleanedLower === 'vamos') && activeTopicName) {
+    return activeTopicName;
+  }
+
+  return cleaned || activeTopicName || userSubject;
 }
-function buildSpecificTeachingLesson(rawTopic: string, userSubject: string): string {
-  const cleaned = cleanTopicTitle(rawTopic) || rawTopic || userSubject;
+
+function checkFollowUpQuestion(rawText: string, userSubject: string): string | null {
+  const lower = rawText.trim().toLowerCase();
+
+  // Se for frase de início da aula, não é pergunta de seguimento
+  if (lower.includes('vamos começar') || lower.includes('vamos comecar') || lower.includes('quero estudar') || lower.includes('vamos la') || lower.includes('materia de hoje')) {
+    return null;
+  }
+
+  // 1. Dúvida específica sobre Resolução / Limite de Resolução / Abbe
+  if (lower.includes('resoluc') || lower.includes('resoluç') || lower.includes('abbe') || lower.includes('limite de resol')) {
+    return `O **Poder de Resolução** é a capacidade do microscópio de distinguir dois pontos extremamente próximos como estruturas separadas.\n\nDiferente da ampliação (que apenas aumenta o tamanho da imagem), o limite de resolução ($d$) depende do comprimento de onda ($\lambda$) e da abertura numérica ($AN$) da lente, pela fórmula de Abbe ($d = \\frac{0,61 \\cdot \\lambda}{AN}$). Quanto menor o $d$, maior o detalhamento! No microscópio óptico o limite é ~200 nm, enquanto no eletrônico atinge fração de nanômetro.\n\nFicou claro por que aumentar a imagem sem poder de resolução gera apenas uma imagem desfocada?`;
+  }
+
+  // 2. Dúvida sobre MET 2D
+  if ((lower.includes('met') || lower.includes('transmissao') || lower.includes('transmissão')) && (lower.includes('2d') || lower.includes('plana') || lower.includes('atravess') || lower.includes('corte') || lower.includes('por que') || lower.includes('porque') || lower.includes('como'))) {
+    return `No **MET (Microscópio Eletrônico de Transmissão)**, a imagem é em 2D porque o feixe de elétrons *atravessa* (transmite por) um corte celular ultra-fino.\n\nComo a amostra é fatiada em lâminas extremamente finas para os elétrons passarem por dentro dela, a imagem resultante no sensor é uma projeção bidimensional (2D) da ultraestrutura interna.\n\nEntendeu por que o MET gera essa fatia plana interna em 2D enquanto o MEV gera uma imagem tridimensional?`;
+  }
+
+  // 3. Dúvida sobre MEV 3D
+  if ((lower.includes('mev') || lower.includes('varredura')) && (lower.includes('3d') || lower.includes('superficie') || lower.includes('superfície') || lower.includes('relevo') || lower.includes('por que') || lower.includes('porque') || lower.includes('como'))) {
+    return `No **MEV (Microscópio Eletrônico de Varredura)**, a imagem é em 3D porque a amostra é recoberta com metal (ouro) e o feixe de elétrons *varre* a superfície externa.\n\nOs elétrons refletidos rebatem em detectores que mapeiam a profundidade e a topografia celular, gerando uma imagem tridimensional (3D) de alta profundidade de campo.\n\nConseguiu visualizar essa diferença entre varrer a superfície (MEV 3D) e atravessar a amostra (MET 2D)?`;
+  }
+
+  // 4. Dúvida sobre Hematoxilina / Eosina
+  if (lower.includes('hematoxilina') || lower.includes('eosina') || lower.includes('corante') || lower.includes('colora')) {
+    return `A **Hematoxilina** é um corante básico com afinidade por estruturas ácidas (basófilas) da célula, como o DNA do núcleo, tingindo-as em roxo/azul.\n\nA **Eosina** é um corante ácido com afinidade por estruturas básicas (acidófilas), como as proteínas do citoplasma, tingindo-as em rosa.\n\nA FUNECE adora trocar essa relação! Conseguiu fixar que Hematoxilina cora o núcleo e Eosina cora o citoplasma?`;
+  }
+
+  // 5. Dúvida sobre Ampliação vs Resolução
+  if (lower.includes('amplia') || lower.includes('aumento')) {
+    return `A **Ampliação** representa o quanto a imagem é multiplicada em tamanho (ex: 100x, 1000x).\n\nPorém, aumentar a imagem sem ter um bom **Poder de Resolução** gera apenas a chamada "ampliação vazia": a imagem fica maior, mas completamente desfocada! Por isso a FUNECE foca tanto na resolução como o parâmetro principal.\n\nFicou clara essa diferença entre aumentar o tamanho e conseguir enxergar detalhes?`;
+  }
+
+  // 6. Dúvida pedagógica (Inatismo / Behaviorismo)
+  if (lower.includes('inatismo') || lower.includes('behaviorismo') || lower.includes('comportamentalismo') || lower.includes('cognitivismo') || lower.includes('interacionismo')) {
+    return `Nas teorias de aprendizagem cobradas pela FUNECE:\n\n• **Inatismo:** Defende que os conhecimentos e capacidades do aluno já nascem pré-formados com ele.\n• **Behaviorismo / Comportamentalismo:** Defende que a aprendizagem ocorre por estímulo-resposta e reforço do ambiente (Skinner).\n• **Interacionismo / Cognitivismo:** O conhecimento é construído na relação ativa do sujeito com o meio e a sociedade (Piaget / Vygotsky).\n\nA FUNECE gosta de perguntar sobre o papel do professor em cada vertente. Qual dessas abordagens você quer detalhar agora?`;
+  }
+
+  // 7. Pergunta curta com "por que", "como", "e ", "qual", "o que é"
+  const isQuestion = lower.includes('?') || lower.startsWith('por que') || lower.startsWith('porque') || lower.startsWith('como') || lower.startsWith('e ') || lower.startsWith('qual') || lower.startsWith('o que');
+  
+  if (isQuestion && lower.length < 120) {
+    return `Sobre a sua dúvida específica:\n\nEsse é um detalhe muito importante exigido pela FUNECE! A banca cobra com precisão o termo técnico e o mecanismo prático aplicado a esse conceito.\n\nConseguiu entender bem esse ponto ou quer que eu detalhe mais algum conceito desse assunto?`;
+  }
+
+  return null;
+}
+
+function buildSpecificTeachingLesson(rawTopic: string, userSubject: string, activeTopicName?: string, userWantsQuiz: boolean = false): string {
+  // Verifica se é pergunta de seguimento/continuidade
+  const followUp = checkFollowUpQuestion(rawTopic, userSubject);
+  if (followUp) {
+    return followUp;
+  }
+
+  const cleaned = cleanTopicTitle(rawTopic, activeTopicName, userSubject) || activeTopicName || userSubject;
   const lower = cleaned.toLowerCase();
 
+  let body = '';
+
   // 1. Noções Básicas de Microscopia
-  if (lower.includes('microscop') || lower.includes('ampliação') || lower.includes('resolução') || lower.includes('resolucao') || lower.includes('mev') || lower.includes('met')) {
-    return `🎯 **O que você DEVE saber (Conceito-Chave):**
-A **Microscopia** é a ferramenta base da Citologia. O parâmetro mais crítico em microscopia não é a **Ampliação** (aumento da imagem), mas sim o **Poder de Resolução** (a capacidade do sistema óptico/eletrônico de distinguir dois pontos distintos e muito próximos como estruturas separadas). O limite de resolução do microscópio óptico fotônico (MO) é de aproximadamente **0,2 µm (200 nm)**, determinado pelo comprimento de onda da luz visível, enquanto os microscópios eletrônicos utilizam feixes de elétrons com comprimento de onda subnanométrico, alcançando resoluções abaixo de **0,1 a 0,2 nm**.
+  if (lower.includes('microscop') || lower.includes('ampliação') || lower.includes('ampliacao') || lower.includes('resolução') || lower.includes('resolucao') || lower.includes('mev') || lower.includes('met')) {
+    body = `Olá! Vamos dominar **Noções Básicas de Microscopia** para a FUNECE de forma simples e direta.
 
-🔬 **Na Prática / Detalhes Técnicos:**
-- **Ampliação vs. Resolução:** Aumentar a imagem sem aumentar a resolução gera apenas uma "ampliação vazia" (imagem maior, porém desfocada).
-- **Limite de Resolução (Fórmula de Abbe):** O limite de resolução ($d$) é inversamente proporcional à Abertura Numérica (AN) da objetiva ($d = \\frac{0,61 \\cdot \\lambda}{AN}$). Quanto menor o valor de $d$, maior a capacidade de distinguir detalhes.
-- **Microscópio Óptico de Luz (MO):** Utiliza lentes de vidro e luz visível. Exige coloração histológica (ex: Hematoxilina, de caráter básico, que cora estruturas ácidas/basófilas como o DNA do núcleo em azul/roxo; e Eosina, de caráter ácido, que cora estruturas básicas/acidófilas como o citoplasma em rosa).
-- **Microscópio Eletrônico de Transmissão (MET):** O feixe de elétrons atravessa cortes ultra-finos da amostra. Utilizado para visualizar a **ultraestrutura interna celular** (cristas mitocondriais, envelope nuclear, ribossomos). Exige fixação com glutaraldeído e tetróxido de ósmio.
-- **Microscópio Eletrônico de Varredura (MEV):** O feixe de elétrons varre a superfície da amostra recoberta por uma fina camada de metal pesado (ouro). Fornece imagens tridimensionais (3D) de alta profundidade de campo da **superfície externa**.
+A **Microscopia** é a ferramenta essencial da Citologia. O ponto mais importante para sua prova não é a *ampliação* (o quanto a imagem aumenta), mas sim o **Poder de Resolução** — a capacidade do microscópio de distinguir dois pontos extremamente próximos como estruturas separadas.
 
-⚠️ **Como a FUNECE (CEV/UECE) cobra:**
-1. **Inversão MEV vs. MET:** A FUNECE adora afirmar que o MEV analisa a estrutura interna e o MET analisa a superfície 3D. **Inverta mentalmente:** MET = Transmite (atravessa -> estrutura interna 2D); MEV = Varre (superfície 3D).
-2. **Confusão de Ampliação vs. Resolução:** A banca formula questões onde coloca a ampliação (ex: 1000x) como responsável por ver organelas que exigem alto limite de resolução.
-3. **Preparo de Amostra:** Lembrar que no MET e MEV as células estão **mortas e desidratadas** (vácuo elevado), não sendo possível observar processos vivos em tempo real.
+Pontos fundamentais que você deve fixar:
 
-🧠 **Desafio Flash / Pergunta de Fixação:**
-*(FUNECE - Adaptada SEDUC CE)* Em um laboratório de biologia celular, um pesquisador deseja analisar a topografia e a morfologia tridimensional da superfície externa de um grão de pólen. Qual modalidade de microscopia e qual princípio técnico devem ser empregados?
+• **Ampliação vs. Resolução:** Aumentar a imagem sem resolução gera apenas "ampliação vazia" (uma imagem maior, porém desfocada).
+• **Microscópio Óptico de Luz (MO):** Utiliza luz visível e lentes de vidro. Limite de resolução de ~0,2 µm (200 nm). Exige coloração histológica (como Hematoxilina e Eosina).
+• **Microscópio Eletrônico de Transmissão (MET):** O feixe de elétrons atravessa cortes ultra-finos da amostra. Serve para visualizar a **ultraestrutura interna** celular (mitocôndrias, núcleo) em 2D.
+• **Microscópio Eletrônico de Varredura (MEV):** O feixe de elétrons varre a superfície recoberta por metal, fornecendo uma imagem **3D detalhada da superfície externa**.
 
-A) Microscopia Óptica de Luz com coloração por Hematoxilina e Eosina.
-B) Microscopia Eletrônica de Transmissão (MET), pois os elétrons atravessam a amostra.
-C) Microscopia Eletrônica de Varredura (MEV), pois os elétrons secundários varrem a superfície recoberta por metal.
-D) Microscopia de Campo Escuro sem fixação prévia da amostra.
-
----
-**Gabarito Comentado:**
-**Resposta Incontestável: C.** O MEV varre a superfície recoberta de metal gerando imagens 3D da topografia externa. O MET seria para estrutura interna e o MO não possui limite de resolução suficiente para topografia fina.`;
+⚠️ **Como a FUNECE cobra:**
+A banca adora inverter MET e MEV! Lembre-se do macete: MET **Transmite/atravessa** (estrutura interna em 2D); MEV **Varre a superfície** (topografia tridimensional em 3D).`;
   }
-
   // 2. Organelas Celulares / Citologia
-  if (lower.includes('organela') || lower.includes('citologia') || lower.includes('célula') || lower.includes('celula')) {
-    return `🎯 **O que você DEVE saber (Conceito-Chave):**
-As **Organelas Celulares** são estruturas especializadas contidas no citoplasma de células eucarióticas que asseguram a compartimentalização metabólica. Essa divisão de trabalho permite que reações quimicamente incompatíveis ocorram simultaneamente com alta eficiência microambiental.
+  else if (lower.includes('organela') || lower.includes('citologia') || lower.includes('célula') || lower.includes('celula')) {
+    body = `Olá! Vamos descomplicar **Organelas Celulares** com foco total no padrão da FUNECE.
 
-🔬 **Na Prática / Detalhes Técnicos:**
-- **Mitocôndrias:** Biogênese de ATP via Respiração Celular (Glicólise no citosol; Ciclo de Krebs na matriz; Cadeia Respiratória e Fosforilação Oxidativa nas cristas mitocondriais). Possuem DNA circular próprio, ribossomos 70S e autoduplicação.
-- **Retículo Endoplasmático Rugoso (RER/Ergastoplasma):** Revestido por ribossomos; sintetiza proteínas destinadas à secreção, membranas ou lisossomos.
-- **Retículo Endoplasmático Liso (REL):** Isento de ribossomos; síntese de lipídios (colesterol, fosfolipídios, hormônios esteroides) e desintoxicação de drogas/álcool nos hepatócitos.
-- **Complexo Golgiense:** Modificação pós-traducional (glicosilação), empacotamento em vesículas de secreção, formação de lisossomos e formação do **acrossomo** do espermatozoide.
-- **Lisossomos:** Digestive organelles com hidrolases ácidas (pH ~5,0) para heterofagia e autofagia (reciclagem celular).
+As **Organelas Celulares** são estruturas especializadas no citoplasma das células eucarióticas. A função principal delas é garantir a **compartimentalização**: permitir que reações químicas incompatíveis ocorram ao mesmo tempo com máxima eficiência.
 
-⚠️ **Como a FUNECE (CEV/UECE) cobra:**
-1. **Teoria Endossimbiótica de Lynn Margulis:** A FUNECE cobra as 4 evidências clássicas da origem procariótica de mitocôndrias e cloroplastos: (1) DNA circular sem histonas, (2) Ribossomos 70S, (3) Dupla membrana, (4) Autoduplicação por fissão binária.
-2. **Vegetal tem Mitocôndria?** Pegadinha clássica da FUNECE: afirmar que plantas só têm cloroplastos. Plantas possuem cloroplastos E mitocôndrias!
+Principais organelas cobradas no edital:
 
-🧠 **Desafio Flash / Pergunta de Fixação:**
-*(FUNECE - Adaptada SEDUC CE)* As células do córtex da glândula suprarrenal produzem elevados níveis de hormônios esteroides (como cortisol e aldosterona), enquanto os hepatócitos do fígado atuam na metabolização de barbitúricos. Qual organela celular encontra-se hipertrofiada nessas células?
+• **Mitocôndrias:** Usinas energéticas que produzem ATP via respiração celular. Possuem DNA circular próprio, ribossomos 70S e autoduplicação.
+• **Retículo Endoplasmático Rugoso (RER):** Revestido por ribossomos; sintetiza proteínas destinadas à secreção ou membranas.
+• **Retículo Endoplasmático Liso (REL):** Sem ribossomos; fabrica lipídios (hormônios esteroides) e realiza desintoxicação celular nos hepatócitos.
+• **Complexo Golgiense:** Empacota vesículas de secreção, forma os lisossomos e origina o **acrossomo** do espermatozoide.
+• **Lisossomos:** Contêm hidrolases ácidas para reciclagem de estruturas velhas (autofagia) e digestão de materiais englobados (heterofagia).
 
-A) Retículo Endoplasmático Rugoso.
-B) Retículo Endoplasmático Liso.
-C) Complexo de Golgi.
-D) Peroxissomo.
-
----
-**Gabarito Comentado:**
-**Resposta Incontestável: B.** O Retículo Endoplasmático Liso (REL) é responsável pela síntese de lipídios/esteroides e pela desintoxicação celular.`;
+⚠️ **Como a FUNECE cobra:**
+A banca ama a **Teoria Endossimbiótica**! Guarde as 4 provas da origem procariótica de mitocôndrias e cloroplastos: (1) DNA circular próprio sem histonas, (2) Ribossomos 70S, (3) Dupla membrana e (4) Autoduplicação por fissão binária. Lembre-se também de que plantas possuem sim mitocôndrias!`;
   }
-
   // 3. Genética / DNA / RNA / Mendel
-  if (lower.includes('genética') || lower.includes('genetica') || lower.includes('dna') || lower.includes('rna') || lower.includes('mendel') || lower.includes('síntese') || lower.includes('sintese')) {
-    return `🎯 **O que você DEVE saber (Conceito-Chave):**
-A **Genética e Biologia Molecular** baseiam-se no **Dogma Central**: Duplicação semiconservativa do DNA $\\rightarrow$ Transcrição em RNA $\\rightarrow$ Tradução em proteínas nos ribossomos. A 1ª Lei de Mendel trata da segregação dos alelos na meiose (1:2:1 genotípica, 3:1 fenotípica na F2) e a 2ª Lei da segregação independente de genes em cromossomos não homólogos (9:3:3:1 na F2).
+  else if (lower.includes('genética') || lower.includes('genetica') || lower.includes('dna') || lower.includes('rna') || lower.includes('mendel') || lower.includes('síntese') || lower.includes('sintese')) {
+    body = `Olá! Vamos compreender os aspectos mais importantes de **Genética e Biologia Molecular** para a FUNECE.
 
-🔬 **Na Prática / Detalhes Técnicos:**
-- **Estrutura do DNA:** Dupla hélice antiparalela (5'$\rightarrow$3' e 3'$\rightarrow$5') unida por pontes de hidrogênio (A=T com 2 pontes; C$\equiv$G com 3 pontes).
-- **Código Genético:** Degenerado/Redundante (mais de um códon codifica o mesmo aminoácido), universal, porém NÃO ambíguo.
-- **Linkage (Ligação Gênica):** Genes no mesmo cromossomo não seguem a 2ª Lei de Mendel. A taxa de recombinação (% de crossing-over) mede a distância em centimorgans (cM) ou unidades de mapa (u.m.).
+A base de tudo é o **Dogma Central da Biologia Molecular**: o DNA se duplica de forma semiconservativa, é transcrito em RNA e traduzido em proteínas nos ribossomos.
 
-⚠️ **Como a FUNECE (CEV/UECE) cobra:**
-1. **Fase da Replicação:** A FUNECE afirma que a duplicação do DNA ocorre na mitose ou mecânica meiótica. FALSO! Ocorre na **Fase S da Interfase**.
-2. **Cálculo de Linkage:** A banca exige montar mapas genéticos a partir das frequências de gametas recombinantes.
+Conceitos essenciais para a prova:
 
-🧠 **Desafio Flash / Pergunta de Fixação:**
-*(FUNECE - Adaptada SEDUC CE)* Sabendo-se que a adenina constitui 30% das bases nitrogenadas de uma molécula de DNA de fita dupla, qual a porcentagem esperada de citosina?
+• **Estrutura do DNA:** Dupla hélice antiparalela (5'→3' e 3'→5') unida por pontes de hidrogênio (A=T com 2 pontes; C≡G com 3 pontes).
+• **Código Genético:** É **degenerado** (vários códons codificam o mesmo aminoácido), universal e não ambíguo.
+• **1ª Lei de Mendel:** Segregação dos alelos na meiose (gera a proporção fenotípica 3:1 na F2).
+• **2ª Lei de Mendel:** Segregação independente de genes em cromossomos não homólogos (gera a proporção 9:3:3:1 na F2).
+• **Linkage (Ligação Gênica):** Genes situados no mesmo cromossomo não seguem a 2ª Lei. A taxa de recombinação (% de crossing-over) indica a distância em centimorgans (cM).
 
-A) 20%
-B) 30%
-C) 40%
-D) 60%
-
----
-**Gabarito Comentado:**
-**Resposta Incontestável: A.** Pela Regra de Chargaff ($A=T$ e $C=G$): Se $A=30\\%$, então $T=30\\%$ ($A+T=60\\%$). Restam $40\\%$ para $C+G$. Como $C=G$, temos $C=20\\%$ e $G=20\\%$.`;
+⚠️ **Como a FUNECE cobra:**
+A banca costuma afirmar que a duplicação do DNA ocorre durante a divisão celular (mitose). Cuidado! A replicação do DNA ocorre exclusivamente na **Fase S da Interfase**.`;
   }
-
   // 4. Ecologia / Ciclos / Relações
-  if (lower.includes('ecologia') || lower.includes('ecossistema') || lower.includes('cadeia') || lower.includes('teia') || lower.includes('nitrogênio') || lower.includes('nitrogenio') || lower.includes('ciclo')) {
-    return `🎯 **O que você DEVE saber (Conceito-Chave):**
-A **Ecologia** estuda as relações bióticas e abióticas. O fluxo de energia é **unidirecional e decrescente** ao longo dos níveis tróficos (~10% repassado), enquanto a matéria é **cíclica** (reciclada por decompositores).
+  else if (lower.includes('ecologia') || lower.includes('ecossistema') || lower.includes('cadeia') || lower.includes('teia') || lower.includes('nitrogênio') || lower.includes('nitrogenio') || lower.includes('ciclo')) {
+    body = `Olá! Vamos alinhar os conceitos cruciais de **Ecologia** exigidos pela FUNECE.
 
-🔬 **Na Prática / Detalhes Técnicos:**
-- **Ciclo do Nitrogênio:**
-  1. Fixação: $N_2 \\rightarrow NH_3$ (*Rhizobium* / *Azotobacter*).
-  2. Nitrosação: $NH_3 \\rightarrow NO_2^-$ (*Nitrosomonas*).
-  3. Nitratação: $NO_2^- \\rightarrow NO_3^-$ (*Nitrobacter*).
-  4. Desnitrificação: $NO_3^- \\rightarrow N_2$ (*Pseudomonas denitrificans*).
-- **Magnificação Trófica (Bioacumulação):** Substâncias não biodegradáveis (DDT, mercúrio) acumulam-se em maior concentração nos organismos do **topo da cadeia alimentar**.
+A Ecologia estuda as interações entre os seres vivos e o meio. Duas regras fundamentais: o fluxo de energia é **unidirecional e decrescente** ao longo da cadeia alimentar (~10% repassado a cada nível), enquanto a matéria é **cíclica** (reciclada pelos decompositores).
 
-⚠️ **Como a FUNECE (CEV/UECE) cobra:**
-1. **Nicho vs. Habitat:** Habitat é o "endereço" e Nicho Ecológico é o "papel ecológico/profissão".
-2. **Princípio de Gause:** Duas espécies com nichos ecológicos idênticos no mesmo habitat entram em competição e uma é exterminada ou migra.
+Destaques de prova:
 
-🧠 **Desafio Flash / Pergunta de Fixação:**
-*(FUNECE - Adaptada SEDUC CE)* No processo de nitrificação do solo, a conversão do nitrito ($NO_2^-$) em nitrato ($NO_3^-$) é realizada por bactérias quimioautotróficas do gênero:
+• **Ciclo do Nitrogênio:** Depende de etapas bacterianas bem definidas: Fixação (*Rhizobium*), Nitrosação (*Nitrosomonas*), Nitratação (*Nitrobacter*) e Desnitrificação (*Pseudomonas*).
+• **Magnificação Trófica (Bioacumulação):** Metais pesados e defensivos agrícolas não biodegradáveis concentram-se em maior escala nos organismos do **topo da cadeia alimentar**.
+• **Nicho vs. Habitat:** Habitat é o "endereço" físico da espécie; Nicho Ecológico é o seu "papel funcional" e hábitos no ecossistema.
 
-A) *Rhizobium*.
-B) *Nitrosomonas*.
-C) *Nitrobacter*.
-D) *Pseudomonas*.
+⚠️ **Como a FUNECE cobra:**
+A banca adora testar o Princípio da Exclusão Competitiva de Gause (espécies com o mesmo nicho no mesmo habitat entram em competição eliminando uma delas) e a microbiologia da nitrificação (*Nitrosomonas* e *Nitrobacter*).`;
+  }
+  // 5. LDB / Legislação / DCRC
+  else if (lower.includes('ldb') || lower.includes('lei 9394') || lower.includes('legislação') || lower.includes('legislacao') || lower.includes('dcrc') || lower.includes('bncc') || lower.includes('diretrizes')) {
+    body = `Olá! Vamos revisar os pontos fundamentais da **LDB (Lei nº 9.394/96)** para o Concurso da SEDUC CE.
 
----
-**Gabarito Comentado:**
-**Resposta Incontestável: C.** A nitratação ($NO_2^- \\rightarrow NO_3^-$) é efetuada especificamente por bactérias do gênero *Nitrobacter*.`;
+A LDB organiza a Educação Básica em Educação Infantil, Ensino Fundamental e Ensino Médio.
+
+Pontos-chave cobrados pela FUNECE:
+
+• **Obrigatoriedade e Gratuidade:** Dos **4 aos 17 anos** de idade (Pré-escola, Ensino Fundamental e Ensino Médio).
+• **Carga Horária Mínima:** 800 horas distribuídas em no mínimo 200 dias de efetivo trabalho escolar.
+• **Frequência Mínima:** 60% na Educação Infantil e 75% no Ensino Fundamental e Médio para aprovação.
+• **Gestão Democrática:** Princípio constitucional do ensino público, garantindo a participação dos professores na elaboração do Projeto Político Pedagógico (PPP).
+
+⚠️ **Como a FUNECE cobra:**
+A FUNECE costuma colocar pegadinhas afirmando que a Creche (0 a 3 anos) é obrigatoria para os pais. Errado! A oferta de vaga é dever do Estado, mas a obrigação da família se inicia aos **4 anos** (Pré-escola).`;
+  }
+  // 6. Genérico Estruturado Conversacional
+  else {
+    body = `Olá! Vamos estudar o tópico **${cleaned}** da disciplina de **${userSubject}** focado nas exigências da FUNECE.
+
+Este conteúdo é recorrente no edital e exige atenção especial à terminologia técnica e aos conceitos fundamentais.
+
+Pontos essenciais para sua revisão:
+
+• **Fundamento Teórico:** **${cleaned}** compreende os mecanismos estruturais e as definições acadêmicas essenciais dessa área de **${userSubject}**.
+• **Mecanismo Prático:** É importante compreender as relações de causa e efeito e como os processos se desenvolvem na prática.
+• **Aplicação Didática:** A banca costuma cobrar este assunto relacionando os conceitos teóricos a problemas práticos de avaliação.
+
+⚠️ **Como a FUNECE cobra:**
+A banca gosta de criar alternativas distratoras invertendo conceitos similares ou utilizando termos restritivos (*sempre, nunca, apenas*). Fique atento à precisão dos termos!`;
   }
 
-  // 5. LDB e Legislação Educacional
-  if (lower.includes('ldb') || lower.includes('lei 9394') || lower.includes('legislação') || lower.includes('legislacao') || lower.includes('dcrc') || lower.includes('bncc') || lower.includes('diretrizes')) {
-    return `🎯 **O que você DEVE saber (Conceito-Chave):**
-A **LDB (Lei nº 9.394/1996)** e o **DCRC (Documento Curricular Referencial do Ceará)** estruturam a Educação Básica em: Educação Infantil, Ensino Fundamental e Ensino Médio. A educação básica é **obrigatória e gratuita dos 4 aos 17 anos de idade**.
+  // Se a usuária pediu EXPLICITAMENTE uma questão ou exercício
+  if (userWantsQuiz) {
+    body += `\n\n🧠 **Desafio de Fixação da FUNECE:**
+*(Adaptada SEDUC CE)* Sobre este tema, qual das alternativas apresenta a proposição correta segundo a literatura de referência?
 
-🔬 **Na Prática / Detalhes Técnicos:**
-- **Carga Horária Mínima:** 800 horas distribuídas em no mínimo 200 dias de efetivo trabalho escolar no Fundamental e Médio.
-- **Frequência Mínima:** 60% na Educação Infantil; 75% no Ensino Fundamental e Ensino Médio para aprovação.
-- **Gestão Democrática:** Princípio do ensino público (Art. 3º e 14 da LDB), garantindo a participação dos profissionais da educação na elaboração do Projeto Político Pedagógico (PPP).
-
-⚠️ **Como a FUNECE (CEV/UECE) cobra:**
-1. **Creche é obrigatória?** A FUNECE adora colocar que a creche (0 a 3 anos) é obrigatória para as famílias. Falso! A obrigatoriedade inicia aos 4 anos (Pré-escola).
-2. **Atualizações Recentes:** Art. 26-A (história e cultura afro-brasileira e indígena) e Educação Digital (Lei nº 14.533/2023).
-
-🧠 **Desafio Flash / Pergunta de Fixação:**
-*(FUNECE - Adaptada SEDUC CE)* De acordo com a Lei de Diretrizes e Bases da Educação Nacional (LDB 9.394/96), a educação básica obrigatória e gratuita compreende:
-
-A) Da creche ao Ensino Médio (0 a 17 anos).
-B) Da Pré-Escola ao Ensino Médio (4 aos 17 anos).
-C) Do Ensino Fundamental ao Ensino Médio (6 aos 17 anos).
-D) Exclusivamente o Ensino Fundamental de 9 anos.
+A) Os conceitos teóricos aplicam-se independentemente da estrutura do sistema.
+B) A correspondência exata entre fundamentação técnica e função operacional assegura o acerto da questão.
+C) Trata-se de um tópico meramente secundário sem cobrança em provas da UECE.
+D) A aplicação prática exclui os postulados clássicos da literatura de referência.
 
 ---
 **Gabarito Comentado:**
-**Resposta Incontestável: B.** Art. 4º, I da LDB: educação básica obrigatória e gratuita dos 4 aos 17 anos de idade (Pré-escola, Fundamental e Médio).`;
+**Resposta Incontestável: B.** A FUNECE fundamenta suas questões na correspondência exata entre a definição teórica e sua função técnica.`;
   }
 
-  // 6. Genérico Estruturado Profundo para Qualquer Outro Tópico
-  return `🎯 **O que você DEVE saber (Conceito-Chave):**
-**${cleaned}** é um conteúdo de elevada recorrência e relevância no edital de **${userSubject}** para o Concurso da SEDUC CE. O domínio desse tópico exige compreender com exatidão a fundamentação teórica e as definições acadêmicas rigorosas adotadas pela banca FUNECE (CEV/UECE).
+  // Pergunta final para diálogo em etapas (Regra 4)
+  const closingQuestion = `\n\nFicou claro para você essa explicação sobre **${cleaned}**? Quer que eu aprofunde algum detalhe específico ou prefere responder a uma questão da banca FUNECE sobre isso agora?`;
 
-🔬 **Na Prática / Detalhes Técnicos:**
-- **Mecanismos e Funcionamento:** Analisa-se a relação estrutural entre causa e efeito, a terminologia científica correta e as variáveis operacionais relativas a **${cleaned}**.
-- **Fundamento Acadêmico:** Identificam-se os elementos essenciais, taxonomias, reações ou normas legais que regem a matéria em **${userSubject}**.
-- **Aplicações Didático-Científicas:** Correlação direta entre o referencial teórico e os problemas/exercícios práticos cobrados nas provas recentes da UECE.
-
-⚠️ **Como a FUNECE (CEV/UECE) cobra:**
-1. **Terminologia Científica Exata:** A FUNECE não aceita definições genéricas; exige o uso do termo técnico preciso.
-2. **Distratores com Troca de Conceitos Correlatos:** A banca costuma criar alternativas trocando características de dois processos vizinhos ou utilizando advérbios restritivos (*exclusivamente, sempre, jamais*).
-
-🧠 **Desafio Flash / Pergunta de Fixação:**
-*(FUNECE - Adaptada SEDUC CE)* Sobre os aspectos teóricos e funcionais de **${cleaned}**, assinale a alternativa que apresenta a proposição CORRETA segundo a literatura de referência de **${userSubject}**:
-
-A) Trata-se de um processo isolado sem aplicação nas interações do sistema.
-B) Apresenta fundamentação rigorosa baseada na correspondência exata entre estrutura e função técnica.
-C) É um conceito obsoleto não contemplado no edital da SEDUC CE.
-D) Depende exclusivamente de fatores externos de forma aleatória.
-
----
-**Gabarito Comentado:**
-**Resposta Incontestável: B.** A FUNECE fundamenta suas questões na correspondência exata entre os postulados científicos/legais e suas funções técnicas operacionais.`;
+  return body + closingQuestion;
 }
 
 // ===============================================================
@@ -325,28 +376,25 @@ D) Depende exclusivamente de fatores externos de forma aleatória.
       day: "numeric"
     });
 
+    const historyList = Array.isArray(req.body.history) ? req.body.history : [];
+    const historyText = historyList.slice(-6).map((h: any) => `${h.role === 'user' ? 'Aluna' : 'Professor'}: ${h.text}`).join('\n\n');
+
     const sysPrompt = `PROFESSOR MENTOR IA - ESPECIALISTA DA BANCA FUNECE (CEV/UECE) - SEDUC CE 2026
 
 IDENTIDADE E REGRA ABSOLUTA DE COMPORTAMENTO:
 Você é o "Professor Mentor IA", um tutor especialista e implacável na Banca FUNECE (CEV/UECE) para o Concurso SEDUC CE.
 Seu único e absoluto objetivo é garantir que a aluna Gerliane Magalhães (e qualquer candidato) DOMINE o conteúdo do edital a ponto de gabaritar a prova da SEDUC CE.
 
-🚨 REGRA ABSOLUTA (ZERO MENUS DE OPÇÕES OU LISTAS DE BOAS-VINDAS):
-- NUNCA responda com listas de opções, menus de escolha ou frases como "Como posso te ajudar hoje?", "Posso te ajudar de duas formas" ou "1. Análise Estratégica / 2. Aula Completa".
-- Se a usuária mencionar qualquer assunto ou demonstrar intenção de estudar (ex: "quero estudar sobre noções básicas de microscopia", "microscopia", "me ajuda com biologia", "explique LDB"), VOCÊ DEVE COMEÇAR A AULA IMEDIATAMENTE.
-- Vá direto ao ponto, explique a matéria com profundidade técnica nas 4 seções obrigatórias (🎯, 🔬, ⚠️, 🧠), traga exemplos práticos e termine com um desafio de prova da banca FUNECE com gabarito comentado. ZERO enrolação!
+🚨 REGRA DE CONTINUIDADE DE CONVERSA E PERGUNTAS DE SEGUIMENTO (MEMÓRIA DE CHAT):
+1. RESPONDA À PERGUNTA ATUAL: Se a mensagem da aluna for uma dúvida específica de seguimento (ex: "e resolução?", "por que o MET é em 2D?", "me explica a fórmula de abbe", "por que o MEV é 3D?", "e hematoxilina?"), você DEVE responder EXATAMENTE sobre esse ponto específico, em 1 ou 2 parágrafos curtos, diretos e conversacionais (no tom de chat de WhatsApp).
+2. É ESTRITAMENTE PROIBIDO REPETIR O RESUMO GERAL DA MATÉRIA INTEIRA OU A AULA COMPLETA QUE VOCÊ JÁ MANDOU ANTES!
+3. NUNCA crie testes, quizzes ou simulados em perguntas de seguimento, a menos que a aluna peça explicitamente por questões/exercícios.
+4. Termine com uma única pergunta simples de acompanhamento sobre a dúvida esclarecida (ex: "Conseguiu entender por que a fatia fina gera a projeção em 2D?").
 
-DIRETRIZES DE DIDÁTICA E COMPORTAMENTO:
-1. FOCO NA APROVAÇÃO E PROFUNDIDADE: Nunca dê respostas superficiais ou puramente conceituais e abstratas. Se o assunto for "Noções Básicas de Microscopia", explique os conceitos técnicos de verdade: diferença entre ampliação e resolução, limite de resolução (fórmula de Abbe), feixe de luz vs. feixe de elétrons (MEV e MET), e coloração/fixação de amostras.
-2. LINGUAGEM DIDÁTICA E RIGOROSA: Seja claro, use analogias quando necessário, mas mantenha o rigor científico que a UECE/FUNECE exige. A FUNECE cobra detalhes técnicos, exceções e classificações clássicas.
-3. ESTRUTURA OBRIGATÓRIA DA AULA:
-Quando a aluna perguntar ou solicitar qualquer tópico do edital, estruture SEMPRE a resposta nestas 4 seções principais:
-   🎯 **O que você DEVE saber (Conceito-Chave):** Explicação direta, precisa e fundamentada do conteúdo.
-   🔬 **Na Prática / Detalhes Técnicos:** Como o fenômeno ou estrutura funciona (mecanismos, reações, termos técnicos e especificidades).
-   ⚠️ **Como a FUNECE (CEV/UECE) cobra:** O padrão de pegadinhas da banca, confusões frequentes entre termos parecidos e exceções de edital.
-   🧠 **Desafio Flash / Pergunta de Fixação:** Termine SEMPRE com uma pergunta de múltipla escolha ou discursiva no estilo exato da FUNECE para testar a aluna na hora, seguida do Gabarito Comentado.
+🚨 REGRA PARA INÍCIO DE AULA NOVO TÓPICO:
+- Apenas quando a aluna solicitar um novo tópico do edital ou iniciar a aula do dia, apresente a explicação nas 4 seções principais (🎯 O que você DEVE saber, 🔬 Na Prática / Detalhes Técnicos, ⚠️ Como a FUNECE cobra, 🧠 Desafio Flash / Pergunta de Fixação).
 
-FUNÇÕES AUXILIARES DE CRONOGRAMA (APENAS QUANDO SOLICITADO SOLICITADO EXPLICITAMENTE):
+FUNÇÕES AUXILIARES DE CRONOGRAMA:
 - Para "O que estudo hoje?": Responda diretamente com a disciplina (${userSubject}), bloco, tópico e subtópico do dia ativos.
 - Para "Tenho matérias atrasadas?": Liste os subtópicos não concluídos das datas atuais/passadas.
 - Para saudações curtas ("Oi", "Olá"): Diga que está pronto e peça para indicar o tópico a dominar hoje (sem menus).
@@ -360,6 +408,7 @@ DADOS DA ALUNA NO SISTEMA:
 - Meta Ativa do Dia: ${activeTopicsText || "Dados do cronograma não sincronizados"}
 - Itens Atrasados: ${overdueText}
 
+${historyText ? `HISTÓRICO DA CONVERSA ANTERIOR:\n${historyText}\n\n` : ''}
 ${isProactive ? `SITUAÇÃO PROATIVA: O candidato abriu a plataforma hoje (${formattedDate}). Apresente diretamente a meta de estudos de hoje segundo o cronograma do sistema.` : `MENSAGEM DA ALUNA: "${message}"`}`;
 
     const aiInstance = getAIClient();
@@ -367,7 +416,7 @@ ${isProactive ? `SITUAÇÃO PROATIVA: O candidato abriu a plataforma hoje (${for
       try {
         const response = await generateContentWithRetry(aiInstance, {
           contents: sysPrompt,
-          defaultModel: "gemini-2.5-flash",
+          defaultModel: "gemini-3.6-flash",
           maxRetries: 2
         });
         if (response && response.text) {
@@ -463,7 +512,12 @@ ${secondaryStr}`
 
     // Para QUALQUER OUTRA MENSAGEM (incluindo assuntos de estudo, "quero estudar...", "me ajuda com biologia", "microscopia", "explique..."):
     // INICIA A AULA IMEDIATAMENTE SEM MENUS!
-    const lessonText = buildSpecificTeachingLesson(message, userSubject);
+    const activeTopicsList = Array.isArray(req.body.activeTopics) ? req.body.activeTopics : [];
+    const specTopic = activeTopicsList.find((t: any) => t.category === 'Conhecimentos Específicos') || activeTopicsList[0];
+    const activeTopicName = specTopic?.subtopics?.[0] || specTopic?.parentTopicName || 'Noções Básicas de Microscopia';
+    const userWantsQuiz = /questã|questao|simulado|exercí|exercici|pergunta|testar/i.test(lowerMsg);
+
+    const lessonText = buildSpecificTeachingLesson(message, userSubject, activeTopicName, userWantsQuiz);
     return res.json({
       success: true,
       text: lessonText
@@ -492,7 +546,7 @@ Forneça um comentário explicativo completo no estilo FUNECE contendo:
       try {
         const response = await generateContentWithRetry(aiInstance, {
           contents: prompt,
-          defaultModel: "gemini-2.5-flash",
+          defaultModel: "gemini-3.6-flash",
           maxRetries: 2
         });
         if (response && response.text) {
@@ -607,7 +661,7 @@ Retorne um objeto JSON contendo a chave "questions" com um array de ${requestedC
         console.log(`[Simulado Motor] Gerando ${requestedCount} questões com Gemini para: "${discipline}" - ${selectedTopics.length} tópicos`);
         const response = await generateContentWithRetry(aiInstance, {
           contents: prompt,
-          defaultModel: "gemini-2.5-flash",
+          defaultModel: "gemini-3.6-flash",
           maxRetries: 2,
           config: {
             responseMimeType: "application/json",
@@ -734,7 +788,7 @@ Retorne EXCLUSIVAMENTE um objeto JSON válido com este formato exato:
       try {
         const response = await generateContentWithRetry(aiInstance, {
           contents: evaluationPrompt,
-          defaultModel: "gemini-2.5-flash",
+          defaultModel: "gemini-3.6-flash",
           maxRetries: 2,
           config: {
             responseMimeType: "application/json",
@@ -903,7 +957,7 @@ Atenção: retorne estritamente um JSON limpo formatado de acordo com o esquema 
       try {
         console.log(`[Nutrition] Tentando Gemini com Google Search para: "${foodName}" (${g}g)`);
         const response = await aiInstance.models.generateContent({
-          model: "gemini-2.5-flash",
+          model: "gemini-3.6-flash",
           contents: prompt,
           config: {
             tools: [{ googleSearch: {} }],
@@ -947,7 +1001,7 @@ Atenção: retorne estritamente um JSON limpo formatado de acordo com o esquema 
         console.log(`[Nutrition] Tentando Gemini normal (com retries) para: "${foodName}" (${g}g)`);
         const responseWithoutSearch = await generateContentWithRetry(aiInstance, {
           contents: prompt,
-          defaultModel: "gemini-2.5-flash",
+          defaultModel: "gemini-3.6-flash",
           maxRetries: 2,
           config: {
             responseMimeType: "application/json",
@@ -1075,7 +1129,7 @@ Atenção: retorne estritamente um JSON limpo formatado de acordo com o esquema 
   });
 
   // Calculate calories burned for aerobic activities using Gemini AI
-  app.post("/api/aerobics-calories", async (req, res) => {
+  const aerobicsHandler = async (req: express.Request, res: express.Response) => {
     const { type, duration, intensity, userWeight } = req.body;
 
     if (!type || !duration || isNaN(Number(duration))) {
@@ -1085,6 +1139,7 @@ Atenção: retorne estritamente um JSON limpo formatado de acordo com o esquema 
     const min = Number(duration);
     const weight = Number(userWeight) || 68; // Fallback to 68kg if not provided
     const normalIntensity = String(intensity || "moderado").toLowerCase().trim();
+    const intensityText = normalIntensity.charAt(0).toUpperCase() + normalIntensity.slice(1);
     const normalizedType = String(type).toLowerCase().trim();
 
     // Strategy 1: Attempt Gemini AI Calculation
@@ -1094,7 +1149,7 @@ Atenção: retorne estritamente um JSON limpo formatado de acordo com o esquema 
       Calcule as calorias gastas por uma pessoa de ${weight}kg realizando a seguinte atividade física:
       Atividade: "${type}"
       Duração: ${min} minutos
-      Intensidade: "${intensity}"
+      Intensidade: "${intensityText}"
       
       Leve em consideração a fisiologia real (gasto por minuto e valor MET). Se for Amamentação, ela tem um custo calórico considerável (~300 a 500 kcal por dia, cerca de 4 a 5 kcal/minuto dependendo da intensidade).
       Retorne estritamente um objeto JSON com as chaves:
@@ -1105,10 +1160,10 @@ Atenção: retorne estritamente um JSON limpo formatado de acordo com o esquema 
       Não inclua markdown extra ou texto de introdução/conclusão. Apenas o JSON em formato puro.`;
 
       try {
-        console.log(`[Aerobics] Tentando calcular calorias com Gemini (com retries) para: ${type}, ${min}min, intensidade: ${intensity}`);
+        console.log(`[Aerobics] Tentando calcular calorias com Gemini (com retries) para: ${type}, ${min}min, intensidade: ${intensityText}`);
         const response = await generateContentWithRetry(aiInstance, {
           contents: gptPrompt,
-          defaultModel: "gemini-2.5-flash",
+          defaultModel: "gemini-3.6-flash",
           maxRetries: 2,
           config: {
             responseMimeType: "application/json",
@@ -1164,7 +1219,6 @@ Atenção: retorne estritamente um JSON limpo formatado de acordo com o esquema 
       // Formula: kcal = MET * weight * hours
       const hours = min / 60;
       const computedKcal = Math.round(baseMet * weight * hours);
-      const intensityText = normalIntensity.charAt(0).toUpperCase() + normalIntensity.slice(1);
 
       console.log(`[Aerobics] Retornando cálculo offline de aeróbico para: ${type} ${min}min. Kcal: ${computedKcal}`);
       return res.json({
@@ -1187,7 +1241,10 @@ Atenção: retorne estritamente um JSON limpo formatado de acordo com o esquema 
         }
       });
     }
-  });
+  };
+
+  app.post("/api/aerobics", aerobicsHandler);
+  app.post("/api/aerobics-calories", aerobicsHandler);
 
   // Analyze Lab Exams with Gemini or offline expert knowledge to provide actionable solutions
   app.post("/api/analyze-exam", async (req, res) => {
@@ -1224,7 +1281,7 @@ Escreva a resposta estritamente em português brasileiro de forma profissional, 
         console.log(`[Exam Analysis] Analisando exame com Gemini (com retries) para: "${type}" (valor: ${value})`);
         const response = await generateContentWithRetry(aiInstance, {
           contents: prompt,
-          defaultModel: "gemini-2.5-flash",
+          defaultModel: "gemini-3.6-flash",
           maxRetries: 2,
           config: {
             responseMimeType: "application/json",
@@ -1422,7 +1479,7 @@ Use um tom de "coach" de alto nível, dinâmico e focado em resultados reais, se
         console.log(`[Motivation] Gerando mensagem motivacional com Gemini (com retries) para: "${name || 'Atleta'}"`);
         const response = await generateContentWithRetry(aiInstance, {
           contents: prompt,
-          defaultModel: "gemini-2.5-flash",
+          defaultModel: "gemini-3.6-flash",
           maxRetries: 2
         });
         if (response && response.text) {
@@ -1481,7 +1538,7 @@ Atenção: retorne estritamente um JSON limpo e válido formatado de acordo com 
         console.log(`[Workout Feedback] Gerando feedback com Gemini para treino: "${workoutType}" (volume: ${totalVolume}kg)`);
         const response = await generateContentWithRetry(aiInstance, {
           contents: prompt,
-          defaultModel: "gemini-2.5-flash",
+          defaultModel: "gemini-3.6-flash",
           maxRetries: 2,
           config: {
             responseMimeType: "application/json",

@@ -267,7 +267,7 @@ export default function IntelligenceCenter({ user, profile, setActiveTab, onOpen
     if (totalQuestions === 0) {
       return {
         score: 0,
-        label: 'Aguardando Primeiros Simulados',
+        label: 'Aguardando Primeiras Questões',
         color: 'text-zinc-700 bg-zinc-100 border-zinc-200',
         especPct: 0,
         generalAvg: 0
