@@ -82,23 +82,94 @@ export default function TutorIASection({ user, profile, setActiveTab }: TutorIAS
     ? Math.round((completedCount / totalSubtopics) * 100) 
     : 0;
 
-  // Find active day (first day with uncompleted subtopics, or day 1)
+  // Find active day (today's calendar date, or first day with uncompleted subtopics, or day 1)
   const currentDay = useMemo(() => {
     if (!scheduleDays || scheduleDays.length === 0) return null;
+
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    const todayISO = `${yyyy}-${mm}-${dd}`;
+
+    // 1. Tenta encontrar a data de hoje no cronograma
+    const todaySchedule = scheduleDays.find(d => d.dateStr === todayISO);
+
+    // 2. Tenta encontrar o primeiro dia com subtópicos pendentes
     const pendingDay = scheduleDays.find(d => {
       return d.topics.some(topicSession => 
         topicSession.subtopicNames.some((_, subIdx) => !completedTopicIds[`${topicSession.id}_sub_${subIdx}`])
       );
     });
-    return pendingDay || scheduleDays[0];
+
+    return todaySchedule || pendingDay || scheduleDays[0];
   }, [scheduleDays, completedTopicIds]);
+
+  // Calculate uncompleted/pending subtopics up to current day / today's date
+  const overdueItems = useMemo(() => {
+    if (!scheduleDays || scheduleDays.length === 0) return [];
+
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    const todayISO = `${yyyy}-${mm}-${dd}`;
+
+    const targetDayNumber = currentDay?.dayNumber || 1;
+
+    const uncompleted: Array<{
+      dayNumber: number;
+      displayDate: string;
+      category: string;
+      blockName?: string;
+      parentTopicName: string;
+      subtopicName: string;
+    }> = [];
+
+    scheduleDays.forEach(day => {
+      // Inclui todos os dias até o dia atual (por número do dia ou por data do calendário)
+      if (day.dayNumber <= targetDayNumber || (day.dateStr && day.dateStr <= todayISO)) {
+        day.topics.forEach(t => {
+          if (t.subtopicNames && t.subtopicNames.length > 0) {
+            t.subtopicNames.forEach((subName, subIdx) => {
+              const key = `${t.id}_sub_${subIdx}`;
+              if (!completedTopicIds[key]) {
+                uncompleted.push({
+                  dayNumber: day.dayNumber,
+                  displayDate: day.displayDate,
+                  category: t.category,
+                  blockName: t.blockName,
+                  parentTopicName: t.parentTopicName,
+                  subtopicName: subName
+                });
+              }
+            });
+          } else {
+            if (!completedTopicIds[t.id]) {
+              uncompleted.push({
+                dayNumber: day.dayNumber,
+                displayDate: day.displayDate,
+                category: t.category,
+                blockName: t.blockName,
+                parentTopicName: t.parentTopicName,
+                subtopicName: t.parentTopicName
+              });
+            }
+          }
+        });
+      }
+    });
+
+    return uncompleted;
+  }, [scheduleDays, currentDay, completedTopicIds]);
 
   // Summary string of active schedule
   const cronogramaSummary = useMemo(() => {
     if (!currentDay) return `Cronograma Ativo FUNECE para ${userSubject}`;
-    const topicsStr = currentDay.topics.map(t => 
-      `[${t.category}]: ${t.parentTopicName} (${t.subtopicNames.join(', ')})`
-    ).join(' | ');
+    const topicsStr = currentDay.topics.map(t => {
+      const subs = t.subtopicNames && t.subtopicNames.length > 0 ? t.subtopicNames.join(', ') : t.parentTopicName;
+      return `[${t.category}]: Subtópico Exato: "${subs}" (Tópico Pai: ${t.parentTopicName})`;
+    }).join(' | ');
     return `Dia ${currentDay.dayNumber} (${currentDay.displayDate}) - Meta Ativa de Hoje: ${topicsStr}. Progresso do Edital: ${completedCount}/${totalSubtopics} subtópicos concluídos (${progressPercent}%).`;
   }, [currentDay, userSubject, completedCount, totalSubtopics, progressPercent]);
 
@@ -106,10 +177,34 @@ export default function TutorIASection({ user, profile, setActiveTab }: TutorIAS
     {
       id: 'welcome-1',
       sender: 'ai',
-      text: `Olá, Prof. ${userName}! Sou o seu Professor Mentor IA, 100% especialista na Banca FUNECE (CEV/UECE) para o Concurso SEDUC CE 2026.\n\nEstou **diretamente conectado ao seu Cronograma de Estudos** de **${userSubject}**!\n\n📌 **Sua Meta Ativa de Hoje (Dia ${currentDay?.dayNumber || 1}):**\n${currentDay?.topics.map(t => `• **${t.category}:** ${t.parentTopicName}`).join('\n') || 'Meta pronta para início!'}\n\n📊 **Progresso Atual:** ${completedCount} de ${totalSubtopics} subtópicos concluídos (${progressPercent}% do edital).\n\nComo posso orientar seus estudos ou tirar dúvidas sobre a matéria de hoje?`,
+      text: `Olá, Prof. ${userName}! Sou o seu Professor Mentor IA, 100% especialista na Banca FUNECE (CEV/UECE) para o Concurso SEDUC CE 2026.\n\nEstou **diretamente conectado ao seu Cronograma de Estudos** de **${userSubject}**!\n\n📌 **Sua Meta Ativa de Hoje (Dia ${currentDay?.dayNumber || 1} • ${currentDay?.displayDate || 'Hoje'}):**\n${currentDay?.topics.map(t => {
+        const subtext = t.subtopicNames && t.subtopicNames.length > 0 ? t.subtopicNames.join(', ') : t.parentTopicName;
+        return `• **${t.category}:** ${subtext}`;
+      }).join('\n') || 'Meta pronta para início!'}\n\n📊 **Progresso Atual:** ${completedCount} de ${totalSubtopics} subtópicos concluídos (${progressPercent}% do edital).\n\nComo posso orientar seus estudos ou tirar dúvidas sobre a matéria de hoje?`,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
   ]);
+
+  // Sincroniza a mensagem inicial assim que os dados do cronograma do dia atual forem carregados
+  useEffect(() => {
+    if (!currentDay) return;
+    setMessages(prev => {
+      if (prev.length === 1 && prev[0].id === 'welcome-1') {
+        const metaStr = currentDay.topics.map(t => {
+          const subtext = t.subtopicNames && t.subtopicNames.length > 0 ? t.subtopicNames.join(', ') : t.parentTopicName;
+          return `• **${t.category}:** ${subtext}`;
+        }).join('\n');
+
+        return [{
+          id: 'welcome-1',
+          sender: 'ai',
+          text: `Olá, Prof. ${userName}! Sou o seu Professor Mentor IA, 100% especialista na Banca FUNECE (CEV/UECE) para o Concurso SEDUC CE 2026.\n\nEstou **diretamente conectado ao seu Cronograma de Estudos** de **${userSubject}**!\n\n📌 **Sua Meta Ativa de Hoje (Dia ${currentDay.dayNumber} • ${currentDay.displayDate}):**\n${metaStr}\n\n📊 **Progresso Atual:** ${completedCount} de ${totalSubtopics} subtópicos concluídos (${progressPercent}% do edital).\n\nComo posso orientar seus estudos ou tirar dúvidas sobre a matéria de hoje?`,
+          timestamp: prev[0].timestamp
+        }];
+      }
+      return prev;
+    });
+  }, [currentDay, userName, userSubject, completedCount, totalSubtopics, progressPercent]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -146,7 +241,12 @@ export default function TutorIASection({ user, profile, setActiveTab }: TutorIAS
     setLoading(true);
 
     try {
-      const activeTopicNames = currentDay ? currentDay.topics.map(t => t.parentTopicName) : [];
+      const activeTopicsList = currentDay ? currentDay.topics.map(t => ({
+        category: t.category,
+        blockName: t.blockName,
+        parentTopicName: t.parentTopicName,
+        subtopics: t.subtopicNames && t.subtopicNames.length > 0 ? t.subtopicNames : [t.parentTopicName]
+      })) : [];
 
       const response = await fetch('/api/seduc/tutor', {
         method: 'POST',
@@ -156,7 +256,8 @@ export default function TutorIASection({ user, profile, setActiveTab }: TutorIAS
           subject: userSubject,
           profile: profile,
           cronograma: cronogramaSummary,
-          activeTopics: activeTopicNames,
+          activeTopics: activeTopicsList,
+          overdueItems: overdueItems,
           stats: {
             completedSubtopics: completedCount,
             totalSubtopics: totalSubtopics,
@@ -200,8 +301,12 @@ export default function TutorIASection({ user, profile, setActiveTab }: TutorIAS
       let replyText = '';
 
       if (lowerMsg.includes('estudo hoje') || lowerMsg.includes('hoje') || lowerMsg.includes('cronograma') || lowerMsg.includes('meta')) {
-        const firstTopic = currentDay?.topics[0];
-        const secondaryTopics = currentDay?.topics.slice(1) || [];
+        const specTopic = currentDay?.topics.find(t => t.category === 'Conhecimentos Específicos') || currentDay?.topics[0];
+        const secondaryTopics = currentDay?.topics.filter(t => t !== specTopic) || [];
+
+        const specSubtopicStr = specTopic?.subtopicNames && specTopic.subtopicNames.length > 0
+          ? specTopic.subtopicNames.join(', ')
+          : (specTopic?.parentTopicName || 'Conteúdo do Cronograma');
 
         replyText = `Hoje você deve estudar:
 
@@ -209,27 +314,42 @@ export default function TutorIASection({ user, profile, setActiveTab }: TutorIAS
 ${userSubject}
 
 **Bloco:**
-${firstTopic?.category || 'Conhecimentos Específicos'}
+${specTopic?.blockName || 'Conhecimentos Específicos'}
 
 **Tópico:**
-${firstTopic?.parentTopicName || 'Tópicos do Edital'}
+${specTopic?.parentTopicName || 'Tópicos do Edital'}
 
 **Subtópico:**
-${firstTopic?.subtopicNames.join(', ') || 'Conteúdo do Cronograma'}
+${specSubtopicStr}
 
-Esse conteúdo foi escolhido porque faz parte do seu cronograma do Dia ${currentDay?.dayNumber || 1} e ainda não foi concluído.
+Esse conteúdo foi escolhido porque faz parte do seu cronograma de hoje (${currentDay?.displayDate || `Dia ${currentDay?.dayNumber || 1}`}) e é sua meta ativa.
 
 Depois continue com:
-${secondaryTopics.length > 0 ? secondaryTopics.map(t => `• **${t.category}:** ${t.parentTopicName}`).join('\n') : `• **Legislação Educacional / Didática:** Leis do CE e LDB\n• **Revisão Espaçada:** Questões da FUNECE`}`;
+${secondaryTopics.length > 0 ? secondaryTopics.map(t => {
+  const sub = t.subtopicNames && t.subtopicNames.length > 0 ? t.subtopicNames.join(', ') : t.parentTopicName;
+  return `• **${t.category}:** ${sub}`;
+}).join('\n') : `• **Legislação Educacional / Didática:** Leis do CE e LDB\n• **Revisão Espaçada:** Questões da FUNECE`}`;
+      } else if (lowerMsg.includes('atrasad') || lowerMsg.includes('atraso') || lowerMsg.includes('pendent')) {
+        if (overdueItems.length === 0) {
+          replyText = `🎉 **Você está 100% em dia com seu cronograma até hoje!**\n\nTodas as metas de **${userSubject}** do seu cronograma de hoje (${currentDay?.displayDate || 'Hoje'}) e de dias anteriores já foram marcadas como concluídas no sistema!`;
+        } else {
+          const formattedOverdue = overdueItems.map(item => 
+            `• **Dia ${item.dayNumber} (${item.displayDate}) - ${item.category}:**\n  - **Tópico:** ${item.parentTopicName}\n  - **Subtópico Pendente:** ${item.subtopicName}`
+          ).join('\n\n');
+          
+          replyText = `⚠️ **Análise de Matérias Pendentes / Atrasadas (Até Hoje)**\n\nVocê possui **${overdueItems.length} subtópicos pendentes** de conclusão no seu cronograma do dia atual e de dias anteriores:\n\n${formattedOverdue}\n\n💡 **Orientação do Mentor:** Finalize estes subtópicos para manter sua preparação no ritmo ideal para a FUNECE!`;
+        }
       } else if (lowerMsg.includes('progresso') || lowerMsg.includes('como estou indo') || lowerMsg.includes('desempenho')) {
-        replyText = `📊 **Seu Desempenho Real no Sistema**\n\n• **Disciplina Alvo:** ${userSubject}\n• **Edital Concluído:** ${completedCount} de ${totalSubtopics} subtópicos (${progressPercent}%)\n• **Dia Atual no Cronograma:** Dia ${currentDay?.dayNumber || 1}\n• **Meta Atual:** ${currentDay?.topics.map(t => t.parentTopicName).join(' • ')}`;
+        const metaSubtopics = currentDay?.topics.map(t => t.subtopicNames?.length ? t.subtopicNames.join(', ') : t.parentTopicName).join(' • ');
+        replyText = `📊 **Seu Desempenho Real no Sistema**\n\n• **Disciplina Alvo:** ${userSubject}\n• **Edital Concluído:** ${completedCount} de ${totalSubtopics} subtópicos (${progressPercent}%)\n• **Dia Atual no Cronograma:** Dia ${currentDay?.dayNumber || 1} (${currentDay?.displayDate || 'Hoje'})\n• **Meta de Subtópicos de Hoje:** ${metaSubtopics}`;
       } else if (lowerMsg.includes('pior assunto') || lowerMsg.includes('dificuldade')) {
-        replyText = `🎯 **Análise de Desempenho**\n\nCom base nos dados do sistema, o assunto do seu edital de **${userSubject}** com menor percentual de conclusão no seu cronograma ativo é: **${currentDay?.topics[0]?.parentTopicName || 'Conteúdos Específicos'}**.\n\nSua prioridade hoje no Dia ${currentDay?.dayNumber || 1} é concluir este bloco!`;
+        const firstSubtopic = currentDay?.topics[0]?.subtopicNames?.[0] || currentDay?.topics[0]?.parentTopicName || 'Conteúdos Específicos';
+        replyText = `🎯 **Análise de Desempenho**\n\nCom base nos dados do sistema, o subtópico priorizado no seu cronograma ativo de **${userSubject}** é: **${firstSubtopic}**.\n\nSua prioridade hoje (${currentDay?.displayDate || `Dia ${currentDay?.dayNumber || 1}`}) é concluir esta meta!`;
       } else if (lowerMsg.includes('revisar') || lowerMsg.includes('revisão')) {
-        replyText = `📚 **Revisão Pendente do Cronograma**\n\nSua revisão pendente do Dia ${currentDay?.dayNumber || 1} engloba os subtópicos:\n${currentDay?.topics.map(t => `• **${t.parentTopicName}:** ${t.subtopicNames.join(', ')}`).join('\n')}\n\nDeseja realizar questões sobre essa meta agora?`;
+        replyText = `📚 **Revisão Pendente do Cronograma**\n\nSua revisão pendente de hoje (${currentDay?.displayDate || `Dia ${currentDay?.dayNumber || 1}`}) engloba os subtópicos:\n${currentDay?.topics.map(t => `• **${t.parentTopicName}:** ${t.subtopicNames?.length ? t.subtopicNames.join(', ') : t.parentTopicName}`).join('\n')}\n\nDeseja realizar questões sobre essa meta agora?`;
       } else {
-        const firstTopic = currentDay?.topics[0]?.parentTopicName || userSubject;
-        replyText = `Prof. ${userName}, sobre **"${text.trim()}"**:\n\n1. **Referência no Cronograma (Dia ${currentDay?.dayNumber || 1}):** Assunto ligado a **${firstTopic}**.\n2. **Orientação FUNECE:** Foco direto nas pegadinhas da banca e na legislação da SEDUC CE.\n\n*(Se desejar uma aula ou explicação teórica sobre isso, me diga: "Explique [assunto]")*`;
+        const firstSubtopic = currentDay?.topics[0]?.subtopicNames?.[0] || currentDay?.topics[0]?.parentTopicName || userSubject;
+        replyText = `Prof. ${userName}, sobre **"${text.trim()}"**:\n\n1. **Referência no Cronograma (${currentDay?.displayDate || `Dia ${currentDay?.dayNumber || 1}`}):** Assunto diretamente ligado ao subtópico **${firstSubtopic}**.\n2. **Orientação FUNECE:** Foco direto nos conceitos científicos e pegadinhas da banca.\n\n*(Se desejar uma explicação teórica sobre isso, me diga: "Explique ${firstSubtopic}")*`;
       }
 
       const aiMsg: TutorChatMessage = {

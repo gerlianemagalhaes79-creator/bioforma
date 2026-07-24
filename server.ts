@@ -132,6 +132,10 @@ app.use(express.json());
     const correctCount = profile?.correctAnswersCount || stats?.correctAnswers || 14;
     const accuracy = questionsDone > 0 ? Math.round((correctCount / questionsDone) * 100) : 75;
     const activeTopicsText = req.body.activeTopics ? JSON.stringify(req.body.activeTopics) : "";
+    const overdueList = req.body.overdueItems || [];
+    const overdueText = overdueList.length > 0
+      ? overdueList.map((item: any) => `• [Dia ${item.dayNumber} • ${item.displayDate}] (${item.category}): Tópico "${item.parentTopicName}" -> Subtópico Pendente: "${item.subtopicName}"`).join("\n")
+      : "Nenhum item pendente. O aluno está 100% em dia com o cronograma até hoje!";
 
     // Formatar data atual real (ex: Quinta-feira, 23 de julho de 2026)
     const now = new Date();
@@ -162,8 +166,8 @@ REGRAS DE CONDUTA RIGOROSAS:
 3. REGRA DE OURO DA PLATAFORMA: O Professor Mentor NUNCA deve utilizar seu conhecimento interno para decidir o que o aluno estudará. Toda recomendação de estudo DEVE ser baseada exclusivamente nos dados armazenados pela plataforma (cronograma, progresso, desempenho, revisões e edital). Caso essas informações não estejam disponíveis, informe claramente que não conseguiu acessar os dados e solicite a sincronização, em vez de inventar uma resposta.
 4. Jamais escreva uma aula inteira ou resumo quando não for expressamente solicitado (por frases como "me ensine", "explique", "vamos estudar", "faça um resumo").
 
-QUANDO O ALUNO PERGUNTAR "O que estudo hoje?":
-Sua resposta OBRIGATORIAMENTE deve seguir esta ordem:
+QUANDO O ALUNO PERGUNTAR "O que estudo hoje?" OU EM QUALQUER PERGUNTA SOBRE A META DO DIA:
+Sua resposta OBRIGATORIAMENTE deve seguir esta ordem e detalhar o SUBTÓPICO exato (ex: "Aspectos físicos, químicos e estruturais da célula" ou "Noções básicas de microscopia"):
 
 1. Responder diretamente (sem introduções nem discursos motivacionais):
    Hoje você deve estudar:
@@ -175,18 +179,36 @@ Sua resposta OBRIGATORIAMENTE deve seguir esta ordem:
    [Nome do Bloco]
 
    **Tópico:**
-   [Nome do Tópico]
+   [Nome do Tópico Pai]
 
    **Subtópico:**
-   [Nome do Subtópico / Detalhes]
+   [NOME EXATO DO SUBTÓPICO - OBRIGATÓRIO informar o subtópico específico (ex: Aspectos físicos, químicos e estruturais da célula / Noções básicas de microscopia) e NUNCA apenas o título geral do bloco/tópico]
 
 2. Explicar rapidamente o motivo (em 1 frase curta):
-   Exemplo: "Esse conteúdo foi escolhido porque faz parte do seu cronograma do Dia X e ainda não foi concluído."
+   Exemplo: "Esse conteúdo foi escolhido porque faz parte do seu cronograma de hoje e ainda não foi concluído."
 
 3. Informar o restante do dia:
    Depois continue com:
    • [Matéria/Tópico Secundário]
    • [Revisão ou Legislação]
+
+QUANDO O ALUNO PERGUNTAR "TENHO ALGUMA MATERIA ATRASADA?" OU PERGUNTAS SOBRE ITENS ATRASADOS/PENDENTES:
+Você DEVE verificar rigorosamente os itens em "ITENS PENDENTES/ATRASADOS DO CRONOGRAMA" (que correspondem a todos os subtópicos do dia atual e de dias anteriores não marcados como concluídos):
+
+1. Se NÃO houver itens pendentes ("Nenhum item pendente"):
+   Responda:
+   🎉 **Você está 100% em dia com seu cronograma até hoje!**
+   Todas as metas de conteúdos de hoje (${formattedDate}) e de dias anteriores já foram concluídas no sistema!
+
+2. Se HOUVER itens pendentes:
+   Aliste os subtópicos pendentes detalhadamente:
+   ⚠️ **Análise de Matérias Pendentes / Atrasadas (Até Hoje)**
+
+   Você possui [X] subtópico(s) pendente(s) de conclusão no seu cronograma do dia atual e de dias anteriores:
+
+   [Aliste cada subtópico com Dia, Data, Categoria, Tópico e Subtópico Pendente]
+
+   💡 **Orientação do Mentor:** Priorize a conclusão destes subtópicos para manter sua preparação no ritmo ideal para a FUNECE!
 
 REGRA DE TAMANHO:
 - Se a pergunta puder ser respondida em poucas linhas, responda em poucas linhas.
@@ -202,7 +224,9 @@ DADOS REAIS DO CANDIDATO NO SISTEMA:
 - Progresso do Edital: ${totalDone} de ${totalSubtopics} subtópicos concluídos (${progressPercent}% do edital).
 - Desempenho em Questões: ${questionsDone} resolvidas (${correctCount} acertos, ${accuracy}% de acerto).
 - Cronograma Ativo do Candidato: ${cronograma || "Dados de cronograma não sincronizados"}.
-- Tópicos Ativos da Meta: ${activeTopicsText || "Tópicos não sincronizados"}
+- Tópicos Ativos da Meta de Hoje: ${activeTopicsText || "Tópicos não sincronizados"}
+- ITENS PENDENTES/ATRASADOS DO CRONOGRAMA (Até Hoje):
+${overdueText}
 
 ${isProactive ? `SITUAÇÃO PROATIVA: O candidato abriu a plataforma hoje (${formattedDate}). Apresente diretamente a meta de estudos de hoje segundo o cronograma do sistema na estrutura exata solicitada.` : `MENSAGEM DO CANDIDATO: "${message}"`}`;
 
@@ -232,17 +256,21 @@ ${isProactive ? `SITUAÇÃO PROATIVA: O candidato abriu a plataforma hoje (${for
       });
     }
 
-    if (lowerMsg.includes('progresso') || lowerMsg.includes('onde paramos') || lowerMsg.includes('desempenho')) {
-      return res.json({
-        success: true,
-        text: `📊 **Seu Progresso Atual**\n\n• **Tópicos do Edital:** ${totalDone} de 23 concluídos (${Math.round((totalDone/23)*100)}% do edital)\n• **Questões FUNECE Resolvidas:** ${questionsDone} no total\n• **Aproveitamento Geral:** **${accuracy}%** (${correctCount} acertos)\n\n*Quer ajustar a meta da semana ou revisar os tópicos com menor taxa de acerto?*`
-      });
-    }
+    if (lowerMsg.includes('atrasad') || lowerMsg.includes('atraso') || lowerMsg.includes('pendent')) {
+      if (overdueList.length === 0) {
+        return res.json({
+          success: true,
+          text: `🎉 **Você está 100% em dia com seu cronograma até hoje!**\n\nTodas as metas do seu cronograma de ${userSubject} do dia de hoje (${formattedDate}) e de dias anteriores já foram marcadas como concluídas no sistema!`
+        });
+      }
 
-    if (lowerMsg.includes('atrasad') || lowerMsg.includes('atraso')) {
+      const formattedOverdue = overdueList.map((item: any) => 
+        `• **Dia ${item.dayNumber} (${item.displayDate}) - ${item.category}:**\n  - **Tópico:** ${item.parentTopicName}\n  - **Subtópico Pendente:** ${item.subtopicName}`
+      ).join('\n\n');
+
       return res.json({
         success: true,
-        text: `⏱ **Análise de Atrasos**\n\nVocê tem **${Math.max(0, 23 - totalDone)} tópicos pendentes** no edital verticalizado.\n\n**Plano de Compensação Rápido:**\n1. Mantenha 1h/dia para o tópico da Fila Única.\n2. Dedique 30min para acelerar os tópicos curtos de Gerais (LDB/Didática).\n3. Use o modo simulado FUNECE para validar aprendizado rápido.\n\n*Deseja reajustar suas horas diárias nas configurações para recalcular seu cronograma?*`
+        text: `⚠️ **Análise de Matérias Pendentes / Atrasadas (Até Hoje)**\n\nVocê possui **${overdueList.length} subtópico(s) pendente(s)** de conclusão no seu cronograma do dia atual e de dias anteriores:\n\n${formattedOverdue}\n\n💡 **Orientação do Mentor:** Priorize a conclusão destes subtópicos para manter sua preparação no ritmo ideal para a FUNECE!`
       });
     }
 
