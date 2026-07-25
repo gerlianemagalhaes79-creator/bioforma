@@ -123,98 +123,99 @@ export default function Dashboard({ user, profile, setActiveTab, onOpenProfile }
         setActiveTab={setActiveTab} 
       />
 
-      {/* Strategic Advice & Official 80-Question Exam Structure Card */}
-      <div className="bg-white border border-emerald-200/90 rounded-3xl p-5 shadow-xs space-y-4">
-        <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 bg-gradient-to-br from-emerald-600 to-teal-800 text-white rounded-xl shadow-xs">
-              <Award size={18} />
+      {/* Strategic Advice & Official 80-Question Exam Structure Card - Minimalist & Formal */}
+      <div className="bg-white border border-zinc-200/80 rounded-xl p-3.5 sm:p-4 shadow-2xs space-y-3">
+        <div className="flex items-center justify-between border-b border-zinc-100 pb-2.5">
+          <div className="flex items-center gap-2">
+            <div className="p-1 bg-emerald-50 text-emerald-800 rounded-md border border-emerald-200/60">
+              <Award size={14} className="text-emerald-700" />
             </div>
             <div>
-              <h4 className="font-extrabold text-emerald-950 text-sm">Estrutura da Prova SEDUC CE (80 Questões)</h4>
-              <p className="text-xs text-zinc-500">Distribuição oficial de peso por disciplina na banca FUNECE</p>
+              <h4 className="font-bold text-zinc-900 text-xs sm:text-sm">Estrutura Oficial da Prova SEDUC CE</h4>
+              <p className="text-[11px] text-zinc-500">80 Questões • Distribuição por disciplina na banca FUNECE</p>
             </div>
           </div>
-          <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-900 font-black text-[10px] uppercase tracking-wider">
-            Prioridade Estratégica
+          <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 font-bold text-[10px] border border-emerald-200/80 uppercase tracking-wider">
+            62,5% Peso Específico
           </span>
         </div>
 
         <div className="space-y-2 text-xs">
-          {/* Conhecimentos Específicos - Prioridade Máxima */}
-          <div className="p-3 bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-100/60 border border-emerald-300 rounded-2xl flex items-center justify-between gap-3 shadow-xs">
+          {/* Conhecimentos Específicos - High Priority Banner */}
+          <div className="p-2.5 bg-emerald-50/60 border border-emerald-200/80 rounded-lg flex items-center justify-between gap-2.5">
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-8 h-8 rounded-xl bg-emerald-700 text-white font-black text-xs flex items-center justify-center shrink-0">
+              <div className="w-7 h-7 rounded-md bg-emerald-900 text-white font-bold text-xs flex items-center justify-center shrink-0">
                 50q
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  <p className="font-black text-emerald-950 text-xs truncate">Conhecimentos Específicos</p>
-                  <span className="px-1.5 py-0.2 bg-amber-400 text-amber-950 text-[9px] font-black uppercase rounded">
-                    Foco 62,5% da Prova
+                  <p className="font-bold text-zinc-900 text-xs truncate">Conhecimentos Específicos</p>
+                  <span className="px-1.5 py-0.2 bg-emerald-100 text-emerald-900 text-[9px] font-bold uppercase rounded border border-emerald-200">
+                    Sua Licenciatura
                   </span>
                 </div>
-                <p className="text-[10px] text-emerald-800 font-medium">Conteúdo da sua licenciatura ({targetSubject})</p>
+                <p className="text-[10px] text-zinc-600 font-medium truncate">{targetSubject}</p>
               </div>
             </div>
-            <span className="font-black text-emerald-900 text-sm shrink-0">50 Questões</span>
+            <span className="font-black text-emerald-950 text-xs shrink-0">50 Questões (62,5%)</span>
           </div>
 
+          {/* General Knowledge Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {/* Educação Brasileira e Pedagógicos */}
-            <div className="p-2.5 bg-amber-50/70 border border-amber-200 rounded-xl flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <span className="w-6 h-6 rounded-lg bg-amber-600 text-white text-[10px] font-bold flex items-center justify-center shrink-0">
+            <div className="p-2.5 bg-zinc-50/80 border border-zinc-200/80 rounded-lg flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="w-6 h-6 rounded bg-zinc-800 text-white text-[10px] font-bold flex items-center justify-center shrink-0">
                   8q
                 </span>
                 <div className="min-w-0">
-                  <p className="font-bold text-amber-950 text-[11px] truncate">Educação Brasileira e Pedagógicos</p>
-                  <p className="text-[9px] text-amber-800">10% • LDB, DUA e Didática</p>
+                  <p className="font-bold text-zinc-900 text-[11px] truncate">Educação Brasileira e Didática</p>
+                  <p className="text-[9px] text-zinc-500">10% • LDB, DUA e Legislação</p>
                 </div>
               </div>
-              <span className="font-black text-amber-900 text-xs shrink-0">8 Questões</span>
+              <span className="font-bold text-zinc-800 text-xs shrink-0">8 Questões</span>
             </div>
 
             {/* Língua Portuguesa */}
-            <div className="p-2.5 bg-teal-50/70 border border-teal-200 rounded-xl flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <span className="w-6 h-6 rounded-lg bg-teal-600 text-white text-[10px] font-bold flex items-center justify-center shrink-0">
+            <div className="p-2.5 bg-zinc-50/80 border border-zinc-200/80 rounded-lg flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="w-6 h-6 rounded bg-zinc-800 text-white text-[10px] font-bold flex items-center justify-center shrink-0">
                   8q
                 </span>
                 <div className="min-w-0">
-                  <p className="font-bold text-teal-950 text-[11px] truncate">Língua Portuguesa</p>
-                  <p className="text-[9px] text-teal-800">10% • Texto, Regência e Crase</p>
+                  <p className="font-bold text-zinc-900 text-[11px] truncate">Língua Portuguesa</p>
+                  <p className="text-[9px] text-zinc-500">10% • Texto, Regência e Crase</p>
                 </div>
               </div>
-              <span className="font-black text-teal-900 text-xs shrink-0">8 Questões</span>
+              <span className="font-bold text-zinc-800 text-xs shrink-0">8 Questões</span>
             </div>
 
             {/* Dados e Indicadores Educacionais */}
-            <div className="p-2.5 bg-blue-50/70 border border-blue-200 rounded-xl flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <span className="w-6 h-6 rounded-lg bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center shrink-0">
+            <div className="p-2.5 bg-zinc-50/80 border border-zinc-200/80 rounded-lg flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="w-6 h-6 rounded bg-zinc-800 text-white text-[10px] font-bold flex items-center justify-center shrink-0">
                   8q
                 </span>
                 <div className="min-w-0">
-                  <p className="font-bold text-blue-950 text-[11px] truncate">Dados e Indicadores Educacionais</p>
-                  <p className="text-[9px] text-blue-800">10% • SPAECE, IDEB e Gráficos</p>
+                  <p className="font-bold text-zinc-900 text-[11px] truncate">Dados e Indicadores Educacionais</p>
+                  <p className="text-[9px] text-zinc-500">10% • SPAECE, IDEB e Estatística</p>
                 </div>
               </div>
-              <span className="font-black text-blue-900 text-xs shrink-0">8 Questões</span>
+              <span className="font-bold text-zinc-800 text-xs shrink-0">8 Questões</span>
             </div>
 
             {/* Administração Pública */}
-            <div className="p-2.5 bg-purple-50/70 border border-purple-200 rounded-xl flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <span className="w-6 h-6 rounded-lg bg-purple-600 text-white text-[10px] font-bold flex items-center justify-center shrink-0">
+            <div className="p-2.5 bg-zinc-50/80 border border-zinc-200/80 rounded-lg flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="w-6 h-6 rounded bg-zinc-800 text-white text-[10px] font-bold flex items-center justify-center shrink-0">
                   6q
                 </span>
                 <div className="min-w-0">
-                  <p className="font-bold text-purple-950 text-[11px] truncate">Administração Pública</p>
-                  <p className="text-[9px] text-purple-800">7,5% • Estatuto Magistério CE</p>
+                  <p className="font-bold text-zinc-900 text-[11px] truncate">Administração Pública</p>
+                  <p className="text-[9px] text-zinc-500">7,5% • Estatuto Magistério CE</p>
                 </div>
               </div>
-              <span className="font-black text-purple-900 text-xs shrink-0">6 Questões</span>
+              <span className="font-bold text-zinc-800 text-xs shrink-0">6 Questões</span>
             </div>
           </div>
         </div>

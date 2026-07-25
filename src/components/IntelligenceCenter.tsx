@@ -29,31 +29,98 @@ export default function IntelligenceCenter({ user, profile, setActiveTab, onOpen
 
   const targetSubject = profile?.targetSubject || 'Biologia';
 
-  // Realtime subscription to Firestore questionLogs
+  // Helper to normalize discipline names to match the 5 main categories
+  const getCanonicalDiscipline = (raw: string, targetSub: string): string => {
+    if (!raw) return targetSub;
+    const lower = raw.toLowerCase();
+    
+    if (lower.includes('portuguê') || lower.includes('língua portuguesa')) {
+      return 'Língua Portuguesa';
+    }
+    if (lower.includes('administra') || lower.includes('estatuto') || lower.includes('pública')) {
+      return 'Administração Pública';
+    }
+    if (lower.includes('educaçã') || lower.includes('pedagóg') || lower.includes('temas')) {
+      return 'Temas Educacionais';
+    }
+    if (lower.includes('dado') || lower.includes('indicador') || lower.includes('leitura') || lower.includes('spaece')) {
+      return 'Indicadores Educacionais';
+    }
+    return targetSub;
+  };
+
+  // Load question logs from local storage AND Firestore with realtime updates
   useEffect(() => {
-    const logsRef = collection(db, 'users', user.uid, 'questionLogs');
-    const q = query(logsRef);
+    let unsubFirestore: (() => void) | null = null;
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const dbLogs: QuestionAnswerLog[] = [];
-      snapshot.forEach((doc) => {
-        dbLogs.push({ id: doc.id, ...doc.data() } as QuestionAnswerLog);
-      });
-
-      if (dbLogs.length > 0) {
-        // Sort descending by timestamp
-        dbLogs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-        setLogs(dbLogs);
-      } else {
-        setLogs([]);
+    const readLocalLogs = (): QuestionAnswerLog[] => {
+      try {
+        const uid = user?.uid || profile?.uid || 'guest';
+        const keys = [`questionLogs_${uid}`, 'questionLogs_guest', 'questionLogs_default'];
+        const map = new Map<string, QuestionAnswerLog>();
+        keys.forEach(k => {
+          const raw = localStorage.getItem(k);
+          if (raw) {
+            const arr: QuestionAnswerLog[] = JSON.parse(raw);
+            arr.forEach(item => {
+              const itemKey = item.id || `${item.questionId}_${item.timestamp}`;
+              map.set(itemKey, item);
+            });
+          }
+        });
+        return Array.from(map.values());
+      } catch {
+        return [];
       }
-    }, (err) => {
-      console.warn("Firestore listener error:", err);
-      setLogs([]);
-    });
+    };
 
-    return () => unsubscribe();
-  }, [user.uid, targetSubject]);
+    const syncLogs = () => {
+      const localLogs = readLocalLogs();
+      const activeUid = user?.uid || profile?.uid;
+
+      if (activeUid) {
+        try {
+          const logsRef = collection(db, 'users', activeUid, 'questionLogs');
+          const q = query(logsRef);
+
+          if (unsubFirestore) unsubFirestore();
+          unsubFirestore = onSnapshot(q, (snapshot) => {
+            const dbLogs: QuestionAnswerLog[] = [];
+            snapshot.forEach((doc) => {
+              dbLogs.push({ id: doc.id, ...doc.data() } as QuestionAnswerLog);
+            });
+
+            const combinedMap = new Map<string, QuestionAnswerLog>();
+            localLogs.forEach(l => combinedMap.set(l.id || `${l.questionId}_${l.timestamp}`, l));
+            dbLogs.forEach(l => combinedMap.set(l.id || `${l.questionId}_${l.timestamp}`, l));
+
+            const finalLogs = Array.from(combinedMap.values());
+            finalLogs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+            setLogs(finalLogs);
+          }, (err) => {
+            console.warn("Firestore listener error:", err);
+            localLogs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+            setLogs(localLogs);
+          });
+        } catch {
+          localLogs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+          setLogs(localLogs);
+        }
+      } else {
+        localLogs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+        setLogs(localLogs);
+      }
+    };
+
+    syncLogs();
+
+    const handleUpdate = () => syncLogs();
+    window.addEventListener('questionLogUpdated', handleUpdate);
+    return () => {
+      window.removeEventListener('questionLogUpdated', handleUpdate);
+      if (unsubFirestore) unsubFirestore();
+    };
+  }, [user?.uid, profile?.uid, targetSubject]);
 
   // Expand target subject discipline by default
   useEffect(() => {
@@ -76,7 +143,7 @@ export default function IntelligenceCenter({ user, profile, setActiveTab, onOpen
     const map: Record<string, { total: number; correct: number; blocks: Record<string, { total: number; correct: number; subtopics: Record<string, { total: number; correct: number }> }> }> = {};
 
     logs.forEach(log => {
-      const disc = log.discipline || 'Outras';
+      const disc = getCanonicalDiscipline(log.discipline, targetSubject);
       const block = log.blockName || 'Geral';
       const subtopic = log.subtopicName || log.topicName || 'Tópico Geral';
 

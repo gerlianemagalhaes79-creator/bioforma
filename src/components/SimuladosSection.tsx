@@ -421,39 +421,79 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
     setUserAnswersMap(prev => ({ ...prev, [qIdx]: letter }));
   };
 
+  const saveQuestionLogHelper = async (logData: Omit<QuestionAnswerLog, 'id'>) => {
+    const fullLog: QuestionAnswerLog = {
+      id: `log_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`,
+      ...logData
+    };
+
+    // 1. Save to local storage for immediate UI reactivity across components
+    try {
+      const activeUid = user?.uid || profile?.uid || 'guest';
+      const keys = [`questionLogs_${activeUid}`, 'questionLogs_guest', 'questionLogs_default'];
+      keys.forEach(k => {
+        const existing = localStorage.getItem(k);
+        const arr: QuestionAnswerLog[] = existing ? JSON.parse(existing) : [];
+        arr.unshift(fullLog);
+        localStorage.setItem(k, JSON.stringify(arr));
+      });
+      window.dispatchEvent(new Event('questionLogUpdated'));
+    } catch (err) {
+      console.warn("Erro ao salvar log local de questão:", err);
+    }
+
+    // 2. Save to Firestore
+    const activeUid = user?.uid || profile?.uid;
+    if (activeUid) {
+      try {
+        const logsRef = collection(db, 'users', activeUid, 'questionLogs');
+        await addDoc(logsRef, {
+          ...logData,
+          uid: activeUid
+        });
+      } catch (err) {
+        console.warn("Erro ao salvar log no Firestore:", err);
+      }
+    }
+  };
+
   // Check Answer in Instant Mode
   const handleCheckAnswerInstant = async (qIdx: number) => {
     if (!userAnswersMap[qIdx]) return;
     setSubmittedQuestionsMap(prev => ({ ...prev, [qIdx]: true }));
 
-    // Save statistics in Firestore
     const q = activeQuizQuestions![qIdx];
     const isCorrect = userAnswersMap[qIdx] === q.correctAnswer;
-    try {
-      const userRef = doc(db, 'users', user.uid);
-      await setDoc(userRef, {
-        totalQuestionsDone: (profile?.totalQuestionsDone || 0) + 1,
-        correctAnswersCount: (profile?.correctAnswersCount || 0) + (isCorrect ? 1 : 0)
-      }, { merge: true });
 
-      // Save granular question log
-      const logsRef = collection(db, 'users', user.uid, 'questionLogs');
-      await addDoc(logsRef, {
-        uid: user.uid,
-        questionId: q.id,
-        discipline: q.subject || 'Conhecimentos Específicos',
-        blockName: q.category || 'Edital SEDUC',
-        topicName: q.topic || 'Conceitos Gerais',
-        subtopicName: q.subtopic || q.topic || 'Conceitos Gerais',
-        banca: q.banca || 'FUNECE / CEV-UECE',
-        isCorrect,
-        timeSpentSeconds: Math.max(12, Math.round(quizElapsedTime / Math.max(1, qIdx + 1))),
-        userAnswer: userAnswersMap[qIdx],
-        correctAnswer: q.correctAnswer,
-        timestamp: new Date().toISOString()
-      });
-    } catch (err) {
-      console.warn("Erro ao atualizar perfil:", err);
+    const logItem: Omit<QuestionAnswerLog, 'id'> = {
+      uid: user?.uid || profile?.uid || 'guest',
+      questionId: q.id,
+      discipline: q.subject || 'Conhecimentos Específicos',
+      blockName: q.category || 'Edital SEDUC',
+      topicName: q.topic || 'Conceitos Gerais',
+      subtopicName: q.subtopic || q.topic || 'Conceitos Gerais',
+      banca: q.banca || 'FUNECE / CEV-UECE',
+      isCorrect,
+      timeSpentSeconds: Math.max(12, Math.round(quizElapsedTime / Math.max(1, qIdx + 1))),
+      userAnswer: userAnswersMap[qIdx],
+      correctAnswer: q.correctAnswer,
+      timestamp: new Date().toISOString()
+    };
+
+    await saveQuestionLogHelper(logItem);
+
+    // Update user profile question counters in Firestore
+    const activeUid = user?.uid || profile?.uid;
+    if (activeUid) {
+      try {
+        const userRef = doc(db, 'users', activeUid);
+        await setDoc(userRef, {
+          totalQuestionsDone: (profile?.totalQuestionsDone || 0) + 1,
+          correctAnswersCount: (profile?.correctAnswersCount || 0) + (isCorrect ? 1 : 0)
+        }, { merge: true });
+      } catch (err) {
+        console.warn("Erro ao atualizar contador de questões:", err);
+      }
     }
   };
 
@@ -463,44 +503,41 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
     if (!activeQuizQuestions) return;
 
     let correctCount = 0;
-    activeQuizQuestions.forEach((q, idx) => {
-      if (userAnswersMap[idx] === q.correctAnswer) {
-        correctCount++;
+    for (let idx = 0; idx < activeQuizQuestions.length; idx++) {
+      const q = activeQuizQuestions[idx];
+      const uAns = userAnswersMap[idx];
+      if (uAns) {
+        const isCorr = uAns === q.correctAnswer;
+        if (isCorr) correctCount++;
+        const logItem: Omit<QuestionAnswerLog, 'id'> = {
+          uid: user?.uid || profile?.uid || 'guest',
+          questionId: q.id,
+          discipline: q.subject || 'Conhecimentos Específicos',
+          blockName: q.category || 'Edital SEDUC',
+          topicName: q.topic || 'Conceitos Gerais',
+          subtopicName: q.subtopic || q.topic || 'Conceitos Gerais',
+          banca: q.banca || 'FUNECE / CEV-UECE',
+          isCorrect: isCorr,
+          timeSpentSeconds: Math.max(12, Math.round(quizElapsedTime / activeQuizQuestions.length)),
+          userAnswer: uAns,
+          correctAnswer: q.correctAnswer,
+          timestamp: new Date().toISOString()
+        };
+        await saveQuestionLogHelper(logItem);
       }
-    });
+    }
 
-    // Batch update stats in Firestore
-    try {
-      const userRef = doc(db, 'users', user.uid);
-      await setDoc(userRef, {
-        totalQuestionsDone: (profile?.totalQuestionsDone || 0) + activeQuizQuestions.length,
-        correctAnswersCount: (profile?.correctAnswersCount || 0) + correctCount
-      }, { merge: true });
-
-      const logsRef = collection(db, 'users', user.uid, 'questionLogs');
-      for (let idx = 0; idx < activeQuizQuestions.length; idx++) {
-        const q = activeQuizQuestions[idx];
-        const uAns = userAnswersMap[idx];
-        if (uAns) {
-          const isCorr = uAns === q.correctAnswer;
-          await addDoc(logsRef, {
-            uid: user.uid,
-            questionId: q.id,
-            discipline: q.subject || 'Conhecimentos Específicos',
-            blockName: q.category || 'Edital SEDUC',
-            topicName: q.topic || 'Conceitos Gerais',
-            subtopicName: q.subtopic || q.topic || 'Conceitos Gerais',
-            banca: q.banca || 'FUNECE / CEV-UECE',
-            isCorrect: isCorr,
-            timeSpentSeconds: Math.max(12, Math.round(quizElapsedTime / activeQuizQuestions.length)),
-            userAnswer: uAns,
-            correctAnswer: q.correctAnswer,
-            timestamp: new Date().toISOString()
-          });
-        }
+    const activeUid = user?.uid || profile?.uid;
+    if (activeUid) {
+      try {
+        const userRef = doc(db, 'users', activeUid);
+        await setDoc(userRef, {
+          totalQuestionsDone: (profile?.totalQuestionsDone || 0) + activeQuizQuestions.length,
+          correctAnswersCount: (profile?.correctAnswersCount || 0) + correctCount
+        }, { merge: true });
+      } catch (err) {
+        console.warn("Erro ao salvar resultado final do simulado:", err);
       }
-    } catch (err) {
-      console.warn("Erro ao salvar resultado final do simulado:", err);
     }
   };
 
