@@ -446,21 +446,6 @@ export default function EditalSection({ user, profile, setActiveTab }: EditalSec
 
       {/* ÁRVORE HIERÁRQUICA: ÁREA -> BLOCO -> TÓPICO -> SUBTÓPICO */}
       <div className="space-y-3">
-        {/* Header da Área Ativa */}
-        <div className="bg-zinc-900 text-white p-3.5 rounded-2xl flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <BookOpen size={16} className="text-emerald-400" />
-            <span className="text-xs font-black uppercase tracking-wider">
-              {activeMainCategory === 'especifico' 
-                ? 'Área: Conhecimentos Específicos' 
-                : `Área: ${selectedGeneralArea}`}
-            </span>
-          </div>
-          <span className="text-[10px] font-extrabold text-emerald-300 bg-emerald-950 px-2 py-0.5 rounded-md border border-emerald-800">
-            {currentBlocks.length} Blocos • {currentAreaProgress}% Grifado
-          </span>
-        </div>
-
         {/* Campo de busca no edital */}
         <div className="relative print:hidden">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />

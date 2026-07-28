@@ -709,13 +709,7 @@ export default function CronogramaSection({ user, profile, setActiveTab }: Crono
                 <Sparkles size={11} />
                 Interleaving
               </span>
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase bg-teal-800/90 text-teal-200 border border-teal-700">
-                FUNECE / UECE 2026
-              </span>
             </div>
-            <p className="text-emerald-100/90 text-xs max-w-3xl font-medium leading-snug">
-              Consumo da <strong>Fila Única</strong>: 65% Conhecimentos Específicos • 35% Conhecimentos Gerais + Resolução de Questões dirigidas.
-            </p>
           </div>
 
           <div className="flex items-center gap-2 no-print shrink-0">
@@ -748,30 +742,7 @@ export default function CronogramaSection({ user, profile, setActiveTab }: Crono
           </div>
         </div>
 
-        {/* Interleaving Breakdown Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 no-print">
-          <div className="p-3.5 bg-teal-900 text-white rounded-xl space-y-0.5">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] uppercase font-black text-teal-300 tracking-wider">65% do Tempo Diário</span>
-              <span className="text-[11px] bg-teal-800 px-2 py-0.5 rounded-md font-extrabold">Específica</span>
-            </div>
-            <h4 className="font-extrabold text-xs text-white">Conteúdo Específico</h4>
-            <p className="text-[11px] text-teal-200/90 leading-snug">
-              Subtópicos da Licenciatura ({activeDegree}).
-            </p>
-          </div>
 
-          <div className="p-3.5 bg-emerald-900 text-white rounded-xl space-y-0.5">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] uppercase font-black text-emerald-300 tracking-wider">35% do Tempo Diário</span>
-              <span className="text-[11px] bg-emerald-800 px-2 py-0.5 rounded-md font-extrabold">Geral</span>
-            </div>
-            <h4 className="font-extrabold text-xs text-white">Conteúdo Geral (Intercalado)</h4>
-            <p className="text-[11px] text-emerald-200/90 leading-snug">
-              Português (FUNECE), Didática e Legislação CE.
-            </p>
-          </div>
-        </div>
 
         {/* Schedule Calendar Grid */}
         <div className="space-y-4">

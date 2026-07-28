@@ -589,41 +589,6 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
 
   return (
     <div className="space-y-5">
-      {/* Top Header Banner */}
-      <div className="bg-white rounded-2xl p-3.5 sm:p-4 border border-emerald-200/80 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-2.5">
-          <div className="p-2 bg-emerald-100 text-emerald-900 rounded-xl">
-            <BrainCircuit size={18} className="text-emerald-700" />
-          </div>
-          <div>
-            <h2 className="text-base font-black text-zinc-900 tracking-tight">Treino de Questões (Questão por Questão)</h2>
-            <p className="text-xs text-zinc-500">Pratique resolução de questões com gabarito instantâneo no formato FUNECE</p>
-          </div>
-        </div>
-
-        {/* Tab Switcher */}
-        <div className="flex items-center p-1 bg-zinc-100 rounded-xl self-start sm:self-auto shrink-0 border border-zinc-200/80">
-          <button
-            onClick={() => { setActiveTab('generator'); setActiveQuizQuestions(null); }}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-extrabold transition cursor-pointer ${
-              activeTab === 'generator' ? 'bg-emerald-800 text-white shadow-2xs' : 'text-zinc-600 hover:text-zinc-900'
-            }`}
-          >
-            <Sparkles size={13} />
-            Treino por Assunto
-          </button>
-          <button
-            onClick={() => { setActiveTab('bank'); setActiveQuizQuestions(null); }}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-extrabold transition cursor-pointer ${
-              activeTab === 'bank' ? 'bg-emerald-800 text-white shadow-2xs' : 'text-zinc-600 hover:text-zinc-900'
-            }`}
-          >
-            <BookOpen size={13} />
-            Banco de Questões
-          </button>
-        </div>
-      </div>
-
       {/* ========================================================= */}
       {/* TAB 1: GERADOR DE SIMULADOS INTELIGENTE (ESTILO QCONCURSOS) */}
       {/* ========================================================= */}
@@ -820,40 +785,18 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
             </div>
           </div>
 
-          {/* Right Column (4 cols): Configuration & Start Button */}
+          {/* Right Column (4 cols): Start Button & Summary */}
           <div className="lg:col-span-4 bg-white rounded-3xl p-5 border border-emerald-100/90 shadow-xs space-y-4 h-fit">
-            <h3 className="text-sm font-extrabold text-zinc-900 flex items-center gap-2 pb-2 border-b border-zinc-100">
-              <Sliders size={16} className="text-emerald-700" />
-              Parâmetros da Questão
-            </h3>
-
-            {/* Difficulty Level */}
-            <div>
-              <label className="block text-[11px] font-extrabold text-zinc-700 mb-1">Nível de Dificuldade</label>
-              <div className="grid grid-cols-2 gap-1.5">
-                {['Fácil', 'Média', 'Difícil', 'Especialista'].map((diff) => (
-                  <button
-                    key={diff}
-                    onClick={() => setSelectedDifficulty(diff)}
-                    className={`py-1.5 px-2 rounded-xl text-xs font-bold transition cursor-pointer text-center ${
-                      selectedDifficulty === diff
-                        ? 'bg-emerald-800 text-white shadow-2xs'
-                        : 'bg-zinc-50 border border-zinc-200 text-zinc-700 hover:border-emerald-300'
-                    }`}
-                  >
-                    {diff}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Mode Banner */}
-            <div className="p-3 bg-teal-50 border border-teal-200 rounded-2xl text-xs text-teal-950 flex items-center gap-2">
-              <Zap size={18} className="shrink-0 text-teal-700 fill-teal-600" />
-              <div>
-                <p className="font-extrabold text-[11px]">Modo Questão por Questão</p>
-                <p className="text-[10px] text-teal-800">Responda e veja o gabarito comentado imediatamente a cada questão.</p>
-              </div>
+            <div className="space-y-1 pb-2 border-b border-zinc-100">
+              <h3 className="text-sm font-extrabold text-zinc-900 flex items-center gap-2">
+                <Sparkles size={16} className="text-emerald-700" />
+                Simulado FUNECE
+              </h3>
+              <p className="text-xs text-zinc-500 font-medium">
+                {selectedCount === 0 
+                  ? 'Selecione ao menos um assunto do edital ao lado.' 
+                  : `${selectedCount} assunto(s) selecionado(s).`}
+              </p>
             </div>
 
             {/* Generation Error Message */}
