@@ -128,99 +128,121 @@ function buildSpecificTeachingLesson(rawTopic: string, userSubject: string, acti
 
   // 1. Noções Básicas de Microscopia
   if (lower.includes('microscop') || lower.includes('ampliação') || lower.includes('ampliacao') || lower.includes('resolução') || lower.includes('resolucao') || lower.includes('mev') || lower.includes('met')) {
-    body = `Olá! Vamos dominar **Noções Básicas de Microscopia** para a FUNECE de forma simples e direta.
+    body = `**Dominando Microscopia para a FUNECE**
 
-A **Microscopia** é a ferramenta essencial da Citologia. O ponto mais importante para sua prova não é a *ampliação* (o quanto a imagem aumenta), mas sim o **Poder de Resolução** — a capacidade do microscópio de distinguir dois pontos extremamente próximos como estruturas separadas.
+🍳 **Ancoragem na Vida Real:**
+Imagine dar zoom numa foto tirada à noite pelo celular. Aumentar o tamanho do pixel borrado não revela a placa do carro; apenas deixa o borrão gigante. Isso é **Ampliação sem Resolução**! Já o **Poder de Resolução** é a nitidez real do sensor: a capacidade de separar dois pontos bem próximos.
+• **MET (Transmissão):** Pense em fatiar um fiambre de presunto bem fininho e olhar por dentro em 2D.
+• **MEV (Varredura):** Pense em passar tinta dourada em uma estátua e escandear o relevo 3D da superfície externa.
 
-Pontos fundamentais que você deve fixar:
+🔬 **O que a FUNECE cobra (Terminologia Técnica):**
+• **Resolução ($d$):** Depende do comprimento de onda ($\lambda$) e da Abertura Numérica ($AN$). Quanto menor o limite $d$, maior o detalhamento!
+• **MET:** Feixe atravessa amostras ultrafinas $\rightarrow$ Visualiza a **ultraestrutura interna** celular (organelas) em 2D.
+• **MEV:** Feixe varre a superfície banhada a metal $\rightarrow$ Imagem tridimensional (3D) de alta profundidade.
 
-• **Ampliação vs. Resolução:** Aumentar a imagem sem resolução gera apenas "ampliação vazia" (uma imagem maior, porém desfocada).
-• **Microscópio Óptico de Luz (MO):** Utiliza luz visível e lentes de vidro. Limite de resolução de ~0,2 µm (200 nm). Exige coloração histológica (como Hematoxilina e Eosina).
-• **Microscópio Eletrônico de Transmissão (MET):** O feixe de elétrons atravessa cortes ultra-finos da amostra. Serve para visualizar a **ultraestrutura interna** celular (mitocôndrias, núcleo) em 2D.
-• **Microscópio Eletrônico de Varredura (MEV):** O feixe de elétrons varre a superfície recoberta por metal, fornecendo uma imagem **3D detalhada da superfície externa**.
+⚡ **Gatilho de Pegadinha FUNECE:**
+A UECE adora inverter MET e MEV! Guarde a neuro-âncora: **MET** = **T**ransmite/Atravessa a fatia em 2D; **MEV** = **V**arre o relevo externo em 3D.
 
-⚠️ **Como a FUNECE cobra:**
-A banca adora inverter MET e MEV! Lembre-se do macete: MET **Transmite/atravessa** (estrutura interna em 2D); MEV **Varre a superfície** (topografia tridimensional em 3D).`;
+🧠 **Desafio de Resgate Ativo (Responda rápido):**
+Se a FUNECE perguntar qual microscópio permite visualizar a **topografia 3D externa** de um grão de pólen, qual é a resposta? (MET ou MEV?)`;
   }
-  // 2. Organelas Celulares / Citologia
+  // 2. Organelas Celulares / Citologia (Ancoragem com o OVO DE GALINHA explicitamente)
   else if (lower.includes('organela') || lower.includes('citologia') || lower.includes('célula') || lower.includes('celula')) {
-    body = `Olá! Vamos descomplicar **Organelas Celulares** com foco total no padrão da FUNECE.
+    body = `**Dominando Estrutura Celular e Organelas para a FUNECE**
 
-As **Organelas Celulares** são estruturas especializadas no citoplasma das células eucarióticas. A função principal delas é garantir a **compartimentalização**: permitir que reações químicas incompatíveis ocorram ao mesmo tempo com máxima eficiência.
+🍳 **Ancoragem na Vida Real (O Ovo de Galinha):**
+Você não precisa memorizar termos difíceis sem imagem mental. Pense em um **ovo de galinha cru**:
+• **Casca e Película Externa** = Membrana Plasmática / Parede Celular (barreira de proteção e permeabilidade seletiva).
+• **Clara (Albumina gelatinosa)** = Citoplasma / Citosol (solução viscosa cheia de nutrientes onde tudo fica suspenso).
+• **Gema (O Oocito no centro)** = Núcleo Celular (o cofre selado protegendo o DNA/material genético).
+• **Manchinhas Amarelas e Pequenas Baterias na gema** = Organelas e Mitocôndrias (as usinas elétricas trabalhando no citoplasma).
 
-Principais organelas cobradas no edital:
+🔬 **O que a FUNECE cobra (Terminologia Técnica):**
+• **Compartimentalização:** Organelas delimitadas por membrana isolam reações químicas incompatíveis na célula.
+• **Mitocôndrias:** Usina energética (síntese de ATP via respiração celular). Provem de simbiose ancestral: possuem **DNA circular próprio, ribossomos 70S e autoduplicação por fissão**.
+• **RER (Retículo Rugoso):** Com ribossomos aderidos; imprime e fabrica **proteínas de secreção**.
+• **REL (Retículo Liso):** Sem ribossomos; fabrica **lipídios/esteroides** e desintoxica o organismo.
+• **Complexo Golgiense:** Empacota vesículas e forma o **acrossomo** do espermatozoide.
 
-• **Mitocôndrias:** Usinas energéticas que produzem ATP via respiração celular. Possuem DNA circular próprio, ribossomos 70S e autoduplicação.
-• **Retículo Endoplasmático Rugoso (RER):** Revestido por ribossomos; sintetiza proteínas destinadas à secreção ou membranas.
-• **Retículo Endoplasmático Liso (REL):** Sem ribossomos; fabrica lipídios (hormônios esteroides) e realiza desintoxicação celular nos hepatócitos.
-• **Complexo Golgiense:** Empacota vesículas de secreção, forma os lisossomos e origina o **acrossomo** do espermatozoide.
-• **Lisossomos:** Contêm hidrolases ácidas para reciclagem de estruturas velhas (autofagia) e digestão de materiais englobados (heterofagia).
+⚡ **Gatilho de Pegadinha FUNECE:**
+A banca costuma dizer que "células vegetais não têm mitocôndrias porque usam cloroplastos". **FALSO!** Células de plantas possuem mitocôndrias E cloroplastos! Além disso, a duplicação do DNA ocorre na **Fase S da Interfase**, e não durante a mitose.
 
-⚠️ **Como a FUNECE cobra:**
-A banca ama a **Teoria Endossimbiótica**! Guarde as 4 provas da origem procariótica de mitocôndrias e cloroplastos: (1) DNA circular próprio sem histonas, (2) Ribossomos 70S, (3) Dupla membrana e (4) Autoduplicação por fissão binária. Lembre-se também de que plantas possuem sim mitocôndrias!`;
+🧠 **Desafio de Resgate Ativo (Responda rápido):**
+A clara do ovo é o citoplasma. Qual é a organela imersa nele responsável por gerar a bateria energética (ATP) da célula?`;
   }
   // 3. Genética / DNA / RNA / Mendel
   else if (lower.includes('genética') || lower.includes('genetica') || lower.includes('dna') || lower.includes('rna') || lower.includes('mendel') || lower.includes('síntese') || lower.includes('sintese')) {
-    body = `Olá! Vamos compreender os aspectos mais importantes de **Genética e Biologia Molecular** para a FUNECE.
+    body = `**Dominando Genética e Biologia Molecular para a FUNECE**
 
-A base de tudo é o **Dogma Central da Biologia Molecular**: o DNA se duplica de forma semiconservativa, é transcrito em RNA e traduzido em proteínas nos ribossomos.
+🍳 **Ancoragem na Vida Real (O Cofre do Chef e a Foto da Receita):**
+Pense na célula como um restaurante famoso de alta gastronomia:
+• **DNA** = O livro mestre com as receitas originais trancado no cofre do Chef (o Núcleo). Ele NUNCA sai do cofre para não ser estragado.
+• **RNA Mensageiro** = A xérofita ou foto no celular de uma única receita que você tira do cofre e leva até a bancada da cozinha.
+• **Ribossomo** = A impressora 3D ou o cozinheiro que lê a foto da receita e junta os ingredientes (aminoácidos) para montar o prato (proteína).
 
-Conceitos essenciais para a prova:
+🔬 **O que a FUNECE cobra (Terminologia Técnica):**
+• **Dogma Central:** DNA $\rightarrow$ (Transcrição) $\rightarrow$ RNAm $\rightarrow$ (Tradução nos ribossomos) $\rightarrow$ Proteína.
+• **Duplicação Semiconservativa:** Cada fita antiga serve de molde para uma nova fita de DNA (ocorre na Fase S da Interfase).
+• **Código Genético Degenerado:** Vários trincas (códons) de RNAm codificam o mesmo aminoácido.
 
-• **Estrutura do DNA:** Dupla hélice antiparalela (5'→3' e 3'→5') unida por pontes de hidrogênio (A=T com 2 pontes; C≡G com 3 pontes).
-• **Código Genético:** É **degenerado** (vários códons codificam o mesmo aminoácido), universal e não ambíguo.
-• **1ª Lei de Mendel:** Segregação dos alelos na meiose (gera a proporção fenotípica 3:1 na F2).
-• **2ª Lei de Mendel:** Segregação independente de genes em cromossomos não homólogos (gera a proporção 9:3:3:1 na F2).
-• **Linkage (Ligação Gênica):** Genes situados no mesmo cromossomo não seguem a 2ª Lei. A taxa de recombinação (% de crossing-over) indica a distância em centimorgans (cM).
+⚡ **Gatilho de Pegadinha FUNECE:**
+A banca tenta afirmar que a duplicação do DNA ocorre na divisão celular (mitose/meiose). Errado! A replicação ocorre exclusivamente na **Fase S da Interfase**, antes da divisão começar.
 
-⚠️ **Como a FUNECE cobra:**
-A banca costuma afirmar que a duplicação do DNA ocorre durante a divisão celular (mitose). Cuidado! A replicação do DNA ocorre exclusivamente na **Fase S da Interfase**.`;
+🧠 **Desafio de Resgate Ativo (Responda rápido):**
+Se o RNAm é a cópia da receita que sai do cofre, em qual organela "cozinheira" ele é lido para virar proteína?`;
   }
   // 4. Ecologia / Ciclos / Relações
   else if (lower.includes('ecologia') || lower.includes('ecossistema') || lower.includes('cadeia') || lower.includes('teia') || lower.includes('nitrogênio') || lower.includes('nitrogenio') || lower.includes('ciclo')) {
-    body = `Olá! Vamos alinhar os conceitos cruciais de **Ecologia** exigidos pela FUNECE.
+    body = `**Dominando Ecologia e Ciclos Biogeoquímicos para a FUNECE**
 
-A Ecologia estuda as interações entre os seres vivos e o meio. Duas regras fundamentais: o fluxo de energia é **unidirecional e decrescente** ao longo da cadeia alimentar (~10% repassado a cada nível), enquanto a matéria é **cíclica** (reciclada pelos decompositores).
+🍳 **Ancoragem na Vida Real (Bateria Descarregando vs. Reciclagem de Lixo):**
+• **Fluxo de Energia = Bateria de Celular Descarregando:** A planta capta o sol (100%), o gafanhoto come a planta e só guarda ~10%, o sapo come o gafanhoto e só guarda ~1%. A energia **escorrega e se dissipa como calor**. É UNIDIRECIONAL.
+• **Ciclo da Matéria = Adubo de Compostagem:** A folha cai, as bactérias e fungos decompõem o material orgânico e devolvem o nitrogênio para o solo. É 100% CÍCLICO e reciclável.
 
-Destaques de prova:
+🔬 **O que a FUNECE cobra (Terminologia Técnica):**
+• **Ciclo do Nitrogênio:** *Rhizobium* (fixação em leguminosas) $\rightarrow$ *Nitrosomonas* (nitrosação: amônia em nitrito) $\rightarrow$ *Nitrobacter* (nitratação: nitrito em nitrato, a forma absorvida pelas plantas) $\rightarrow$ *Pseudomonas* (desnitrificação).
+• **Magnificação Trófica (Bioacumulação):** Metais pesados e venenos agrícolas (não biodegradáveis) acumulam-se no **topo da cadeia alimentar**.
 
-• **Ciclo do Nitrogênio:** Depende de etapas bacterianas bem definidas: Fixação (*Rhizobium*), Nitrosação (*Nitrosomonas*), Nitratação (*Nitrobacter*) e Desnitrificação (*Pseudomonas*).
-• **Magnificação Trófica (Bioacumulação):** Metais pesados e defensivos agrícolas não biodegradáveis concentram-se em maior escala nos organismos do **topo da cadeia alimentar**.
-• **Nicho vs. Habitat:** Habitat é o "endereço" físico da espécie; Nicho Ecológico é o seu "papel funcional" e hábitos no ecossistema.
+⚡ **Gatilho de Pegadinha FUNECE:**
+A FUNECE adora dizer que "a energia é reciclada pelos decompositores". **FALSO!** A energia NUNCA é reciclada; ela se dissipa como calor. Apenas a MATÉRIA é reciclada!
 
-⚠️ **Como a FUNECE cobra:**
-A banca adora testar o Princípio da Exclusão Competitiva de Gause (espécies com o mesmo nicho no mesmo habitat entram em competição eliminando uma delas) e a microbiologia da nitrificação (*Nitrosomonas* e *Nitrobacter*).`;
+🧠 **Desafio de Resgate Ativo (Responda rápido):**
+Quem acumula MAIS agrotóxico não biodegradável em um ecossistema: a planta na base ou o gavião no topo da cadeia alimentar?`;
   }
   // 5. LDB / Legislação / DCRC
   else if (lower.includes('ldb') || lower.includes('lei 9394') || lower.includes('legislação') || lower.includes('legislacao') || lower.includes('dcrc') || lower.includes('bncc') || lower.includes('diretrizes')) {
-    body = `Olá! Vamos revisar os pontos fundamentais da **LDB (Lei nº 9.394/96)** para o Concurso da SEDUC CE.
+    body = `**Dominando a LDB (Lei 9.394/96) para a SEDUC CE**
 
-A LDB organiza a Educação Básica em Educação Infantil, Ensino Fundamental e Ensino Médio.
+🍳 **Ancoragem na Vida Real (O Código de Trânsito Escolar):**
+Pense na LDB como o Código de Trânsito Brasileiro das escolas. Ela estabelece exatamente em qual idade a criança tem que tirar a "habilitação de aluno" (matrícula obrigatória), qual a "velocidade mínima" de aulas (carga horária) e os "pontos na carteira" (frequência obrigatória).
 
-Pontos-chave cobrados pela FUNECE:
-
-• **Obrigatoriedade e Gratuidade:** Dos **4 aos 17 anos** de idade (Pré-escola, Ensino Fundamental e Ensino Médio).
+🔬 **O que a FUNECE cobra (Números de Ouro):**
+• **Faixa Etária Obrigatória e Gratuita:** Dos **4 aos 17 anos** (Pré-escola, Ensino Fundamental e Ensino Médio).
 • **Carga Horária Mínima:** 800 horas distribuídas em no mínimo 200 dias de efetivo trabalho escolar.
-• **Frequência Mínima:** 60% na Educação Infantil e 75% no Ensino Fundamental e Médio para aprovação.
-• **Gestão Democrática:** Princípio constitucional do ensino público, garantindo a participação dos professores na elaboração do Projeto Político Pedagógico (PPP).
+• **Frequência Mínima para Aprovação:** 60% na Educação Infantil e 75% no Ensino Fundamental e Médio.
 
-⚠️ **Como a FUNECE cobra:**
-A FUNECE costuma colocar pegadinhas afirmando que a Creche (0 a 3 anos) é obrigatoria para os pais. Errado! A oferta de vaga é dever do Estado, mas a obrigação da família se inicia aos **4 anos** (Pré-escola).`;
+⚡ **Gatilho de Pegadinha FUNECE:**
+A FUNECE tenta enganar dizendo que a Creche (0 a 3 anos) é obrigatória para a família. **FALSO!** A oferta de vaga na creche é dever do Estado, mas a obrigação legal da família só começa aos **4 anos** (na Pré-escola).
+
+🧠 **Desafio de Resgate Ativo (Responda rápido):**
+Com quantos anos de idade a família passa a ser OBRIGADA por lei a matricular a criança na escola?`;
   }
-  // 6. Genérico Estruturado Conversacional
+  // 6. Genérico Estruturado
   else {
-    body = `Olá! Vamos estudar o tópico **${cleaned}** da disciplina de **${userSubject}** focado nas exigências da FUNECE.
+    body = `**Dominando ${cleaned} (${userSubject}) para a FUNECE**
 
-Este conteúdo é recorrente no edital e exige atenção especial à terminologia técnica e aos conceitos fundamentais.
+🍳 **Ancoragem na Vida Real:**
+Para dominar **${cleaned}**, associe a lógica do conceito ao seu funcionamento diário: a teoria acadêmica é apenas o nome bonito que a ciência deu para um processo que ocorre naturalmente no mundo real.
 
-Pontos essenciais para sua revisão:
+🔬 **O que a FUNECE cobra:**
+• **Definição Técnica:** Mapeamento preciso do termo acadêmico e suas propriedades.
+• **Relação de Causa e Efeito:** A FUNECE cobra a aplicação prática e o motivo fisiológico/histórico de cada regra.
 
-• **Fundamento Teórico:** **${cleaned}** compreende os mecanismos estruturais e as definições acadêmicas essenciais dessa área de **${userSubject}**.
-• **Mecanismo Prático:** É importante compreender as relações de causa e efeito e como os processos se desenvolvem na prática.
-• **Aplicação Didática:** A banca costuma cobrar este assunto relacionando os conceitos teóricos a problemas práticos de avaliação.
+⚡ **Gatilho de Pegadinha FUNECE:**
+Fique atento a alternativas que usam palavras absolutistas (*sempre, nunca, exclusivamente*) para tentar distorcer o conceito correto.
 
-⚠️ **Como a FUNECE cobra:**
-A banca gosta de criar alternativas distratoras invertendo conceitos similares ou utilizando termos restritivos (*sempre, nunca, apenas*). Fique atento à precisão dos termos!`;
+🧠 **Desafio de Resgate Ativo:**
+Você consegue explicar a função principal deste tópico em uma frase simples usando suas próprias palavras?`;
   }
 
   // Se a usuária pediu EXPLICITAMENTE uma questão ou exercício
@@ -238,10 +260,7 @@ D) A aplicação prática exclui os postulados clássicos da literatura de refer
 **Resposta Incontestável: B.** A FUNECE fundamenta suas questões na correspondência exata entre a definição teórica e sua função técnica.`;
   }
 
-  // Pergunta final para diálogo em etapas (Regra 4)
-  const closingQuestion = `\n\nFicou claro para você essa explicação sobre **${cleaned}**? Quer que eu aprofunde algum detalhe específico ou prefere responder a uma questão da banca FUNECE sobre isso agora?`;
-
-  return body + closingQuestion;
+  return body;
 }
 
 export default function TutorIASection({ user, profile, setActiveTab }: TutorIASectionProps) {
@@ -419,10 +438,10 @@ export default function TutorIASection({ user, profile, setActiveTab }: TutorIAS
     {
       id: 'welcome-1',
       sender: 'ai',
-      text: `Olá, Prof. ${userName}! Sou o seu Professor Mentor IA, 100% especialista na Banca FUNECE (CEV/UECE) para o Concurso SEDUC CE 2026.\n\nEstou **diretamente conectado ao seu Cronograma de Estudos** de **${userSubject}**!\n\n📌 **Sua Meta Ativa de Hoje (Dia ${currentDay?.dayNumber || 1} • ${currentDay?.displayDate || 'Hoje'}):**\n${currentDay?.topics.map(t => {
+      text: `Olá, Prof. ${userName}! Sou o seu Professor Mentor IA especialista na Banca FUNECE (CEV/UECE) para o Concurso SEDUC CE 2026.\n\n⚡ **Modo Neurociência Ativado:** Explicações diretas (zero enrolação), ancoragem em exemplos concretos do mundo real (como usar um ovo para explicar a célula) e testes de resgate ativo!\n\n📌 **Sua Meta Ativa de Hoje (Dia ${currentDay?.dayNumber || 1} • ${currentDay?.displayDate || 'Hoje'}):**\n${currentDay?.topics.map(t => {
         const subtext = t.subtopicNames && t.subtopicNames.length > 0 ? t.subtopicNames.join(', ') : t.parentTopicName;
         return `• **${t.category}:** ${subtext}`;
-      }).join('\n') || 'Meta pronta para início!'}\n\n📊 **Progresso Atual:** ${completedCount} de ${totalSubtopics} subtópicos concluídos (${progressPercent}% do edital).\n\nComo posso orientar seus estudos ou tirar dúvidas sobre a matéria de hoje?`,
+      }).join('\n') || 'Meta pronta para início!'}\n\n📊 **Progresso do Edital:** ${completedCount} de ${totalSubtopics} subtópicos (${progressPercent}%).\n\nQual tópico do edital você quer dominar agora?`,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
   ]);
@@ -440,7 +459,7 @@ export default function TutorIASection({ user, profile, setActiveTab }: TutorIAS
         return [{
           id: 'welcome-1',
           sender: 'ai',
-          text: `Olá, Prof. ${userName}! Sou o seu Professor Mentor IA, 100% especialista na Banca FUNECE (CEV/UECE) para o Concurso SEDUC CE 2026.\n\nEstou **diretamente conectado ao seu Cronograma de Estudos** de **${userSubject}**!\n\n📌 **Sua Meta Ativa de Hoje (Dia ${currentDay.dayNumber} • ${currentDay.displayDate}):**\n${metaStr}\n\n📊 **Progresso Atual:** ${completedCount} de ${totalSubtopics} subtópicos concluídos (${progressPercent}% do edital).\n\nComo posso orientar seus estudos ou tirar dúvidas sobre a matéria de hoje?`,
+          text: `Olá, Prof. ${userName}! Sou o seu Professor Mentor IA especialista na Banca FUNECE (CEV/UECE) para o Concurso SEDUC CE 2026.\n\n⚡ **Modo Neurociência Ativado:** Explicações diretas (zero enrolação), ancoragem em exemplos concretos do mundo real (como usar um ovo para explicar a célula) e testes de resgate ativo!\n\n📌 **Sua Meta Ativa de Hoje (Dia ${currentDay.dayNumber} • ${currentDay.displayDate}):**\n${metaStr}\n\n📊 **Progresso do Edital:** ${completedCount} de ${totalSubtopics} subtópicos (${progressPercent}%).\n\nQual tópico do edital você quer dominar agora?`,
           timestamp: prev[0].timestamp
         }];
       }

@@ -22,7 +22,7 @@ interface IntelligenceCenterProps {
 
 export default function IntelligenceCenter({ user, profile, setActiveTab, onOpenTutorWithContext }: IntelligenceCenterProps) {
   const [logs, setLogs] = useState<QuestionAnswerLog[]>([]);
-  const [isDetailedBoxOpen, setIsDetailedBoxOpen] = useState(false);
+  const [isDetailedBoxOpen, setIsDetailedBoxOpen] = useState(true);
   const [expandedDiscipline, setExpandedDiscipline] = useState<string | null>(null);
   const [expandedBlock, setExpandedBlock] = useState<string | null>(null);
   const [evolutionFilter, setEvolutionFilter] = useState<'7d' | '30d' | 'all'>('30d');
@@ -55,23 +55,35 @@ export default function IntelligenceCenter({ user, profile, setActiveTab, onOpen
 
     const readLocalLogs = (): QuestionAnswerLog[] => {
       try {
-        const uid = user?.uid || profile?.uid || 'guest';
-        const keys = [`questionLogs_${uid}`, 'questionLogs_guest', 'questionLogs_default'];
+        const activeUid = user?.uid || profile?.uid;
+        const keys = activeUid 
+          ? [`questionLogs_${activeUid}`] 
+          : ['questionLogs_guest'];
+
         const map = new Map<string, QuestionAnswerLog>();
         keys.forEach(k => {
           const raw = localStorage.getItem(k);
           if (raw) {
-            const arr: QuestionAnswerLog[] = JSON.parse(raw);
-            arr.forEach(item => {
-              const itemKey = item.id || `${item.questionId}_${item.timestamp}`;
-              map.set(itemKey, item);
-            });
+            try {
+              const arr: QuestionAnswerLog[] = JSON.parse(raw);
+              arr.forEach(item => {
+                if (item.id?.startsWith('synth_log_')) return;
+                const itemKey = item.id || `${item.questionId}_${item.timestamp}`;
+                map.set(itemKey, item);
+              });
+            } catch (_) {}
           }
         });
         return Array.from(map.values());
       } catch {
         return [];
       }
+    };
+
+    const processLogs = (rawLogs: QuestionAnswerLog[]): QuestionAnswerLog[] => {
+      const finalLogs = [...rawLogs];
+      finalLogs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+      return finalLogs;
     };
 
     const syncLogs = () => {
@@ -94,21 +106,22 @@ export default function IntelligenceCenter({ user, profile, setActiveTab, onOpen
             localLogs.forEach(l => combinedMap.set(l.id || `${l.questionId}_${l.timestamp}`, l));
             dbLogs.forEach(l => combinedMap.set(l.id || `${l.questionId}_${l.timestamp}`, l));
 
-            const finalLogs = Array.from(combinedMap.values());
-            finalLogs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-            setLogs(finalLogs);
+            const merged = Array.from(combinedMap.values());
+            const processed = processLogs(merged);
+            setLogs(processed);
+
+            try {
+              localStorage.setItem(`questionLogs_${activeUid}`, JSON.stringify(processed));
+            } catch (_) {}
           }, (err) => {
             console.warn("Firestore listener error:", err);
-            localLogs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-            setLogs(localLogs);
+            setLogs(processLogs(localLogs));
           });
         } catch {
-          localLogs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-          setLogs(localLogs);
+          setLogs(processLogs(localLogs));
         }
       } else {
-        localLogs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-        setLogs(localLogs);
+        setLogs(processLogs(localLogs));
       }
     };
 
@@ -330,51 +343,30 @@ export default function IntelligenceCenter({ user, profile, setActiveTab, onOpen
     return allSubtopics.slice(0, 3);
   }, [disciplineStats]);
 
-  // 9. Índice de Preparação / Aprovação SEDUC-CE (0 - 100)
-  const aprovaçãoIndex = useMemo(() => {
-    if (totalQuestions === 0) {
-      return {
-        score: 0,
-        label: 'Aguardando Primeiras Questões',
-        color: 'text-zinc-700 bg-zinc-100 border-zinc-200',
-        especPct: 0,
-        generalAvg: 0
-      };
-    }
-
+  // Clean real performance stats
+  const performanceSummary = useMemo(() => {
     const especificStat = disciplineStats.find(d => d.discipline === targetSubject);
-    const especPct = especificStat && especificStat.total > 0 ? especificStat.pct : 0;
+    const especTotal = especificStat ? especificStat.total : 0;
+    const especPctDisplay = especTotal > 0 ? `${especificStat!.pct}%` : 'Sem dados';
 
     const generalStats = disciplineStats.filter(d => d.discipline !== targetSubject && d.total > 0);
-    const generalAvg = generalStats.length > 0 
-      ? Math.round(generalStats.reduce((acc, g) => acc + g.pct, 0) / generalStats.length)
-      : 0;
+    const generalTotal = generalStats.reduce((acc, g) => acc + g.total, 0);
+    const generalCorrect = generalStats.reduce((acc, g) => acc + g.correct, 0);
+    const generalAvgDisplay = generalTotal > 0 ? `${Math.round((generalCorrect / generalTotal) * 100)}%` : 'Sem dados';
 
-    const volumeBonus = Math.min(20, Math.round((totalQuestions / 40) * 20));
-
-    const finalScore = Math.min(99, Math.round((especPct * 0.5) + (generalAvg * 0.3) + volumeBonus));
-
-    let label = 'Em Evolução Promissora';
-    let color = 'text-amber-700 bg-amber-50 border-amber-200';
-    if (finalScore >= 80) {
-      label = 'Excelente Chance de Aprovação nas Vagas!';
-      color = 'text-emerald-800 bg-emerald-50 border-emerald-200';
-    } else if (finalScore >= 65) {
-      label = 'Competitivo (Zona de Classificação)';
-      color = 'text-teal-800 bg-teal-50 border-teal-200';
-    }
-
-    return { score: finalScore, label, color, especPct, generalAvg };
-  }, [disciplineStats, targetSubject, totalQuestions]);
+    return { especPctDisplay, especTotal, generalAvgDisplay, generalTotal };
+  }, [disciplineStats, targetSubject]);
 
   // Helper for status badge colors
-  const getBadgeColor = (pct: number) => {
+  const getBadgeColor = (pct: number, total: number = 1) => {
+    if (total === 0) return 'bg-zinc-100 text-zinc-500 border-zinc-200/80 font-medium';
     if (pct >= 80) return 'bg-emerald-50 text-emerald-900 border-emerald-200/80 font-bold';
     if (pct >= 60) return 'bg-amber-50 text-amber-900 border-amber-200/80 font-bold';
     return 'bg-rose-50 text-rose-900 border-rose-200/80 font-bold';
   };
 
-  const getBarBg = (pct: number) => {
+  const getBarBg = (pct: number, total: number = 1) => {
+    if (total === 0) return 'bg-zinc-200';
     if (pct >= 80) return 'bg-emerald-700';
     if (pct >= 60) return 'bg-amber-600';
     return 'bg-rose-600';
@@ -412,31 +404,29 @@ export default function IntelligenceCenter({ user, profile, setActiveTab, onOpen
             <span className="text-zinc-300">•</span>
             <span className="font-bold text-emerald-900 flex items-center gap-1">
               <Target size={12} className="text-emerald-700" />
-              {overallAccuracy}% Aproveitamento Geral
+              {totalQuestions > 0 ? `${overallAccuracy}% Aproveitamento Geral` : 'Sem questões respondidas ainda'}
             </span>
           </div>
         </div>
 
-        {/* Right: Ultra Compact Índice de Preparação */}
-        <div className="bg-zinc-50 rounded-lg px-2.5 py-1.5 border border-zinc-200/80 flex items-center gap-2.5 shrink-0 self-start sm:self-auto">
-          <div className="text-center shrink-0 border-r border-zinc-200 pr-2.5">
-            <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-600 flex items-center gap-1 justify-center">
-              <Award size={11} className="text-emerald-700" />
-              Índice
+        {/* Right: Resumo de Desempenho Real */}
+        <div className="bg-zinc-50 rounded-lg px-3 py-2 border border-zinc-200/80 flex items-center gap-3 shrink-0 self-start sm:self-auto">
+          <div className="text-center shrink-0 border-r border-zinc-200 pr-3">
+            <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-500 block">
+              Específica
             </span>
-            <div className="flex items-baseline justify-center gap-0.5">
-              <span className="text-sm font-black text-zinc-900">{aprovaçãoIndex.score}</span>
-              <span className="text-[9px] font-bold text-zinc-500">/100</span>
-            </div>
+            <span className="text-sm font-black text-emerald-900">
+              {performanceSummary.especPctDisplay}
+            </span>
           </div>
 
           <div className="text-[10px] space-y-0.5">
-            <span className={`text-[9px] px-1.5 py-0.5 rounded font-extrabold border block text-center ${aprovaçãoIndex.color}`}>
-              {aprovaçãoIndex.label}
-            </span>
-            <div className="flex items-center gap-2 text-[9px] text-zinc-500 font-semibold">
-              <span>Esp: <strong className="text-zinc-800">{aprovaçãoIndex.especPct}%</strong></span>
-              <span>Ger: <strong className="text-zinc-800">{aprovaçãoIndex.generalAvg}%</strong></span>
+            <div className="text-zinc-600 font-semibold flex items-center gap-1.5">
+              <span>Gerais:</span>
+              <strong className="text-zinc-900">{performanceSummary.generalAvgDisplay}</strong>
+            </div>
+            <div className="text-[9px] text-zinc-500 font-medium">
+              Total Real: {totalQuestions} questões
             </div>
           </div>
         </div>
@@ -512,19 +502,19 @@ export default function IntelligenceCenter({ user, profile, setActiveTab, onOpen
                             {/* Progress Bar */}
                             <div className="w-full bg-zinc-100 rounded-full h-1.5 overflow-hidden flex items-center">
                               <div 
-                                className={`h-full rounded-full transition-all duration-500 ${getBarBg(d.pct)}`}
-                                style={{ width: `${d.pct}%` }}
+                                className={`h-full rounded-full transition-all duration-500 ${getBarBg(d.pct, d.total)}`}
+                                style={{ width: `${d.total > 0 ? d.pct : 0}%` }}
                               />
                             </div>
                           </div>
 
                           <div className="flex items-center justify-between sm:justify-end gap-2.5 shrink-0">
                             <div className="text-right">
-                              <span className={`inline-block text-[11px] px-2 py-0.5 rounded-md border ${getBadgeColor(d.pct)}`}>
-                                {d.pct}%
+                              <span className={`inline-block text-[11px] px-2 py-0.5 rounded-md border ${getBadgeColor(d.pct, d.total)}`}>
+                                {d.total > 0 ? `${d.pct}%` : 'Sem dados'}
                               </span>
                               <span className="block text-[10px] text-zinc-500 font-medium mt-0.5">
-                                {d.total} questões
+                                {d.total === 0 ? '0 questões' : `${d.total} questão${d.total > 1 ? 'ões' : ''}`}
                               </span>
                             </div>
 

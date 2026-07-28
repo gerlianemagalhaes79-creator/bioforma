@@ -430,13 +430,11 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
     // 1. Save to local storage for immediate UI reactivity across components
     try {
       const activeUid = user?.uid || profile?.uid || 'guest';
-      const keys = [`questionLogs_${activeUid}`, 'questionLogs_guest', 'questionLogs_default'];
-      keys.forEach(k => {
-        const existing = localStorage.getItem(k);
-        const arr: QuestionAnswerLog[] = existing ? JSON.parse(existing) : [];
-        arr.unshift(fullLog);
-        localStorage.setItem(k, JSON.stringify(arr));
-      });
+      const key = `questionLogs_${activeUid}`;
+      const existing = localStorage.getItem(key);
+      const arr: QuestionAnswerLog[] = existing ? JSON.parse(existing) : [];
+      arr.unshift(fullLog);
+      localStorage.setItem(key, JSON.stringify(arr));
       window.dispatchEvent(new Event('questionLogUpdated'));
     } catch (err) {
       console.warn("Erro ao salvar log local de questão:", err);

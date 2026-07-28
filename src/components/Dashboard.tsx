@@ -76,11 +76,11 @@ export default function Dashboard({ user, profile, setActiveTab, onOpenProfile }
       <motion.div 
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white rounded-xl p-3 sm:p-3.5 border border-zinc-200/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-2.5"
+        className="bg-white rounded-xl p-3 sm:p-4 border border-zinc-200/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3"
       >
         <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3 min-w-0">
           <div className="flex items-center gap-2 min-w-0">
-            <h2 className="text-sm font-black text-zinc-900 tracking-tight truncate">
+            <h2 className="text-sm sm:text-base font-black text-zinc-900 tracking-tight truncate">
               Olá, Prof. {userName}!
             </h2>
           </div>
@@ -99,16 +99,16 @@ export default function Dashboard({ user, profile, setActiveTab, onOpenProfile }
         </div>
 
         <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto flex-wrap">
-          <div className="px-2.5 py-1 bg-emerald-50 border border-emerald-200/80 rounded-lg text-center flex items-center gap-1.5">
+          <div className="px-3 py-1.5 bg-emerald-50 border border-emerald-200/80 rounded-lg text-center flex items-center gap-1.5">
             <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">Faltam</span>
-            <span className="text-xs font-black text-emerald-950">{daysRemaining}</span>
+            <span className="text-sm font-black text-emerald-950">{daysRemaining}</span>
             <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">dias para a prova</span>
           </div>
 
           {((user?.email || profile?.email || '').toLowerCase().trim() === 'gerlianemagalhaes79@gmail.com') && (
             <button
               onClick={() => onOpenProfile && onOpenProfile('add_user')}
-              className="px-2.5 py-1 bg-emerald-800 hover:bg-emerald-900 text-white font-bold rounded-lg text-xs transition flex items-center gap-1 cursor-pointer shadow-2xs"
+              className="px-3 py-1.5 bg-emerald-800 hover:bg-emerald-900 text-white font-bold rounded-lg text-xs transition flex items-center gap-1 cursor-pointer shadow-2xs"
             >
               <span>+ Cadastrar Novo Professor</span>
             </button>
@@ -140,11 +140,11 @@ export default function Dashboard({ user, profile, setActiveTab, onOpenProfile }
           </span>
         </div>
 
-        <div className="space-y-2 text-xs">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 text-xs">
           {/* Conhecimentos Específicos - High Priority Banner */}
-          <div className="p-2.5 bg-emerald-50/60 border border-emerald-200/80 rounded-lg flex items-center justify-between gap-2.5">
+          <div className="lg:col-span-5 p-3 bg-emerald-50/70 border border-emerald-200/80 rounded-lg flex items-center justify-between gap-2.5">
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-7 h-7 rounded-md bg-emerald-900 text-white font-bold text-xs flex items-center justify-center shrink-0">
+              <div className="w-8 h-8 rounded-lg bg-emerald-900 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-2xs">
                 50q
               </div>
               <div className="min-w-0">
@@ -161,7 +161,7 @@ export default function Dashboard({ user, profile, setActiveTab, onOpenProfile }
           </div>
 
           {/* General Knowledge Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-2">
             {/* Educação Brasileira e Pedagógicos */}
             <div className="p-2.5 bg-zinc-50/80 border border-zinc-200/80 rounded-lg flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 min-w-0">

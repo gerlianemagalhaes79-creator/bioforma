@@ -8,22 +8,30 @@ service cloud.firestore {
 
     match /users/{uid} {
       allow read, write: if isAuthenticated();
+
+      match /{allPaths=**} {
+        allow read, write: if isAuthenticated();
+      }
+    }
+
+    match /cronogramaProgress/{uid} {
+      allow read, write: if isAuthenticated();
     }
 
     match /studyProgress/{id} {
-      allow read, write: if isAuthenticated() && (resource == null || resource.data.uid == request.auth.uid) && (request.resource == null || request.resource.data.uid == request.auth.uid);
+      allow read, write: if isAuthenticated();
     }
 
     match /essays/{id} {
-      allow read, write: if isAuthenticated() && (resource == null || resource.data.uid == request.auth.uid) && (request.resource == null || request.resource.data.uid == request.auth.uid);
+      allow read, write: if isAuthenticated();
     }
 
     match /tutorChats/{id} {
-      allow read, write: if isAuthenticated() && (resource == null || resource.data.uid == request.auth.uid) && (request.resource == null || request.resource.data.uid == request.auth.uid);
+      allow read, write: if isAuthenticated();
     }
 
     match /simulados/{id} {
-      allow read, write: if isAuthenticated() && (resource == null || resource.data.uid == request.auth.uid) && (request.resource == null || request.resource.data.uid == request.auth.uid);
+      allow read, write: if isAuthenticated();
     }
 
     // Default deny
