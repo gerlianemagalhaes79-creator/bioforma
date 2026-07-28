@@ -1,7 +1,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import confetti from 'canvas-confetti';
 import { User, db, doc, getDoc, setDoc } from '../firebase';
 import { UserProfile, EditalTopic } from '../types';
 import { generateStudySchedule, buildInterleavedStudyQueue, INITIAL_EDITAL_TOPICS } from '../data/seducData';
+import { recordUserActivity } from '../utils/streak';
 import { 
   Calendar, 
   Printer, 
@@ -15,7 +17,9 @@ import {
   HelpCircle,
   Layers,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  CheckCircle2,
+  PartyPopper
 } from 'lucide-react';
 import { motion } from 'motion/react';
 
@@ -118,12 +122,53 @@ export default function CronogramaSection({ user, profile, setActiveTab }: Crono
     return generateStudySchedule(profile || {}, topics);
   }, [profile, topics]);
 
-  const toggleSubtopicCompletion = (subKey: string) => {
+  const triggerDayConfetti = () => {
+    try {
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#047857', '#059669', '#10b981', '#34d399', '#f59e0b', '#fbbf24']
+      });
+      setTimeout(() => {
+        confetti({
+          particleCount: 50,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0 },
+          colors: ['#047857', '#10b981', '#fbbf24']
+        });
+        confetti({
+          particleCount: 50,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1 },
+          colors: ['#047857', '#10b981', '#fbbf24']
+        });
+      }, 250);
+    } catch (err) {
+      console.warn('Erro ao disparar confetes:', err);
+    }
+  };
+
+  const toggleSubtopicCompletion = (subKey: string, daySubtopicKeys?: string[]) => {
     setCompletedTopicIds(prev => {
+      const isNowChecked = !prev[subKey];
       const updated = {
         ...prev,
-        [subKey]: !prev[subKey]
+        [subKey]: isNowChecked
       };
+
+      if (isNowChecked && daySubtopicKeys && daySubtopicKeys.length > 0) {
+        const wasAllDone = daySubtopicKeys.every(k => prev[k]);
+        const isAllDone = daySubtopicKeys.every(k => updated[k]);
+        if (isAllDone && !wasAllDone) {
+          triggerDayConfetti();
+        }
+      }
+
+      const activeUid = user?.uid || profile?.uid;
+      recordUserActivity(activeUid).catch(() => {});
 
       // Save to localStorage immediately under all fallbacks
       try {
@@ -135,7 +180,6 @@ export default function CronogramaSection({ user, profile, setActiveTab }: Crono
       }
 
       // Save to Firestore asynchronously
-      const activeUid = user?.uid || profile?.uid;
       if (activeUid) {
         setDoc(doc(db, 'cronogramaProgress', activeUid), {
           uid: activeUid,
@@ -144,6 +188,49 @@ export default function CronogramaSection({ user, profile, setActiveTab }: Crono
         }, { merge: true }).catch(err => {
           console.warn('Erro ao salvar progresso do cronograma no Firestore:', err);
         });
+
+        const count = Object.values(updated).filter(Boolean).length;
+        setDoc(doc(db, 'users', activeUid), {
+          completedTopicsCount: count
+        }, { merge: true }).catch(() => {});
+      }
+
+      return updated;
+    });
+  };
+
+  const toggleWholeDayCompletion = (daySubtopicKeys: string[]) => {
+    if (!daySubtopicKeys || daySubtopicKeys.length === 0) return;
+
+    setCompletedTopicIds(prev => {
+      const isAllDone = daySubtopicKeys.every(k => !!prev[k]);
+      const updated = { ...prev };
+      
+      daySubtopicKeys.forEach(k => {
+        updated[k] = !isAllDone;
+      });
+
+      if (!isAllDone) {
+        triggerDayConfetti();
+      }
+
+      const activeUid = user?.uid || profile?.uid;
+      recordUserActivity(activeUid).catch(() => {});
+
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(updated));
+        localStorage.setItem('cronogramaProgress_guest', JSON.stringify(updated));
+        localStorage.setItem('cronogramaProgress_default', JSON.stringify(updated));
+      } catch (err) {
+        console.warn('Erro ao salvar no localStorage:', err);
+      }
+
+      if (activeUid) {
+        setDoc(doc(db, 'cronogramaProgress', activeUid), {
+          uid: activeUid,
+          completedTopicIds: updated,
+          updatedAt: new Date().toISOString()
+        }, { merge: true }).catch(() => {});
 
         const count = Object.values(updated).filter(Boolean).length;
         setDoc(doc(db, 'users', activeUid), {
@@ -699,99 +786,144 @@ export default function CronogramaSection({ user, profile, setActiveTab }: Crono
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
-            {scheduleDays.map((day) => (
-              <div 
-                key={day.dateStr} 
-                className="bg-white border border-zinc-200/90 rounded-2xl p-4 space-y-3 hover:border-emerald-300 transition shadow-xs flex flex-col justify-between"
-              >
-                <div className="space-y-2.5">
-                  {/* DIA HEADER */}
-                  <div className="flex items-center justify-between border-b border-zinc-100 pb-2">
-                    <div className="flex items-center gap-2">
-                      <span className="w-7 h-7 rounded-xl bg-emerald-800 text-white flex items-center justify-center text-xs font-black shadow-xs">
-                        {day.dayNumber}
-                      </span>
-                      <div>
-                        <h4 className="font-extrabold text-xs text-zinc-900 capitalize">
-                          {day.displayDate}
-                        </h4>
-                        <p className="text-[11px] font-bold text-emerald-800 flex items-center gap-1">
-                          <Clock size={11} />
-                          <span>{day.timeSlotFormatted}</span>
-                        </p>
+            {scheduleDays.map((day) => {
+              const daySubtopicKeys = day.topics.flatMap((session) =>
+                session.subtopicNames.map((_, subIdx) => `${session.id}_sub_${subIdx}`)
+              );
+              const isDayFullyCompleted = daySubtopicKeys.length > 0 && daySubtopicKeys.every((k) => !!completedTopicIds[k]);
+
+              return (
+                <div 
+                  key={day.dateStr} 
+                  className={`border rounded-2xl p-4 space-y-3 transition shadow-xs flex flex-col justify-between ${
+                    isDayFullyCompleted 
+                      ? 'bg-emerald-50/60 border-emerald-300' 
+                      : 'bg-white border-zinc-200/90 hover:border-emerald-300'
+                  }`}
+                >
+                  <div className="space-y-2.5">
+                    {/* DIA HEADER */}
+                    <div className="flex items-center justify-between border-b border-zinc-100 pb-2">
+                      <div className="flex items-center gap-2">
+                        <span className={`w-7 h-7 rounded-xl flex items-center justify-center text-xs font-black shadow-xs ${
+                          isDayFullyCompleted ? 'bg-emerald-600 text-white' : 'bg-emerald-800 text-white'
+                        }`}>
+                          {isDayFullyCompleted ? '✓' : day.dayNumber}
+                        </span>
+                        <div>
+                          <h4 className="font-extrabold text-xs text-zinc-900 capitalize">
+                            {day.displayDate}
+                          </h4>
+                          <p className="text-[11px] font-bold text-emerald-800 flex items-center gap-1">
+                            <Clock size={11} />
+                            <span>{day.timeSlotFormatted}</span>
+                          </p>
+                        </div>
                       </div>
+
+                      {isDayFullyCompleted ? (
+                        <span className="text-[10px] font-black uppercase bg-emerald-100 text-emerald-900 px-2 py-0.5 rounded-lg border border-emerald-300 flex items-center gap-1">
+                          <PartyPopper size={11} className="text-emerald-700 animate-bounce" />
+                          Concluído 🎉
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-extrabold uppercase bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded-lg border border-emerald-200">
+                          Dia {day.dayNumber}
+                        </span>
+                      )}
                     </div>
 
-                    <span className="text-[10px] font-extrabold uppercase bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded-lg border border-emerald-200">
-                      Dia {day.dayNumber}
-                    </span>
-                  </div>
+                    {/* ESTUDO PRINCIPAL (SESSÕES INTERCALADAS DE TÓPICOS/SUBTÓPICOS) */}
+                    <div className="space-y-2">
+                      {day.topics.map((session) => (
+                        <div 
+                          key={session.id} 
+                          className={`border rounded-xl p-2.5 space-y-2 ${
+                            session.category === 'Conhecimentos Específicos' 
+                              ? 'bg-teal-50/40 border-teal-200/80' 
+                              : 'bg-emerald-50/40 border-emerald-200/80'
+                          }`}
+                        >
+                          {/* CATEGORIA E TÓPICO */}
+                          <div className="flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-md text-white ${
+                                session.category === 'Conhecimentos Específicos' ? 'bg-teal-800' : 'bg-emerald-800'
+                              }`}>
+                                {session.reviewType || (session.category === 'Conhecimentos Específicos' ? 'Específica' : 'Geral')}
+                              </span>
+                              <span className="text-xs font-bold text-zinc-800 truncate">
+                                {session.parentTopicName}
+                              </span>
+                            </div>
 
-                  {/* ESTUDO PRINCIPAL (SESSÕES INTERCALADAS DE TÓPICOS/SUBTÓPICOS) */}
-                  <div className="space-y-2">
-                    {day.topics.map((session) => (
-                      <div 
-                        key={session.id} 
-                        className={`border rounded-xl p-2.5 space-y-2 ${
-                          session.category === 'Conhecimentos Específicos' 
-                            ? 'bg-teal-50/40 border-teal-200/80' 
-                            : 'bg-emerald-50/40 border-emerald-200/80'
-                        }`}
-                      >
-                        {/* CATEGORIA E TÓPICO */}
-                        <div className="flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap">
-                          <div className="flex items-center gap-1.5 min-w-0">
-                            <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-md text-white ${
-                              session.category === 'Conhecimentos Específicos' ? 'bg-teal-800' : 'bg-emerald-800'
-                            }`}>
-                              {session.reviewType || (session.category === 'Conhecimentos Específicos' ? 'Específica' : 'Geral')}
-                            </span>
-                            <span className="text-xs font-bold text-zinc-800 truncate">
-                              {session.parentTopicName}
-                            </span>
+                            {session.questionsGoal && (
+                              <span className="text-[10px] font-extrabold text-teal-900 bg-teal-100/80 px-2 py-0.5 rounded-md shrink-0">
+                                {session.questionsGoal}
+                              </span>
+                            )}
                           </div>
 
-                          {session.questionsGoal && (
-                            <span className="text-[10px] font-extrabold text-teal-900 bg-teal-100/80 px-2 py-0.5 rounded-md shrink-0">
-                              {session.questionsGoal}
-                            </span>
-                          )}
+                          {/* LISTA DE SUBTÓPICOS */}
+                          <div className="space-y-1">
+                            {session.subtopicNames.map((subName, subIdx) => {
+                              const subKey = `${session.id}_sub_${subIdx}`;
+                              const isChecked = !!completedTopicIds[subKey];
+                              return (
+                                <button
+                                  key={subKey}
+                                  type="button"
+                                  onClick={() => toggleSubtopicCompletion(subKey, daySubtopicKeys)}
+                                  className={`w-full text-left p-1.5 rounded-lg border transition text-xs flex items-center gap-2 cursor-pointer ${
+                                    isChecked
+                                      ? 'bg-emerald-50 border-emerald-300 text-emerald-950 font-bold'
+                                      : 'bg-white hover:bg-emerald-50/50 border-zinc-200/80 text-zinc-800'
+                                  }`}
+                                >
+                                  {isChecked ? (
+                                    <CheckSquare size={14} className="text-emerald-700 shrink-0" />
+                                  ) : (
+                                    <Square size={14} className="text-zinc-400 shrink-0" />
+                                  )}
+                                  <span className={`text-[11px] leading-tight break-words ${isChecked ? 'line-through text-emerald-800/80' : ''}`}>
+                                    {subName}
+                                  </span>
+                                </button>
+                              );
+                            })}
+                          </div>
                         </div>
+                      ))}
+                    </div>
+                  </div>
 
-                        {/* LISTA DE SUBTÓPICOS */}
-                        <div className="space-y-1">
-                          {session.subtopicNames.map((subName, subIdx) => {
-                            const subKey = `${session.id}_sub_${subIdx}`;
-                            const isChecked = !!completedTopicIds[subKey];
-                            return (
-                              <button
-                                key={subKey}
-                                type="button"
-                                onClick={() => toggleSubtopicCompletion(subKey)}
-                                className={`w-full text-left p-1.5 rounded-lg border transition text-xs flex items-center gap-2 cursor-pointer ${
-                                  isChecked
-                                    ? 'bg-emerald-50 border-emerald-300 text-emerald-950 font-bold'
-                                    : 'bg-white hover:bg-emerald-50/50 border-zinc-200/80 text-zinc-800'
-                                }`}
-                              >
-                                {isChecked ? (
-                                  <CheckSquare size={14} className="text-emerald-700 shrink-0" />
-                                ) : (
-                                  <Square size={14} className="text-zinc-400 shrink-0" />
-                                )}
-                                <span className={`text-[11px] leading-tight break-words ${isChecked ? 'line-through text-emerald-800/80' : ''}`}>
-                                  {subName}
-                                </span>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    ))}
+                  {/* BOTAO CONCLUIR DIA INTEIRO */}
+                  <div className="pt-2 border-t border-zinc-100 mt-2">
+                    <button
+                      type="button"
+                      onClick={() => toggleWholeDayCompletion(daySubtopicKeys)}
+                      className={`w-full py-2 px-3 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                        isDayFullyCompleted
+                          ? 'bg-emerald-100 hover:bg-emerald-200 text-emerald-900 border border-emerald-300'
+                          : 'bg-emerald-800 hover:bg-emerald-900 text-white shadow-2xs hover:shadow-xs'
+                      }`}
+                    >
+                      {isDayFullyCompleted ? (
+                        <>
+                          <CheckCircle2 size={15} className="text-emerald-700" />
+                          <span>Dia de Estudo Concluído! 🎉</span>
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles size={15} className="text-emerald-200" />
+                          <span>Marcar Dia como Concluído ✨</span>
+                        </>
+                      )}
+                    </button>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 

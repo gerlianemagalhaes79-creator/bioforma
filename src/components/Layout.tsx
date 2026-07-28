@@ -18,7 +18,7 @@ export default function Layout({
   setActiveTab, 
   user, 
   logout, 
-  streakDays = 7,
+  streakDays = 1,
   onOpenProfile
 }: LayoutProps) {
   const tabs = [

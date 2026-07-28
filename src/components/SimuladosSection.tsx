@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { User, db, doc, setDoc, collection, addDoc } from '../firebase';
 import { UserProfile, Question, QuestionAnswerLog } from '../types';
+import { recordUserActivity } from '../utils/streak';
 import { SEDUC_QUESTIONS, OFFICIAL_EDITAL_TREE, getEspecificoTree, FUNECE_DEGREE_OPTIONS } from '../data/seducData';
 import { 
   FileText, CheckCircle2, XCircle, Sparkles, Filter, ChevronRight, ChevronDown, 
@@ -436,6 +437,7 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
       arr.unshift(fullLog);
       localStorage.setItem(key, JSON.stringify(arr));
       window.dispatchEvent(new Event('questionLogUpdated'));
+      recordUserActivity(activeUid).catch(() => {});
     } catch (err) {
       console.warn("Erro ao salvar log local de questão:", err);
     }

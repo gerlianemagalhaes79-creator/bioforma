@@ -17,6 +17,7 @@ import {
   Timestamp, 
   onSnapshot 
 } from './firebase';
+import { recordUserActivity } from './utils/streak';
 import { UserProfile } from './types';
 import Layout from './components/Layout';
 import Dashboard from './components/Dashboard';
@@ -128,7 +129,7 @@ export default function App() {
               degree: 'Licenciatura em Língua Portuguesa / Letras',
               dailyGoalMinutes: 180,
               hoursPerDay: 3,
-              streakDays: 7,
+              streakDays: 1,
               completedTopicsCount: 6,
               totalQuestionsDone: 18,
               correctAnswersCount: 14,
@@ -147,6 +148,9 @@ export default function App() {
             await setDoc(userRef, { role: 'professor', isAdmin: false }, { merge: true });
           }
         }
+
+        // Record activity and calculate streak dynamically
+        recordUserActivity(currentUser.uid).catch(() => {});
 
         // Listen to changes in real-time
         unsubscribeProfile = onSnapshot(userRef, (snapshot) => {
@@ -275,7 +279,7 @@ export default function App() {
       setActiveTab={setActiveTab} 
       user={user}
       logout={logout}
-      streakDays={userProfile?.streakDays || 7}
+      streakDays={userProfile?.streakDays ?? 1}
       onOpenProfile={() => handleOpenProfile()}
     >
       {/* Profile Modal */}

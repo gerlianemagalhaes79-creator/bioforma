@@ -69,6 +69,12 @@ function cleanTopicTitle(rawText: string, activeTopicName?: string, userSubject:
 function checkFollowUpQuestion(rawText: string, userSubject: string): string | null {
   const lower = rawText.trim().toLowerCase();
 
+  // 0. Saudações simples (resposta rápida e amigável sem aula)
+  const greetingRegex = /^(oi|oii|oiii|olá|ola|boa tarde|bom dia|boa noite|tudo bem|tudo bom|tudo joia|fala prof|fala professor|professor|mestre|hey|hi|e ai|e aí|oi prof|oi professor|olá prof|olá professor)[\s!,?.]*$/i;
+  if (greetingRegex.test(lower)) {
+    return `Olá, Profª. Gerliane! Tudo ótimo por aqui! Como posso te ajudar hoje nos seus estudos para a SEDUC CE? Quer tirar uma dúvida, ver a meta de hoje ou resolver questões da FUNECE?`;
+  }
+
   // Se for frase de início da aula, não é pergunta de seguimento
   if (lower.includes('vamos começar') || lower.includes('vamos comecar') || lower.includes('quero estudar') || lower.includes('vamos la') || lower.includes('materia de hoje')) {
     return null;
