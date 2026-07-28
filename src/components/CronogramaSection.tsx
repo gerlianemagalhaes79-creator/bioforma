@@ -271,7 +271,7 @@ export default function CronogramaSection({ user, profile, setActiveTab }: Crono
         <style>
           @page {
             size: A4 portrait;
-            margin: 12mm 12mm 12mm 12mm;
+            margin: 10mm 12mm 10mm 12mm;
           }
           * {
             box-sizing: border-box;
@@ -282,133 +282,99 @@ export default function CronogramaSection({ user, profile, setActiveTab }: Crono
             background: #ffffff;
             margin: 0;
             padding: 0;
-            font-size: 10.5px;
+            font-size: 10px;
             line-height: 1.35;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
           
-          /* OFFICIAL HEADER */
-          .official-header {
-            border-bottom: 3px solid #064e3b;
-            padding-bottom: 8px;
+          /* CABEÇALHO BONITO E MOTIVADOR (SEM TEXTAO) */
+          .print-header {
+            background: linear-gradient(135deg, #064e3b 0%, #047857 100%);
+            color: #ffffff;
+            border-radius: 8px;
+            padding: 10px 14px;
             margin-bottom: 12px;
             display: flex;
             justify-content: space-between;
-            align-items: flex-start;
+            align-items: center;
           }
-          .brand-title {
-            font-size: 18px;
-            font-weight: 900;
-            color: #064e3b;
-            text-transform: uppercase;
-            letter-spacing: -0.3px;
-            margin: 0;
-            line-height: 1.1;
+          .header-left {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
           }
-          .brand-subtitle {
-            font-size: 11px;
-            color: #047857;
-            font-weight: 800;
-            margin-top: 3px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-          }
-          .doc-badge {
-            background: #064e3b;
-            color: #ffffff;
-            font-size: 9px;
-            font-weight: 800;
-            padding: 4px 8px;
-            border-radius: 4px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            text-align: right;
-          }
-
-          /* CANDIDATE DOSSIER BOX */
-          .dossier-card {
-            background: #f8fafc;
-            border: 1px solid #cbd5e1;
-            border-left: 4px solid #064e3b;
-            border-radius: 6px;
-            padding: 10px 12px;
-            margin-bottom: 12px;
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 8px;
-          }
-          .dossier-item {
-            font-size: 10px;
-          }
-          .dossier-label {
+          .header-badge {
             font-size: 8.5px;
-            font-weight: 800;
-            color: #64748b;
+            font-weight: 900;
             text-transform: uppercase;
-            display: block;
-            margin-bottom: 1px;
+            letter-spacing: 0.6px;
+            color: #a7f3d0;
           }
-          .dossier-value {
-            font-weight: 800;
-            color: #0f172a;
-            font-size: 11px;
-          }
-
-          /* MOTIVATIONAL MANIFESTO BANNER */
-          .manifesto-banner {
-            background: #ecfdf5;
-            border: 1px solid #a7f3d0;
-            border-radius: 6px;
-            padding: 8px 12px;
-            margin-bottom: 14px;
-            text-align: center;
-          }
-          .manifesto-text {
-            font-size: 11px;
-            font-weight: 800;
-            color: #064e3b;
+          .print-title {
+            font-size: 15px;
+            font-weight: 900;
+            color: #ffffff;
             margin: 0;
-            font-style: italic;
+            letter-spacing: -0.2px;
           }
-          .manifesto-subtext {
-            font-size: 9px;
-            color: #047857;
-            margin-top: 2px;
+          .print-meta {
+            font-size: 9.5px;
+            color: #ecfdf5;
             font-weight: 600;
           }
-
-          /* SCHEDULE GRID */
-          .grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
+          .header-motto {
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            padding: 6px 12px;
+            border-radius: 6px;
+            text-align: right;
+            max-width: 220px;
           }
+          .motto-text {
+            font-size: 9.5px;
+            font-weight: 800;
+            color: #ffffff;
+            font-style: italic;
+            display: block;
+            line-height: 1.25;
+          }
+
+          /* CRONOGRAMA EM LISTA VERTICAL (UM ABAIXO DO OUTRO) */
+          .schedule-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+          }
+
           .day-card {
             border: 1px solid #cbd5e1;
             border-radius: 8px;
-            padding: 10px;
+            padding: 9px 12px;
             background: #ffffff;
             page-break-inside: avoid;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
           }
+
           .day-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1.5px solid #064e3b;
+            border-bottom: 1px solid #e2e8f0;
             padding-bottom: 5px;
             margin-bottom: 8px;
           }
+
           .day-title {
-            font-size: 12px;
+            font-size: 11.5px;
             font-weight: 900;
             color: #064e3b;
             text-transform: uppercase;
+            letter-spacing: 0.2px;
           }
+
           .day-time {
             font-size: 9px;
-            font-weight: 800;
+            font-weight: 700;
             color: #0d9488;
             background: #f0fdfa;
             border: 1px solid #ccfbf1;
@@ -420,177 +386,126 @@ export default function CronogramaSection({ user, profile, setActiveTab }: Crono
           .session {
             border: 1px solid #e2e8f0;
             border-radius: 6px;
-            padding: 7px;
-            margin-bottom: 7px;
-            background: #fafafa;
+            padding: 7px 9px;
+            margin-bottom: 6px;
+            background: #f8fafc;
           }
           .session-especifica {
-            border-left: 4px solid #0f766e;
+            border-left: 3.5px solid #0f766e;
             background: #f0fdfa;
           }
           .session-geral {
-            border-left: 4px solid #047857;
-            background: #ecfdf5;
+            border-left: 3.5px solid #047857;
+            background: #f0fdf4;
           }
+
           .session-top {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            margin-bottom: 4px;
+            gap: 6px;
+            margin-bottom: 5px;
           }
+
           .badge {
             font-size: 8px;
             font-weight: 900;
             text-transform: uppercase;
-            padding: 2px 6px;
+            padding: 2px 5px;
             border-radius: 3px;
             color: #ffffff;
-            background: #0f766e;
             letter-spacing: 0.3px;
-          }
-          .topic-name {
-            font-size: 10.5px;
-            font-weight: 800;
-            color: #1e293b;
+            flex-shrink: 0;
           }
 
-          /* SUBTOPIC CHECKLIST */
+          .topic-name {
+            font-size: 11px;
+            font-weight: 800;
+            color: #0f172a;
+          }
+
+          /* SUBTOPIC CHECKLIST - LIMPO E CONFORTÁVEL DE ANOTAR */
+          .subtopics-container {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-top: 4px;
+          }
+
           .subtopic-item {
             display: flex;
-            align-items: flex-start;
-            gap: 6px;
-            margin-top: 4px;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
             font-size: 10px;
-            color: #334155;
+            color: #1e293b;
+            background: #ffffff;
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid #e2e8f0;
           }
-          .checkbox {
+
+          .subtopic-text {
+            font-weight: 600;
+            color: #334155;
+            flex: 1;
+          }
+
+          .check-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 9px;
+            font-weight: 700;
+            color: #475569;
+            flex-shrink: 0;
+          }
+
+          .check-option {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+          }
+
+          .check-box {
             width: 11px;
             height: 11px;
-            border: 1.5px solid #475569;
+            border: 1.5px solid #064e3b;
             border-radius: 2px;
+            background: #ffffff;
             display: inline-block;
-            margin-top: 1px;
-            flex-shrink: 0;
-            background: #ffffff;
-          }
-          
-          /* PERFORMANCE LOG TRACKER ON DAY CARD */
-          .day-tracker {
-            display: flex;
-            gap: 8px;
-            margin-top: 8px;
-            padding-top: 6px;
-            border-top: 1px dashed #cbd5e1;
-            font-size: 8.5px;
-            color: #475569;
-            font-weight: 700;
-          }
-          .tracker-box {
-            flex: 1;
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            padding: 3px 5px;
-            border-radius: 4px;
           }
 
-          /* REVIEWS DUE BOX */
-          .review-box {
-            margin-top: 6px;
-            padding: 5px 8px;
-            background: #fffbeb;
-            border: 1px solid #fde68a;
-            border-radius: 5px;
-            font-size: 9px;
-            color: #92400e;
-            font-weight: 700;
-          }
-
-          /* SIGNATURE & FOOTER */
-          .pledge-footer {
-            margin-top: 18px;
+          /* FOOTER */
+          .print-footer {
+            margin-top: 14px;
             page-break-inside: avoid;
             border-top: 1px solid #cbd5e1;
-            padding-top: 12px;
+            padding-top: 8px;
             display: flex;
             justify-content: space-between;
-            align-items: flex-end;
-          }
-          .signature-box {
-            text-align: center;
-            width: 240px;
-          }
-          .signature-line {
-            border-bottom: 1px solid #334155;
-            margin-bottom: 4px;
-            height: 20px;
-          }
-          .signature-label {
-            font-size: 9px;
-            font-weight: 800;
-            color: #475569;
-            text-transform: uppercase;
-          }
-          .footer-notes {
+            align-items: center;
             font-size: 8.5px;
             color: #64748b;
-            max-w: 300px;
-            line-height: 1.3;
           }
         </style>
       </head>
       <body>
-        <!-- OFFICIAL HEADER -->
-        <div class="official-header">
-          <div>
-            <h1 class="brand-title">PASSEI SEDUC CE 2026 • PLANO INTELIGENTE</h1>
-            <div class="brand-subtitle">Matriz Intercalada de Estudos & Resolução de Questões</div>
+        <!-- MOTIVATIONAL HEADER -->
+        <div class="print-header">
+          <div class="header-left">
+            <div class="header-badge">🚀 Rumo à Nomeação SEDUC CE 2026</div>
+            <h1 class="print-title">Plano de Estudos & Cronograma Diário</h1>
+            <div class="print-meta">
+              Prof(a). <strong>${userName}</strong> &nbsp;•&nbsp; ${userSubject} &nbsp;•&nbsp; Meta: <strong>${dailyHours}h/dia</strong> (FUNECE)
+            </div>
           </div>
-          <div class="doc-badge">
-            Banca FUNECE / UECE<br/>
-            Documento Oficial
-          </div>
-        </div>
-
-        <!-- CANDIDATE DOSSIER CARD -->
-        <div class="dossier-card">
-          <div class="dossier-item">
-            <span class="dossier-label">Professor(a) Candidato(a)</span>
-            <span class="dossier-value">${userName}</span>
-          </div>
-          <div class="dossier-item">
-            <span class="dossier-label">Cargo / Disciplina Específica</span>
-            <span class="dossier-value">${userSubject}</span>
-          </div>
-          <div class="dossier-item">
-            <span class="dossier-label">Emissão do Plano</span>
-            <span class="dossier-value">${new Date().toLocaleDateString('pt-BR')}</span>
-          </div>
-          <div class="dossier-item">
-            <span class="dossier-label">Carga Horária Diária</span>
-            <span class="dossier-value">${dailyHours} Horas / Dia</span>
-          </div>
-          <div class="dossier-item">
-            <span class="dossier-label">Método Aplicado</span>
-            <span class="dossier-value">Interleaving (Estudo Intercalado)</span>
-          </div>
-          <div class="dossier-item">
-            <span class="dossier-label">Estratégia de Prova</span>
-            <span class="dossier-value">Foco 62,5% Conhecimentos Específicos</span>
+          <div class="header-motto">
+            <span class="motto-text">"Sua dedicação diária constrói a sua aprovação!" ✨</span>
           </div>
         </div>
 
-        <!-- MOTIVATIONAL MANIFESTO BANNER -->
-        <div class="manifesto-banner">
-          <p class="manifesto-text">
-            "A aprovação no Magistério Estadual do Ceará é construída dia a dia com foco, disciplina e resolução sistemática de questões."
-          </p>
-          <div class="manifesto-subtext">
-            Marque cada sessão concluída e mantenha o ritmo. Você está mais próximo da sua vaga!
-          </div>
-        </div>
-
-        <!-- SCHEDULE GRID -->
-        <div class="grid">
+        <!-- SCHEDULE LIST (DAYS STACKED VERTICALLY) -->
+        <div class="schedule-list">
           ${scheduleDays.map(day => `
             <div class="day-card">
               <div class="day-header">
@@ -607,35 +522,28 @@ export default function CronogramaSection({ user, profile, setActiveTab }: Crono
                     <span class="topic-name">${session.parentTopicName}</span>
                   </div>
 
-                  ${session.subtopicNames.map(subName => `
-                    <div class="subtopic-item">
-                      <span class="checkbox"></span>
-                      <span><strong>[ ] Teoria/Lei</strong> &nbsp; <strong>[ ] Questões FUNECE</strong> — ${subName}</span>
-                    </div>
-                  `).join('')}
+                  <div class="subtopics-container">
+                    ${session.subtopicNames.map(subName => `
+                      <div class="subtopic-item">
+                        <span class="subtopic-text">${subName}</span>
+                        <div class="check-group">
+                          <span class="check-option"><span class="check-box"></span> Teoria</span>
+                          <span class="check-option"><span class="check-box"></span> Questões</span>
+                          <span class="check-option"><span class="check-box"></span> Revisão</span>
+                        </div>
+                      </div>
+                    `).join('')}
+                  </div>
                 </div>
               `).join('')}
-
-              <!-- Daily Execution Log Box -->
-              <div class="day-tracker">
-                <div class="tracker-box">⏱ Tempo Real: _____ min</div>
-                <div class="tracker-box">🎯 Questões: ___ / ___ acertos</div>
-              </div>
             </div>
           `).join('')}
         </div>
 
-        <!-- PLEDGE & SIGNATURE FOOTER -->
-        <div class="pledge-footer">
-          <div class="footer-notes">
-            <strong>PasseiSEDUC 2026</strong> • Plataforma Especializada de Preparação FUNECE<br/>
-            Guarde este documento impresso em seu local de estudos e assinale o cumprimento diário das metas.
-          </div>
-
-          <div class="signature-box">
-            <div class="signature-line"></div>
-            <div class="signature-label">Assinatura do(a) Futuro(a) Professor(a) Efetivo(a)</div>
-          </div>
+        <!-- FOOTER -->
+        <div class="print-footer">
+          <div>PasseiSEDUC 2026 • Plataforma de Preparação FUNECE</div>
+          <div>Emissão: ${new Date().toLocaleDateString('pt-BR')}</div>
         </div>
 
         <script>
