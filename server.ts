@@ -580,7 +580,8 @@ Forneça um comentário explicativo completo no estilo FUNECE contendo:
       banca = "FUNECE / CEV-UECE",
       difficulty = "Média",
       questionType = "Estilo banca",
-      count = 5
+      count = 5,
+      previousQuestions = [] // Array<string> of previously seen question texts or titles
     } = req.body;
 
     if (!selectedTopics || !Array.isArray(selectedTopics) || selectedTopics.length === 0) {
@@ -593,6 +594,18 @@ Forneça um comentário explicativo completo no estilo FUNECE contendo:
       `• Disciplina: ${discipline || 'Conhecimentos do Edital'} | Bloco: ${blockName || 'Edital'} | Tópico: ${t.topicName} | Subtópico: ${t.subtopicName || t.topicName}`
     ).join("\n");
 
+    const previousBlock = Array.isArray(previousQuestions) && previousQuestions.length > 0
+      ? `\n## 🚨 REGRA CRÍTICA DE ANTI-REPETIÇÃO E INEDITISMO ABSOLUTO:
+O candidato JÁ RESOLVEU as seguintes questões anteriormente sobre estes tópicos:
+${previousQuestions.slice(-20).map((q: string, idx: number) => `   [${idx + 1}] "${q.substring(0, 160)}..."`).join('\n')}
+
+⚠️ É ABSOLUTAMENTE PROIBIDO REPETIR QUALQUER UMA DAS QUESTÕES ACIMA!
+- NÃO repita enunciados, casos hipotéticos, exemplos ou alternativas parecidas.
+- Explore OUTROS aspectos teóricos, outras exceções, definições complementares, análises comparativas ou situações-problema inéditas dentro do mesmo assunto.
+- Garanta que o candidato enfrente uma prova 100% NOVA, testando a verdadeira fixação e não a memorização de gabaritos passados.`
+      : `\n## REGRA DE INEDITISMO E DIVERSIDADE FUNECE:
+Gere questões 100% inéditas com abordagens variadas sobre os tópicos (análises conceituais, situações-problema, interpretação de fenômenos e comparações técnicas). Jamais use modelos genéricos ou repetitivos.`;
+
     const prompt = `Você é o ELABORADOR ESPECIALISTA DE QUESTÕES DE CONCURSO para a SEDUC-CE (FUNECE / CEV-UECE).
 
 MISSÃO CRÍTICA:
@@ -601,6 +614,7 @@ O assunto informado é OBRIGATÓRIO. Você NÃO pode alterar, ampliar ou substit
 
 ASSUNTOS SELECIONADOS PELO SISTEMA:
 ${topicPaths}
+${previousBlock}
 
 ## REGRA MAIS IMPORTANTE (AVALIAR CONHECIMENTO DA MATÉRIA):
 A questão deve avaliar O CONHECIMENTO TÉCNICO E CIENTÍFICO DA DISCIPLINA (ex: Biologia, Língua Portuguesa, Matemática, História, Química, etc.).
@@ -635,8 +649,9 @@ NUNCA avalie em questões de matérias específicas:
 
 ## VALIDAÇÃO FINAL ANTES DE EMITIR O JSON:
 1. A questão trata EXCLUSIVAMENTE do subtópico solicitado?
-2. Se retirar qualquer menção à banca, é uma excelente questão técnica da disciplina?
-3. Nenhuma alternativa menciona edital, banca, currículo ou competências?
+2. A questão é 100% inédita em relação a qualquer treino anterior do candidato?
+3. Se retirar qualquer menção à banca, é uma excelente questão técnica da disciplina?
+4. Nenhuma alternativa menciona edital, banca, currículo ou competências?
 
 ## ESTRUTURA OBRIGATÓRIA DO JSON:
 Retorne um objeto JSON contendo a chave "questions" com um array de ${requestedCount} questões:

@@ -3,6 +3,7 @@ import { User } from '../firebase';
 import { UserProfile } from '../types';
 import OnboardingModal from './OnboardingModal';
 import IntelligenceCenter from './IntelligenceCenter';
+import BadgesSection from './BadgesSection';
 import { 
   Target, 
   CheckCircle2, 
@@ -121,6 +122,13 @@ export default function Dashboard({ user, profile, setActiveTab, onOpenProfile }
         user={user} 
         profile={profile} 
         setActiveTab={setActiveTab} 
+      />
+
+      {/* Galeria de Conquistas & Badges de Estudo */}
+      <BadgesSection
+        user={user}
+        profile={profile}
+        setActiveTab={setActiveTab}
       />
 
       {/* Strategic Advice & Official 80-Question Exam Structure Card - Minimalist & Formal */}

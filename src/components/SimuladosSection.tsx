@@ -208,6 +208,59 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
 
   const selectedCount = Object.keys(selectedSubtopicsMap).length;
 
+  // Helper to retrieve previously seen question texts to prevent repetition
+  const getPreviouslySeenQuestionTexts = (): string[] => {
+    try {
+      const activeUid = user?.uid || profile?.uid || 'guest';
+      const seenSet = new Set<string>();
+
+      const historyKey = `seduc_seen_questions_${activeUid}`;
+      const rawHistory = localStorage.getItem(historyKey);
+      if (rawHistory) {
+        const arr = JSON.parse(rawHistory);
+        if (Array.isArray(arr)) {
+          arr.forEach((txt: string) => { if (txt) seenSet.add(txt.trim()); });
+        }
+      }
+
+      const logsKey = `questionLogs_${activeUid}`;
+      const rawLogs = localStorage.getItem(logsKey);
+      if (rawLogs) {
+        const logs = JSON.parse(rawLogs);
+        if (Array.isArray(logs)) {
+          logs.forEach((l: any) => {
+            if (l.questionText) seenSet.add(l.questionText.trim());
+          });
+        }
+      }
+
+      return Array.from(seenSet);
+    } catch (err) {
+      return [];
+    }
+  };
+
+  // Helper to record newly generated questions into history
+  const recordSeenQuestions = (questions: Question[]) => {
+    try {
+      const activeUid = user?.uid || profile?.uid || 'guest';
+      const historyKey = `seduc_seen_questions_${activeUid}`;
+      const existing = localStorage.getItem(historyKey);
+      const arr: string[] = existing ? JSON.parse(existing) : [];
+
+      questions.forEach(q => {
+        if (q.questionText && !arr.includes(q.questionText.trim())) {
+          arr.push(q.questionText.trim());
+        }
+      });
+
+      const trimmed = arr.slice(-200);
+      localStorage.setItem(historyKey, JSON.stringify(trimmed));
+    } catch (err) {
+      console.warn("Erro ao registrar histórico de questões vistas:", err);
+    }
+  };
+
   const generateSmartFallbackQuestions = (
     disciplineName: string,
     category: string,
@@ -215,6 +268,7 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
     count: number
   ): Question[] => {
     const selectedQuestions: Question[] = [];
+    const seenTexts = getPreviouslySeenQuestionTexts();
 
     // Filter bank questions that belong to this discipline or category
     const categoryMatch = SEDUC_QUESTIONS.filter(q => {
@@ -229,55 +283,50 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
       return qCat.includes(cat) || qSub.includes(cat) || cat.includes(qCat);
     });
 
+    // Unseen static questions
+    const unseenCategoryMatch = categoryMatch.filter(q => !seenTexts.includes(q.questionText.trim()));
+    const pool = unseenCategoryMatch.length > 0 ? unseenCategoryMatch : categoryMatch;
+
     for (let i = 0; i < count; i++) {
       const topObj = topicPayload[i % topicPayload.length] || { topicName: 'Tópico de Estudo', subtopicName: '' };
       const topicName = topObj.topicName;
       const subtopicName = topObj.subtopicName || topicName;
 
       // Check if we have an exact matching question from SEDUC_QUESTIONS
-      const exactMatch = categoryMatch.find(q => 
+      const exactMatch = pool.find(q => 
         q.topic.toLowerCase().includes(topicName.toLowerCase()) || 
         (subtopicName && q.subtopic.toLowerCase().includes(subtopicName.toLowerCase()))
       );
 
-      if (exactMatch) {
+      if (exactMatch && !selectedQuestions.some(sq => sq.questionText === exactMatch.questionText)) {
         selectedQuestions.push({
           ...exactMatch,
-          id: `fallback-smart-${Date.now()}-${i}`,
+          id: `fallback-smart-${Date.now()}-${i}-${Math.random().toString(36).substring(2, 6)}`,
           subject: disciplineName,
           options: exactMatch.options.slice(0, 4)
         });
-      } else if (categoryMatch.length > 0) {
-        // Use a question from the same category/subject, keeping its OWN topic so text matches topic!
-        const baseQ = categoryMatch[i % categoryMatch.length];
+      } else if (pool.length > 0) {
+        const baseQ = pool[(i + Math.floor(Math.random() * pool.length)) % pool.length];
         selectedQuestions.push({
           ...baseQ,
-          id: `fallback-cat-${Date.now()}-${i}`,
+          id: `fallback-cat-${Date.now()}-${i}-${Math.random().toString(36).substring(2, 6)}`,
           subject: disciplineName,
           options: baseQ.options.slice(0, 4)
         });
       } else {
-        // Build a custom topic-tailored question so question text directly addresses subtopicName/topicName
-        let qText = `Sobre os conceitos e fundamentos científicos/técnicos de "${subtopicName}" (${topicName}), assinale a alternativa correta:`;
-        let opts: { letter: 'A' | 'B' | 'C' | 'D' | 'E'; text: string }[] = [
+        // Build a unique custom topic-tailored question
+        const seed = Math.floor(Math.random() * 1000);
+        const qText = `[Treino FUNECE #${seed}] Acerca dos preceitos e fundamentos científicos de "${subtopicName}" (${topicName}), assinale a afirmativa correta:`;
+        
+        const opts: { letter: 'A' | 'B' | 'C' | 'D' | 'E'; text: string }[] = [
           { letter: 'A', text: `A caracterização de ${subtopicName} baseia-se na integração dos princípios essenciais da matéria e de suas propriedades fundamentais.` },
           { letter: 'B', text: `O processo de ${subtopicName} limita-se a um evento isolado sem relação com os demais fenômenos da disciplina.` },
           { letter: 'C', text: `A ocorrência de ${subtopicName} independe das variáveis estruturais e físico-químicas do sistema.` },
           { letter: 'D', text: `A análise técnica de ${subtopicName} nega os postulados e leis consagrados da área de conhecimento.` }
         ];
 
-        if (subtopicName.toLowerCase().includes('organela') || topicName.toLowerCase().includes('organela') || topicName.toLowerCase().includes('seres vivos')) {
-          qText = `Em relação à estrutura celular e às organelas citoplasmáticas nas células eucarióticas (${subtopicName}), assinale a opção correta:`;
-          opts = [
-            { letter: 'A', text: 'As mitocôndrias são organelas membranosas responsáveis pelo processo de respiração celular e síntese de ATP.' },
-            { letter: 'B', text: 'Os ribossomos realizam exclusivamente a digestão intracelular de macromoléculas fagocitadas.' },
-            { letter: 'C', text: 'O complexo de Golgi atua de forma isolada na síntese primária de ácidos nucleicos do núcleo celular.' },
-            { letter: 'D', text: 'O retículo endoplasmático liso é o local onde ocorre a tradução de todas as proteínas de exportação.' }
-          ];
-        }
-
         selectedQuestions.push({
-          id: `fallback-gen-${Date.now()}-${i}`,
+          id: `fallback-gen-${Date.now()}-${i}-${seed}`,
           category: category === 'especifico' ? 'Conhecimentos Específicos' : (category as any),
           subject: disciplineName,
           topic: topicName,
@@ -321,6 +370,9 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
     const disciplineName = selectedDisciplineCategory === 'especifico' ? userDegree : selectedDisciplineCategory;
     const blockName = Object.values(selectedSubtopicsMap)[0]?.blockName || 'Conhecimentos Específicos';
 
+    // Retrieve seen questions to pass to AI for absolute anti-repetition
+    const seenTexts = getPreviouslySeenQuestionTexts();
+
     try {
       const response = await fetch('/api/seduc/generate-simulado', {
         method: 'POST',
@@ -332,7 +384,8 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
           banca: selectedBanca,
           difficulty: selectedDifficulty,
           questionType: selectedQuestionType,
-          count: questionCount
+          count: questionCount,
+          previousQuestions: seenTexts
         })
       });
 
@@ -349,7 +402,7 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
       if (data && data.success && data.questions && data.questions.length > 0) {
         // Format returned questions to fit Question interface
         const formattedQuestions: Question[] = data.questions.map((q: any, idx: number) => ({
-          id: `gen-q-${Date.now()}-${idx}`,
+          id: `gen-q-${Date.now()}-${idx}-${Math.random().toString(36).substring(2, 6)}`,
           category: selectedDisciplineCategory === 'especifico' ? 'Conhecimentos Específicos' : (selectedDisciplineCategory as any),
           subject: disciplineName,
           topic: q.topic || topicPayload[idx % topicPayload.length]?.topicName || 'Tópico de Estudo',
@@ -365,6 +418,8 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
           studyTip: q.studyTip || ''
         }));
 
+        recordSeenQuestions(formattedQuestions);
+
         setActiveQuizQuestions(formattedQuestions);
         setCurrentQuestionIndex(0);
         setUserAnswersMap({});
@@ -378,6 +433,8 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
         // Fallback: load matching offline questions from bank if API is unreachable/fails
         console.warn("API de geração indisponível ou resposta inválida. Usando gerador adaptativo de questões FUNECE.");
         const fallbackQuestions = generateSmartFallbackQuestions(disciplineName, selectedDisciplineCategory, topicPayload, questionCount);
+
+        recordSeenQuestions(fallbackQuestions);
 
         setActiveQuizQuestions(fallbackQuestions);
         setCurrentQuestionIndex(0);
@@ -393,6 +450,7 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
       console.error("Erro ao gerar simulado:", err);
       // Fallback on total network error
       const fallbackQuestions = generateSmartFallbackQuestions(disciplineName, selectedDisciplineCategory, topicPayload, questionCount);
+      recordSeenQuestions(fallbackQuestions);
       setActiveQuizQuestions(fallbackQuestions);
       setCurrentQuestionIndex(0);
       setUserAnswersMap({});

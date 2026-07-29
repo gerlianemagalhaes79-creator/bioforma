@@ -44,6 +44,14 @@ export default function CronogramaSection({ user, profile, setActiveTab }: Crono
   });
 
   const [showQueueModal, setShowQueueModal] = useState(false);
+  const [collapsedDays, setCollapsedDays] = useState<Record<string, boolean>>({});
+
+  const toggleDayCollapse = (dateStr: string) => {
+    setCollapsedDays(prev => ({
+      ...prev,
+      [dateStr]: prev[dateStr] !== undefined ? !prev[dateStr] : false
+    }));
+  };
 
   // Sync / Load saved cronograma completion progress from localStorage & Firestore
   useEffect(() => {
@@ -151,7 +159,7 @@ export default function CronogramaSection({ user, profile, setActiveTab }: Crono
     }
   };
 
-  const toggleSubtopicCompletion = (subKey: string, daySubtopicKeys?: string[]) => {
+  const toggleSubtopicCompletion = (subKey: string, daySubtopicKeys?: string[], dateStr?: string) => {
     setCompletedTopicIds(prev => {
       const isNowChecked = !prev[subKey];
       const updated = {
@@ -164,6 +172,9 @@ export default function CronogramaSection({ user, profile, setActiveTab }: Crono
         const isAllDone = daySubtopicKeys.every(k => updated[k]);
         if (isAllDone && !wasAllDone) {
           triggerDayConfetti();
+          if (dateStr) {
+            setCollapsedDays(prevCollapsed => ({ ...prevCollapsed, [dateStr]: true }));
+          }
         }
       }
 
@@ -199,7 +210,7 @@ export default function CronogramaSection({ user, profile, setActiveTab }: Crono
     });
   };
 
-  const toggleWholeDayCompletion = (daySubtopicKeys: string[]) => {
+  const toggleWholeDayCompletion = (daySubtopicKeys: string[], dateStr?: string) => {
     if (!daySubtopicKeys || daySubtopicKeys.length === 0) return;
 
     setCompletedTopicIds(prev => {
@@ -212,6 +223,13 @@ export default function CronogramaSection({ user, profile, setActiveTab }: Crono
 
       if (!isAllDone) {
         triggerDayConfetti();
+        if (dateStr) {
+          setCollapsedDays(prevCollapsed => ({ ...prevCollapsed, [dateStr]: true }));
+        }
+      } else {
+        if (dateStr) {
+          setCollapsedDays(prevCollapsed => ({ ...prevCollapsed, [dateStr]: false }));
+        }
       }
 
       const activeUid = user?.uid || profile?.uid;
@@ -669,28 +687,37 @@ export default function CronogramaSection({ user, profile, setActiveTab }: Crono
               const daySubtopicKeys = day.topics.flatMap((session) =>
                 session.subtopicNames.map((_, subIdx) => `${session.id}_sub_${subIdx}`)
               );
-              const isDayFullyCompleted = daySubtopicKeys.length > 0 && daySubtopicKeys.every((k) => !!completedTopicIds[k]);
+              const completedInDay = daySubtopicKeys.filter((k) => !!completedTopicIds[k]).length;
+              const isDayFullyCompleted = daySubtopicKeys.length > 0 && completedInDay === daySubtopicKeys.length;
+
+              const isCollapsed = collapsedDays[day.dateStr] !== undefined
+                ? collapsedDays[day.dateStr]
+                : isDayFullyCompleted;
 
               return (
                 <div 
                   key={day.dateStr} 
-                  className={`border rounded-2xl p-4 space-y-3 transition shadow-xs flex flex-col justify-between ${
+                  className={`border rounded-2xl p-3.5 sm:p-4 transition shadow-2xs flex flex-col justify-between ${
                     isDayFullyCompleted 
-                      ? 'bg-emerald-50/60 border-emerald-300' 
+                      ? 'bg-emerald-50/70 border-emerald-300/80 hover:border-emerald-400' 
                       : 'bg-white border-zinc-200/90 hover:border-emerald-300'
                   }`}
                 >
                   <div className="space-y-2.5">
                     {/* DIA HEADER */}
                     <div className="flex items-center justify-between border-b border-zinc-100 pb-2">
-                      <div className="flex items-center gap-2">
-                        <span className={`w-7 h-7 rounded-xl flex items-center justify-center text-xs font-black shadow-xs ${
-                          isDayFullyCompleted ? 'bg-emerald-600 text-white' : 'bg-emerald-800 text-white'
+                      <button
+                        type="button"
+                        onClick={() => toggleDayCollapse(day.dateStr)}
+                        className="flex items-center gap-2 text-left cursor-pointer group"
+                      >
+                        <span className={`w-7 h-7 rounded-xl flex items-center justify-center text-xs font-black shadow-2xs transition ${
+                          isDayFullyCompleted ? 'bg-emerald-600 text-white group-hover:bg-emerald-700' : 'bg-emerald-800 text-white group-hover:bg-emerald-900'
                         }`}>
                           {isDayFullyCompleted ? '✓' : day.dayNumber}
                         </span>
                         <div>
-                          <h4 className="font-extrabold text-xs text-zinc-900 capitalize">
+                          <h4 className="font-extrabold text-xs text-zinc-900 capitalize group-hover:text-emerald-900 transition">
                             {day.displayDate}
                           </h4>
                           <p className="text-[11px] font-bold text-emerald-800 flex items-center gap-1">
@@ -698,108 +725,142 @@ export default function CronogramaSection({ user, profile, setActiveTab }: Crono
                             <span>{day.timeSlotFormatted}</span>
                           </p>
                         </div>
-                      </div>
+                      </button>
 
-                      {isDayFullyCompleted ? (
-                        <span className="text-[10px] font-black uppercase bg-emerald-100 text-emerald-900 px-2 py-0.5 rounded-lg border border-emerald-300 flex items-center gap-1">
-                          <PartyPopper size={11} className="text-emerald-700 animate-bounce" />
-                          Concluído 🎉
-                        </span>
-                      ) : (
-                        <span className="text-[10px] font-extrabold uppercase bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded-lg border border-emerald-200">
-                          Dia {day.dayNumber}
-                        </span>
-                      )}
+                      <div className="flex items-center gap-1.5">
+                        {isDayFullyCompleted ? (
+                          <span className="text-[10px] font-black uppercase bg-emerald-100 text-emerald-900 px-2 py-0.5 rounded-lg border border-emerald-300 flex items-center gap-1 shrink-0">
+                            <PartyPopper size={11} className="text-emerald-700 animate-bounce" />
+                            Concluído 🎉
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-extrabold uppercase bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded-lg border border-emerald-200 shrink-0">
+                            Dia {day.dayNumber}
+                          </span>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => toggleDayCollapse(day.dateStr)}
+                          className="p-1 rounded-lg hover:bg-emerald-100/60 text-emerald-800 transition cursor-pointer"
+                          title={isCollapsed ? "Expandir detalhes" : "Recolher barrinha"}
+                        >
+                          {isCollapsed ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
+                        </button>
+                      </div>
                     </div>
 
-                    {/* ESTUDO PRINCIPAL (SESSÕES INTERCALADAS DE TÓPICOS/SUBTÓPICOS) */}
-                    <div className="space-y-2">
-                      {day.topics.map((session) => (
-                        <div 
-                          key={session.id} 
-                          className={`border rounded-xl p-2.5 space-y-2 ${
-                            session.category === 'Conhecimentos Específicos' 
-                              ? 'bg-teal-50/40 border-teal-200/80' 
-                              : 'bg-emerald-50/40 border-emerald-200/80'
-                          }`}
-                        >
-                          {/* CATEGORIA E TÓPICO */}
-                          <div className="flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap">
-                            <div className="flex items-center gap-1.5 min-w-0">
-                              <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-md text-white ${
-                                session.category === 'Conhecimentos Específicos' ? 'bg-teal-800' : 'bg-emerald-800'
-                              }`}>
-                                {session.reviewType || (session.category === 'Conhecimentos Específicos' ? 'Específica' : 'Geral')}
-                              </span>
-                              <span className="text-xs font-bold text-zinc-800 truncate">
-                                {session.parentTopicName}
-                              </span>
+                    {/* VISTA RECOLHIDA (BARRINHA DO DIA) SE FOR CONCLUÍDO/RECOLHIDO */}
+                    {isCollapsed ? (
+                      <div 
+                        onClick={() => toggleDayCollapse(day.dateStr)}
+                        className="p-2.5 bg-emerald-100/60 hover:bg-emerald-100 border border-emerald-200 rounded-xl cursor-pointer transition flex items-center justify-between text-xs font-bold text-emerald-950"
+                      >
+                        <div className="flex items-center gap-2 text-[11px]">
+                          <CheckCircle2 size={16} className="text-emerald-700 shrink-0" />
+                          <span>
+                            {isDayFullyCompleted
+                              ? `Dia ${day.dayNumber} concluído (${completedInDay}/${daySubtopicKeys.length} subtópicos)`
+                              : `Dia ${day.dayNumber} em andamento (${completedInDay}/${daySubtopicKeys.length} subtópicos)`
+                            }
+                          </span>
+                        </div>
+                        <span className="text-[10px] text-emerald-800 font-extrabold hover:underline shrink-0">
+                          Abrir detalhes ↓
+                        </span>
+                      </div>
+                    ) : (
+                      /* ESTUDO PRINCIPAL (SESSÕES INTERCALADAS DE TÓPICOS/SUBTÓPICOS) */
+                      <div className="space-y-2">
+                        {day.topics.map((session) => (
+                          <div 
+                            key={session.id} 
+                            className={`border rounded-xl p-2.5 space-y-2 ${
+                              session.category === 'Conhecimentos Específicos' 
+                                ? 'bg-teal-50/40 border-teal-200/80' 
+                                : 'bg-emerald-50/40 border-emerald-200/80'
+                            }`}
+                          >
+                            {/* CATEGORIA E TÓPICO */}
+                            <div className="flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap">
+                              <div className="flex items-center gap-1.5 min-w-0">
+                                <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-md text-white ${
+                                  session.category === 'Conhecimentos Específicos' ? 'bg-teal-800' : 'bg-emerald-800'
+                                }`}>
+                                  {session.reviewType || (session.category === 'Conhecimentos Específicos' ? 'Específica' : 'Geral')}
+                                </span>
+                                <span className="text-xs font-bold text-zinc-800 truncate">
+                                  {session.parentTopicName}
+                                </span>
+                              </div>
+
+                              {session.questionsGoal && (
+                                <span className="text-[10px] font-extrabold text-teal-900 bg-teal-100/80 px-2 py-0.5 rounded-md shrink-0">
+                                  {session.questionsGoal}
+                                </span>
+                              )}
                             </div>
 
-                            {session.questionsGoal && (
-                              <span className="text-[10px] font-extrabold text-teal-900 bg-teal-100/80 px-2 py-0.5 rounded-md shrink-0">
-                                {session.questionsGoal}
-                              </span>
-                            )}
+                            {/* LISTA DE SUBTÓPICOS */}
+                            <div className="space-y-1">
+                              {session.subtopicNames.map((subName, subIdx) => {
+                                const subKey = `${session.id}_sub_${subIdx}`;
+                                const isChecked = !!completedTopicIds[subKey];
+                                return (
+                                  <button
+                                    key={subKey}
+                                    type="button"
+                                    onClick={() => toggleSubtopicCompletion(subKey, daySubtopicKeys, day.dateStr)}
+                                    className={`w-full text-left p-1.5 rounded-lg border transition text-xs flex items-center gap-2 cursor-pointer ${
+                                      isChecked
+                                        ? 'bg-emerald-50 border-emerald-300 text-emerald-950 font-bold'
+                                        : 'bg-white hover:bg-emerald-50/50 border-zinc-200/80 text-zinc-800'
+                                    }`}
+                                  >
+                                    {isChecked ? (
+                                      <CheckSquare size={14} className="text-emerald-700 shrink-0" />
+                                    ) : (
+                                      <Square size={14} className="text-zinc-400 shrink-0" />
+                                    )}
+                                    <span className={`text-[11px] leading-tight break-words ${isChecked ? 'line-through text-emerald-800/80' : ''}`}>
+                                      {subName}
+                                    </span>
+                                  </button>
+                                );
+                              })}
+                            </div>
                           </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
 
-                          {/* LISTA DE SUBTÓPICOS */}
-                          <div className="space-y-1">
-                            {session.subtopicNames.map((subName, subIdx) => {
-                              const subKey = `${session.id}_sub_${subIdx}`;
-                              const isChecked = !!completedTopicIds[subKey];
-                              return (
-                                <button
-                                  key={subKey}
-                                  type="button"
-                                  onClick={() => toggleSubtopicCompletion(subKey, daySubtopicKeys)}
-                                  className={`w-full text-left p-1.5 rounded-lg border transition text-xs flex items-center gap-2 cursor-pointer ${
-                                    isChecked
-                                      ? 'bg-emerald-50 border-emerald-300 text-emerald-950 font-bold'
-                                      : 'bg-white hover:bg-emerald-50/50 border-zinc-200/80 text-zinc-800'
-                                  }`}
-                                >
-                                  {isChecked ? (
-                                    <CheckSquare size={14} className="text-emerald-700 shrink-0" />
-                                  ) : (
-                                    <Square size={14} className="text-zinc-400 shrink-0" />
-                                  )}
-                                  <span className={`text-[11px] leading-tight break-words ${isChecked ? 'line-through text-emerald-800/80' : ''}`}>
-                                    {subName}
-                                  </span>
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      ))}
+                  {/* BOTAO CONCLUIR / REABRIR DIA INTEIRO */}
+                  {!isCollapsed && (
+                    <div className="pt-2 border-t border-zinc-100 mt-2">
+                      <button
+                        type="button"
+                        onClick={() => toggleWholeDayCompletion(daySubtopicKeys, day.dateStr)}
+                        className={`w-full py-2 px-3 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                          isDayFullyCompleted
+                            ? 'bg-emerald-100 hover:bg-emerald-200 text-emerald-900 border border-emerald-300'
+                            : 'bg-emerald-800 hover:bg-emerald-900 text-white shadow-2xs hover:shadow-xs'
+                        }`}
+                      >
+                        {isDayFullyCompleted ? (
+                          <>
+                            <CheckCircle2 size={15} className="text-emerald-700" />
+                            <span>Dia de Estudo Concluído! 🎉 (Recolher)</span>
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles size={15} className="text-emerald-200" />
+                            <span>Marcar Dia como Concluído ✨</span>
+                          </>
+                        )}
+                      </button>
                     </div>
-                  </div>
-
-                  {/* BOTAO CONCLUIR DIA INTEIRO */}
-                  <div className="pt-2 border-t border-zinc-100 mt-2">
-                    <button
-                      type="button"
-                      onClick={() => toggleWholeDayCompletion(daySubtopicKeys)}
-                      className={`w-full py-2 px-3 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 cursor-pointer ${
-                        isDayFullyCompleted
-                          ? 'bg-emerald-100 hover:bg-emerald-200 text-emerald-900 border border-emerald-300'
-                          : 'bg-emerald-800 hover:bg-emerald-900 text-white shadow-2xs hover:shadow-xs'
-                      }`}
-                    >
-                      {isDayFullyCompleted ? (
-                        <>
-                          <CheckCircle2 size={15} className="text-emerald-700" />
-                          <span>Dia de Estudo Concluído! 🎉</span>
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles size={15} className="text-emerald-200" />
-                          <span>Marcar Dia como Concluído ✨</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
+                  )}
                 </div>
               );
             })}
