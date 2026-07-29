@@ -1,8 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import confetti from 'canvas-confetti';
 import { User, db, doc, getDoc, setDoc } from '../firebase';
-import { UserProfile, EditalTopic } from '../types';
-import { generateStudySchedule, buildInterleavedStudyQueue, INITIAL_EDITAL_TOPICS } from '../data/seducData';
+import { UserProfile, EditalTopic, TopicStatus } from '../types';
+import { generateStudySchedule, buildInterleavedStudyQueue, INITIAL_EDITAL_TOPICS, extractEditalLeafNodes, EditalLeafNode } from '../data/seducData';
 import { recordUserActivity } from '../utils/streak';
 import { 
   Calendar, 
@@ -53,6 +53,97 @@ export default function CronogramaSection({ user, profile, setActiveTab }: Crono
     }));
   };
 
+  const activeDegree = profile?.degree || profile?.targetSubject || 'Licenciatura em Língua Portuguesa / Letras';
+
+  // Build the unified Interleaving Queue
+  const interleavedQueue = useMemo(() => {
+    return buildInterleavedStudyQueue(activeDegree);
+  }, [activeDegree]);
+
+  // Generate schedule array based on profile data
+  const scheduleDays = useMemo(() => {
+    return generateStudySchedule(profile || {}, topics);
+  }, [profile, topics]);
+
+  const syncCronogramaToEdital = (updatedCompletedIds: Record<string, boolean>) => {
+    const activeUid = user?.uid || profile?.uid || 'guest';
+    const editalStorageKey = `studyProgress_${activeUid}`;
+
+    const leafNodes = extractEditalLeafNodes(activeDegree);
+
+    const leafMapByName = new Map<string, EditalLeafNode[]>();
+    leafNodes.forEach(node => {
+      const key = node.leafName.trim().toLowerCase();
+      const existing = leafMapByName.get(key) || [];
+      existing.push(node);
+      leafMapByName.set(key, existing);
+    });
+
+    let editalProgress: Record<string, TopicStatus> = {};
+    try {
+      const local = localStorage.getItem(editalStorageKey) || localStorage.getItem('studyProgress_guest');
+      if (local) editalProgress = JSON.parse(local);
+    } catch (_) {}
+
+    scheduleDays.forEach(day => {
+      day.topics.forEach(session => {
+        session.subtopicNames.forEach((subName, subIdx) => {
+          const subKey = `${session.id}_sub_${subIdx}`;
+          const isCompleted = !!updatedCompletedIds[subKey];
+          const directLeafId = session.leafIds?.[subIdx];
+
+          const targetIds = new Set<string>();
+          if (directLeafId) {
+            targetIds.add(directLeafId);
+          } else {
+            const exactMatches = leafMapByName.get(subName.trim().toLowerCase());
+            const matches = exactMatches || leafNodes.filter(l => l.leafName.toLowerCase().includes(subName.toLowerCase()));
+            matches.forEach(m => targetIds.add(m.id));
+          }
+
+          targetIds.forEach(leafId => {
+            const currentStatus = editalProgress[leafId];
+            if (isCompleted) {
+              if (currentStatus !== 'mastered' && currentStatus !== 'reviewed') {
+                editalProgress[leafId] = 'mastered';
+
+                if (activeUid && activeUid !== 'guest') {
+                  const userProgressRef = doc(db, 'studyProgress', `${activeUid}_${leafId}`);
+                  setDoc(userProgressRef, {
+                    uid: activeUid,
+                    itemId: leafId,
+                    status: 'mastered',
+                    updatedAt: new Date().toISOString()
+                  }, { merge: true }).catch(() => {});
+                }
+              }
+            } else {
+              if (currentStatus === 'mastered') {
+                editalProgress[leafId] = 'not_started';
+
+                if (activeUid && activeUid !== 'guest') {
+                  const userProgressRef = doc(db, 'studyProgress', `${activeUid}_${leafId}`);
+                  setDoc(userProgressRef, {
+                    uid: activeUid,
+                    itemId: leafId,
+                    status: 'not_started',
+                    updatedAt: new Date().toISOString()
+                  }, { merge: true }).catch(() => {});
+                }
+              }
+            }
+          });
+        });
+      });
+    });
+
+    try {
+      localStorage.setItem(editalStorageKey, JSON.stringify(editalProgress));
+      localStorage.setItem('studyProgress_guest', JSON.stringify(editalProgress));
+    } catch (_) {}
+    window.dispatchEvent(new Event('studyProgressUpdated'));
+  };
+
   // Sync / Load saved cronograma completion progress from localStorage & Firestore
   useEffect(() => {
     const loadSavedCronogramaProgress = async () => {
@@ -72,6 +163,7 @@ export default function CronogramaSection({ user, profile, setActiveTab }: Crono
 
         if (Object.keys(currentLocalMap).length > 0) {
           setCompletedTopicIds(currentLocalMap);
+          syncCronogramaToEdital(currentLocalMap);
         }
       } catch (err) {
         console.warn('Erro ao carregar do localStorage:', err);
@@ -89,6 +181,7 @@ export default function CronogramaSection({ user, profile, setActiveTab }: Crono
               // MERGE local + firestore so no completed items are ever lost!
               const merged = { ...currentLocalMap, ...data.completedTopicIds };
               setCompletedTopicIds(merged);
+              syncCronogramaToEdital(merged);
               
               localStorage.setItem(storageKey, JSON.stringify(merged));
               localStorage.setItem(`cronogramaProgress_${activeUid}`, JSON.stringify(merged));
@@ -117,18 +210,6 @@ export default function CronogramaSection({ user, profile, setActiveTab }: Crono
 
     loadSavedCronogramaProgress();
   }, [user?.uid, profile?.uid, storageKey]);
-
-  const activeDegree = profile?.degree || profile?.targetSubject || 'Licenciatura em Biologia / Ciências Biológicas';
-
-  // Build the unified Interleaving Queue
-  const interleavedQueue = useMemo(() => {
-    return buildInterleavedStudyQueue(activeDegree);
-  }, [activeDegree]);
-
-  // Generate schedule array based on profile data
-  const scheduleDays = useMemo(() => {
-    return generateStudySchedule(profile || {}, topics);
-  }, [profile, topics]);
 
   const triggerDayConfetti = () => {
     try {
@@ -190,6 +271,8 @@ export default function CronogramaSection({ user, profile, setActiveTab }: Crono
         console.warn('Erro ao salvar no localStorage:', err);
       }
 
+      syncCronogramaToEdital(updated);
+
       // Save to Firestore asynchronously
       if (activeUid) {
         setDoc(doc(db, 'cronogramaProgress', activeUid), {
@@ -242,6 +325,8 @@ export default function CronogramaSection({ user, profile, setActiveTab }: Crono
       } catch (err) {
         console.warn('Erro ao salvar no localStorage:', err);
       }
+
+      syncCronogramaToEdital(updated);
 
       if (activeUid) {
         setDoc(doc(db, 'cronogramaProgress', activeUid), {

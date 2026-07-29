@@ -660,6 +660,7 @@ export interface InterleavedQueueItem {
   blockName: string;
   parentTopicName: string;
   subtopicNames: string[];
+  leafIds: string[];
   type: 'especifico' | 'geral';
 }
 
@@ -692,6 +693,7 @@ export function buildInterleavedStudyQueue(userDegree?: string): InterleavedQueu
             blockName: first.blockName,
             parentTopicName: first.parentTopicName,
             subtopicNames: currentBatch.map(b => b.leafName),
+            leafIds: currentBatch.map(b => b.id),
             type: itemType
           });
           currentBatch = [node];
@@ -708,6 +710,7 @@ export function buildInterleavedStudyQueue(userDegree?: string): InterleavedQueu
         blockName: first.blockName,
         parentTopicName: first.parentTopicName,
         subtopicNames: currentBatch.map(b => b.leafName),
+        leafIds: currentBatch.map(b => b.id),
         type: itemType
       });
     }
@@ -744,7 +747,7 @@ export function generateStudySchedule(
   profile: Partial<UserProfile>,
   topics?: EditalTopic[]
 ): ScheduleDay[] {
-  const activeDegree = profile.degree || profile.targetSubject || 'Licenciatura em Biologia / Ciências Biológicas';
+  const activeDegree = profile.degree || profile.targetSubject || 'Licenciatura em Língua Portuguesa / Letras';
   const leaves = extractEditalLeafNodes(activeDegree);
 
   const specLeaves = leaves.filter(l => l.category === 'Conhecimentos Específicos');
@@ -770,6 +773,7 @@ export function generateStudySchedule(
             blockName: first.blockName,
             parentTopicName: first.parentTopicName,
             subtopicNames: currentBatch.map(b => b.leafName),
+            leafIds: currentBatch.map(b => b.id),
             type: itemType
           });
           currentBatch = [node];
@@ -786,6 +790,7 @@ export function generateStudySchedule(
         blockName: first.blockName,
         parentTopicName: first.parentTopicName,
         subtopicNames: currentBatch.map(b => b.leafName),
+        leafIds: currentBatch.map(b => b.id),
         type: itemType
       });
     }
@@ -839,6 +844,7 @@ export function generateStudySchedule(
         blockName: specBatch.blockName,
         parentTopicName: specBatch.parentTopicName,
         subtopicNames: specBatch.subtopicNames,
+        leafIds: specBatch.leafIds,
         completed: false,
         questionsGoal: `${specQuestions} questões`,
         reviewType: 'Específica'
@@ -866,6 +872,7 @@ export function generateStudySchedule(
         blockName: genBatch.blockName,
         parentTopicName: genBatch.parentTopicName,
         subtopicNames: genBatch.subtopicNames,
+        leafIds: genBatch.leafIds,
         completed: false,
         questionsGoal: `${genQuestions} questões`,
         reviewType: 'Geral'

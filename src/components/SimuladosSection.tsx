@@ -44,7 +44,6 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
 
   // Generator Configurations
   const [selectedBanca, setSelectedBanca] = useState<string>('FUNECE / CEV-UECE');
-  const [questionCount] = useState<number>(5); // Fixed queue of questions per session
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>('Média');
   const [selectedQuestionType, setSelectedQuestionType] = useState<string>('Estilo banca');
 
@@ -207,6 +206,27 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
   };
 
   const selectedCount = Object.keys(selectedSubtopicsMap).length;
+
+  // Total subtopics available in current tree
+  const totalSubtopicsInTree = useMemo(() => {
+    let count = 0;
+    currentTreeBlocks.forEach(block => {
+      block.topics.forEach(topic => {
+        const subList = topic.subtopics.length > 0 ? topic.subtopics : [{ id: `${topic.id}-gen` }];
+        count += subList.length;
+      });
+    });
+    return count;
+  }, [currentTreeBlocks]);
+
+  // Dynamic question count: 1 per selected topic, or 5 if ALL topics in tree are selected
+  const computedQuestionCount = useMemo(() => {
+    if (selectedCount === 0) return 0;
+    if (totalSubtopicsInTree > 0 && selectedCount >= totalSubtopicsInTree) {
+      return 5;
+    }
+    return selectedCount;
+  }, [selectedCount, totalSubtopicsInTree]);
 
   // Helper to retrieve previously seen question texts to prevent repetition
   const getPreviouslySeenQuestionTexts = (): string[] => {
@@ -373,6 +393,8 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
     // Retrieve seen questions to pass to AI for absolute anti-repetition
     const seenTexts = getPreviouslySeenQuestionTexts();
 
+    const targetCount = computedQuestionCount || 1;
+
     try {
       const response = await fetch('/api/seduc/generate-simulado', {
         method: 'POST',
@@ -384,7 +406,7 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
           banca: selectedBanca,
           difficulty: selectedDifficulty,
           questionType: selectedQuestionType,
-          count: questionCount,
+          count: targetCount,
           previousQuestions: seenTexts
         })
       });
@@ -432,7 +454,7 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
       } else {
         // Fallback: load matching offline questions from bank if API is unreachable/fails
         console.warn("API de geração indisponível ou resposta inválida. Usando gerador adaptativo de questões FUNECE.");
-        const fallbackQuestions = generateSmartFallbackQuestions(disciplineName, selectedDisciplineCategory, topicPayload, questionCount);
+        const fallbackQuestions = generateSmartFallbackQuestions(disciplineName, selectedDisciplineCategory, topicPayload, targetCount);
 
         recordSeenQuestions(fallbackQuestions);
 
@@ -449,7 +471,7 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
     } catch (err: any) {
       console.error("Erro ao gerar simulado:", err);
       // Fallback on total network error
-      const fallbackQuestions = generateSmartFallbackQuestions(disciplineName, selectedDisciplineCategory, topicPayload, questionCount);
+      const fallbackQuestions = generateSmartFallbackQuestions(disciplineName, selectedDisciplineCategory, topicPayload, targetCount);
       recordSeenQuestions(fallbackQuestions);
       setActiveQuizQuestions(fallbackQuestions);
       setCurrentQuestionIndex(0);
@@ -853,7 +875,11 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
               <p className="text-xs text-zinc-500 font-medium">
                 {selectedCount === 0 
                   ? 'Selecione ao menos um assunto do edital ao lado.' 
-                  : `${selectedCount} assunto(s) selecionado(s).`}
+                  : (totalSubtopicsInTree > 0 && selectedCount >= totalSubtopicsInTree)
+                    ? 'Todos os assuntos selecionados (Serão geradas 5 questões).'
+                    : selectedCount === 1
+                      ? '1 assunto selecionado (Será gerada 1 questão).'
+                      : `${selectedCount} assuntos selecionados (Serão geradas ${computedQuestionCount} questões - 1 por assunto).`}
               </p>
             </div>
 
@@ -883,7 +909,11 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
               ) : (
                 <>
                   <Play size={16} className="fill-white" />
-                  <span>INICIAR QUESTÕES ({selectedCount} ASSUNTOS)</span>
+                  <span>
+                    {computedQuestionCount === 1 
+                      ? 'INICIAR (1 QUESTÃO)' 
+                      : `INICIAR (${computedQuestionCount} QUESTÕES)`}
+                  </span>
                 </>
               )}
             </button>

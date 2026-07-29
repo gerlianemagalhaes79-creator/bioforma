@@ -97,6 +97,23 @@ export default function EditalSection({ user, profile, setActiveTab }: EditalSec
       }
     };
     loadProgress();
+
+    const handleProgressUpdate = () => {
+      try {
+        const local = localStorage.getItem(storageKey) || localStorage.getItem('studyProgress_guest');
+        if (local) {
+          setStatusMap(JSON.parse(local));
+        }
+      } catch (_) {}
+    };
+
+    window.addEventListener('studyProgressUpdated', handleProgressUpdate);
+    window.addEventListener('storage', handleProgressUpdate);
+
+    return () => {
+      window.removeEventListener('studyProgressUpdated', handleProgressUpdate);
+      window.removeEventListener('storage', handleProgressUpdate);
+    };
   }, [user?.uid, storageKey]);
 
   const toggleBlock = (blockId: string) => {

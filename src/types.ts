@@ -106,6 +106,7 @@ export interface ScheduleTopicItem {
   blockName: string;
   parentTopicName: string;
   subtopicNames: string[]; // Lista de 2 a 5 nós folha (subtópicos finais)
+  leafIds?: string[]; // IDs exatos dos nós no Edital (ex: ['sub-eb-1-1-1', 'sub-eb-1-1-2'])
   completed: boolean;
   learningGoal?: string;
   questionsGoal?: string;
