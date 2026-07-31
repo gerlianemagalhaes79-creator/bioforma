@@ -595,16 +595,24 @@ Forneça um comentário explicativo completo no estilo FUNECE contendo:
     ).join("\n");
 
     const previousBlock = Array.isArray(previousQuestions) && previousQuestions.length > 0
-      ? `\n## 🚨 REGRA CRÍTICA DE ANTI-REPETIÇÃO E INEDITISMO ABSOLUTO:
-O candidato JÁ RESOLVEU as seguintes questões anteriormente sobre estes tópicos:
-${previousQuestions.slice(-20).map((q: string, idx: number) => `   [${idx + 1}] "${q.substring(0, 160)}..."`).join('\n')}
+      ? `\n## 🚨 DIRETIVA CRÍTICA: EXCLUSIVIDADE DE QUESTÕES (ANTI-REPETIÇÃO)
+Você é um gerador de questões altamente dinâmico e rigoroso. O usuário poderá selecionar o mesmo assunto repetidas vezes. No entanto, é ESTREITAMENTE PROIBIDO repetir qualquer questão, enunciado, contexto ou alternativa já gerada anteriormente em solicitações passadas para o mesmo tema.
 
-⚠️ É ABSOLUTAMENTE PROIBIDO REPETIR QUALQUER UMA DAS QUESTÕES ACIMA!
-- NÃO repita enunciados, casos hipotéticos, exemplos ou alternativas parecidas.
-- Explore OUTROS aspectos teóricos, outras exceções, definições complementares, análises comparativas ou situações-problema inéditas dentro do mesmo assunto.
-- Garanta que o candidato enfrente uma prova 100% NOVA, testando a verdadeira fixação e não a memorização de gabaritos passados.`
-      : `\n## REGRA DE INEDITISMO E DIVERSIDADE FUNECE:
-Gere questões 100% inéditas com abordagens variadas sobre os tópicos (análises conceituais, situações-problema, interpretação de fenômenos e comparações técnicas). Jamais use modelos genéricos ou repetitivos.`;
+O candidato JÁ RESOLVEU as seguintes questões anteriormente sobre estes tópicos:
+${previousQuestions.slice(-50).map((q: string, idx: number) => `   [${idx + 1}] "${q.substring(0, 160)}..."`).join('\n')}
+
+### Regras de Ouro de Anti-Repetição:
+1. Zero Duplicidade: Cada nova solicitação deve trazer perguntas 100% inéditas, explorando subtemas diferentes, novos ângulos teóricos, cenários práticos variados ou níveis de complexidade distintos dentro do mesmo assunto selecionado.
+2. Diversidade de Enunciados: Alterne a estrutura das perguntas (estudo de caso, assertivas de verdadeiro/falso, múltipla escolha direta, interpretação de texto/dados, resolução de problemas).
+3. Memória de Escopo: Considere que todas as requisições anteriores para este assunto já foram esgotadas. Nunca reutilize estruturas de perguntas anteriores apenas trocando os valores numéricos ou sinônimos superficiais.`
+      : `\n## 🚨 DIRETIVA CRÍTICA: EXCLUSIVIDADE DE QUESTÕES E INEDITISMO ABSOLUTO (ANTI-REPETIÇÃO)
+Você é um gerador de questões altamente dinâmico e rigoroso. O usuário poderá selecionar o mesmo assunto repetidas vezes. No entanto, é ESTREITAMENTE PROIBIDO repetir qualquer questão, enunciado, contexto ou alternativa.
+
+### Regras de Ouro:
+1. Zero Duplicidade: Cada nova solicitação deve trazer perguntas 100% inéditas, explorando subtemas diferentes, novos ângulos teóricos, cenários práticos variados ou níveis de complexidade distintos dentro do mesmo assunto selecionado.
+2. Diversidade de Enunciados: Alterne a estrutura das perguntas (estudo de caso, assertivas de verdadeiro/falso, múltipla escolha direta, interpretação de texto/dados, resolução de problemas).
+3. Memória de Escopo: Nunca reutilize estruturas de perguntas anteriores apenas trocando valores numéricos ou sinônimos superficiais.
+4. Formato e Qualidade: Garanta que a questão seja original, criativa e desafiadora. Caso o assunto seja exaurido em termos básicos, aprofunde para aspectos avançados, exceções da regra ou aplicações práticas do tema.`;
 
     const prompt = `Você é o ELABORADOR ESPECIALISTA DE QUESTÕES DE CONCURSO para a SEDUC-CE (FUNECE / CEV-UECE).
 
