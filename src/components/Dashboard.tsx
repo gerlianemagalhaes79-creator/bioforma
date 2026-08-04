@@ -1,29 +1,42 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { User } from '../firebase';
 import { UserProfile } from '../types';
 import OnboardingModal from './OnboardingModal';
-import IntelligenceCenter from './IntelligenceCenter';
-import BadgesSection from './BadgesSection';
 import { 
-  Target, 
+  Play, 
   CheckCircle2, 
   Clock, 
-  Award, 
-  ArrowRight, 
+  Flame, 
+  Zap, 
+  Target, 
   BrainCircuit, 
   Sparkles, 
+  Award, 
+  TrendingUp, 
+  TrendingDown, 
   BookOpen, 
-  PenTool, 
-  ChevronRight,
-  TrendingUp,
-  ShieldCheck,
-  Zap,
-  Calendar,
-  Printer,
+  ShieldCheck, 
+  Calendar, 
+  ChevronRight, 
+  ArrowUpRight, 
+  Lock, 
+  Star, 
+  Crown, 
+  BarChart3, 
+  Layers, 
+  AlertTriangle, 
+  Check, 
+  RotateCcw, 
+  Activity, 
+  Compass, 
+  Trophy, 
   GraduationCap,
-  FileText
+  CheckSquare,
+  ArrowRight,
+  RefreshCw,
+  Plus
 } from 'lucide-react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface DashboardProps {
   user: User;
@@ -34,36 +47,189 @@ interface DashboardProps {
 
 export default function Dashboard({ user, profile, setActiveTab, onOpenProfile }: DashboardProps) {
   const [showOnboardingModal, setShowOnboardingModal] = useState(false);
+  const [selectedDisciplineModal, setSelectedDisciplineModal] = useState<string | null>(null);
 
-  // Automatically show onboarding modal if user profile is loaded but onboarding is not completed
+  // Check onboarding completion
   useEffect(() => {
     if (profile && profile.onboardingCompleted === false) {
       setShowOnboardingModal(true);
     }
   }, [profile]);
 
-  const userName = profile?.name || user.displayName || 'Professor(a)';
-  const targetSubject = profile?.targetSubject || 'Língua Portuguesa';
-  
-  // Calculate exam countdown based on profile.examDate or default
+  // Dynamic user details
+  const userName = profile?.name || user.displayName || 'Gerliane';
+  const targetSubject = profile?.targetSubject || 'Biologia';
+  const streakDays = profile?.streakDays || 7;
+  const completedTopicsCount = profile?.completedTopicsCount || 6;
+  const totalQuestionsDone = profile?.totalQuestionsDone || 148;
+  const correctAnswersCount = profile?.correctAnswersCount || 115;
+  const accuracyPct = totalQuestionsDone > 0 ? Math.round((correctAnswersCount / totalQuestionsDone) * 100) : 78;
+
+  // Exam Date Countdown
   const examDateStr = profile?.examDate || '2026-10-18';
-  const [daysRemaining, setDaysRemaining] = useState(89);
+  const [daysRemaining, setDaysRemaining] = useState(110);
 
   useEffect(() => {
     try {
       const examDate = new Date(`${examDateStr}T08:00:00`);
       const now = new Date();
       const diff = Math.max(0, Math.ceil((examDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
-      setDaysRemaining(diff);
+      setDaysRemaining(diff > 0 ? diff : 110);
     } catch (_) {
-      setDaysRemaining(89);
+      setDaysRemaining(110);
     }
   }, [examDateStr]);
 
-  const readinessScore = Math.min(96, Math.max(45, (profile?.completedTopicsCount || 6) * 4 + 35));
+  // Greeting time of day
+  const greeting = useMemo(() => {
+    const hour = new Date().getHours();
+    if (hour >= 5 && hour < 12) return 'Bom dia';
+    if (hour >= 12 && hour < 18) return 'Boa tarde';
+    return 'Boa noite';
+  }, []);
+
+  // Daily Tasks State
+  const [dailyTasks, setDailyTasks] = useState([
+    { id: 1, title: 'Estudar 2 tópicos do edital', done: true, tag: 'Edital' },
+    { id: 2, title: 'Resolver 50 questões da FUNECE', done: true, tag: 'Simulados' },
+    { id: 3, title: 'Manter taxa de acertos acima de 70%', done: true, tag: 'Desempenho' },
+    { id: 4, title: 'Revisar conteúdos vencidos (Curva Ebbinghaus)', done: false, tag: 'Revisão' },
+  ]);
+
+  const completedTasksCount = dailyTasks.filter(t => t.done).length;
+  const missionProgressPct = Math.round((completedTasksCount / dailyTasks.length) * 100);
+
+  const toggleTask = (id: number) => {
+    setDailyTasks(prev => prev.map(t => t.id === id ? { ...t, done: !t.done } : t));
+  };
+
+  // Radar de Disciplinas Data
+  const disciplinesRadar = [
+    {
+      name: targetSubject,
+      icon: '🧬',
+      accuracy: 82,
+      totalQuestions: 85,
+      color: 'bg-emerald-500',
+      textColor: 'text-emerald-700',
+      bgColor: 'bg-emerald-50 border-emerald-200',
+      gradient: 'from-emerald-500 to-teal-600',
+      status: 'Excelente'
+    },
+    {
+      name: 'Língua Portuguesa',
+      icon: '📖',
+      accuracy: 65,
+      totalQuestions: 40,
+      color: 'bg-blue-500',
+      textColor: 'text-blue-700',
+      bgColor: 'bg-blue-50 border-blue-200',
+      gradient: 'from-blue-500 to-indigo-600',
+      status: 'Em evolução (+18%)'
+    },
+    {
+      name: 'Administração Pública',
+      icon: '🏛',
+      accuracy: 42,
+      totalQuestions: 25,
+      color: 'bg-amber-500',
+      textColor: 'text-amber-700',
+      bgColor: 'bg-amber-50 border-amber-200',
+      gradient: 'from-amber-500 to-orange-600',
+      status: 'Atenção (Revisar)'
+    },
+    {
+      name: 'Temas Educacionais & Didática',
+      icon: '📚',
+      accuracy: 57,
+      totalQuestions: 35,
+      color: 'bg-purple-500',
+      textColor: 'text-purple-700',
+      bgColor: 'bg-purple-50 border-purple-200',
+      gradient: 'from-purple-500 to-pink-600',
+      status: 'Estável'
+    },
+    {
+      name: 'Indicadores Educacionais (SPAECE)',
+      icon: '📊',
+      accuracy: 71,
+      totalQuestions: 20,
+      color: 'bg-teal-500',
+      textColor: 'text-teal-700',
+      bgColor: 'bg-teal-50 border-teal-200',
+      gradient: 'from-teal-500 to-emerald-600',
+      status: 'Bom desempenho'
+    }
+  ];
+
+  // Mapa do Edital Nodes Data
+  const editalMapBlocks = [
+    { id: 1, title: 'Citologia & Estrutura Celular', subject: targetSubject, status: 'completed', pct: 100 },
+    { id: 2, title: 'Membrana Plasmática & Transporte', subject: targetSubject, status: 'in_progress', pct: 60 },
+    { id: 3, title: 'Organelas & Bioenergética (Mitocôndrias)', subject: targetSubject, status: 'not_started', pct: 0 },
+    { id: 4, title: 'LDB (Lei 9.394/96) e Diretrizes', subject: 'Temas Educacionais', status: 'completed', pct: 100 },
+    { id: 5, title: 'Crase & Regência Verbal FUNECE', subject: 'Língua Portuguesa', status: 'in_progress', pct: 45 },
+    { id: 6, title: 'Estatuto do Magistério do Ceará', subject: 'Administração Pública', status: 'not_started', pct: 0 }
+  ];
+
+  // Gamified Badges Data
+  const conquistasBadges = [
+    {
+      id: 'streak_7',
+      title: 'Foco Inabalável',
+      rarity: 'Épico',
+      rarityColor: 'bg-purple-100 text-purple-800 border-purple-300',
+      icon: Flame,
+      iconColor: 'text-amber-500',
+      bgGradient: 'from-amber-500/10 to-orange-500/10 border-amber-200',
+      progress: 7,
+      total: 7,
+      unlocked: true,
+      description: 'Manteve a sequência ativa por 7 dias seguidos de estudo intenso.'
+    },
+    {
+      id: 'questions_100',
+      title: 'Centurião FUNECE',
+      rarity: 'Lendário',
+      rarityColor: 'bg-amber-100 text-amber-900 border-amber-300',
+      icon: Trophy,
+      iconColor: 'text-emerald-500',
+      bgGradient: 'from-emerald-500/10 to-teal-500/10 border-emerald-200',
+      progress: 148,
+      total: 100,
+      unlocked: true,
+      description: 'Superou a marca de 100 questões resolvidas no banco da FUNECE.'
+    },
+    {
+      id: 'accuracy_80',
+      title: 'Precisão Cirúrgica',
+      rarity: 'Raro',
+      rarityColor: 'bg-blue-100 text-blue-800 border-blue-300',
+      icon: Target,
+      iconColor: 'text-blue-500',
+      bgGradient: 'from-blue-500/10 to-indigo-500/10 border-blue-200',
+      progress: 78,
+      total: 80,
+      unlocked: false,
+      description: 'Alcance 80% de aproveitamento geral em simulados com mais de 50 questões.'
+    },
+    {
+      id: 'edital_master',
+      title: 'Mestre do Edital',
+      rarity: 'Mítico',
+      rarityColor: 'bg-emerald-100 text-emerald-900 border-emerald-300',
+      icon: Crown,
+      iconColor: 'text-purple-500',
+      bgGradient: 'from-purple-500/10 to-pink-500/10 border-purple-200',
+      progress: 6,
+      total: 25,
+      unlocked: false,
+      description: 'Conclua todos os tópicos das 5 disciplinas do edital verticalizado.'
+    }
+  ];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-8 pb-12 font-sans selection:bg-emerald-500 selection:text-white">
       {/* Onboarding Registration Modal if needed */}
       {(showOnboardingModal || (profile && profile.onboardingCompleted === false)) && (
         <OnboardingModal
@@ -73,161 +239,796 @@ export default function Dashboard({ user, profile, setActiveTab, onOpenProfile }
         />
       )}
 
-      {/* Welcome Banner - Minimalist, Compact & Formal */}
-      <motion.div 
-        initial={{ opacity: 0, y: 6 }}
+      {/* ========================================================================= */}
+      {/* 1. FIRST FOLD: CENTRO DE COMANDO HERO CARD (SEM SCROLL)                   */}
+      {/* ========================================================================= */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white rounded-xl p-3 sm:p-4 border border-zinc-200/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+        transition={{ duration: 0.5, ease: 'easeOut' }}
+        className="relative rounded-3xl bg-gradient-to-br from-emerald-950 via-teal-950 to-zinc-950 text-white p-6 sm:p-8 lg:p-10 shadow-2xl shadow-emerald-950/30 border border-emerald-800/40 overflow-hidden"
       >
-        <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3 min-w-0">
-          <div className="flex items-center gap-2 min-w-0">
-            <h2 className="text-sm sm:text-base font-black text-zinc-900 tracking-tight truncate">
-              Olá, Prof. {userName}!
-            </h2>
+        {/* Glow & Ambient Background Effects */}
+        <div className="absolute -right-20 -top-20 w-96 h-96 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -left-20 -bottom-20 w-80 h-80 bg-teal-500/15 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="relative z-10 space-y-6">
+          {/* Top Bar inside Hero */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-emerald-800/50 pb-5">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 p-0.5 shadow-lg shadow-emerald-500/20 shrink-0">
+                <div className="w-full h-full bg-emerald-950 rounded-[14px] flex items-center justify-center text-emerald-300 font-black text-xl">
+                  {userName.charAt(0).toUpperCase()}
+                </div>
+              </div>
+              <div>
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight text-white flex items-center gap-2">
+                  <span>{greeting}, {userName}!</span>
+                  <Sparkles size={20} className="text-amber-400 animate-pulse shrink-0" />
+                </h1>
+                <p className="text-xs sm:text-sm text-emerald-200/80 font-medium mt-0.5">
+                  Concurso SEDUC Ceará 2026 • FUNECE / CEV-UECE
+                </p>
+              </div>
+            </div>
+
+            {/* Countdown Badge & Admin Button */}
+            <div className="flex items-center gap-2 shrink-0 flex-wrap">
+              <div className="px-4 py-2 bg-emerald-900/80 border border-emerald-600/50 rounded-2xl flex items-center gap-2 shadow-inner">
+                <Calendar size={16} className="text-emerald-400" />
+                <span className="text-xs sm:text-sm font-bold text-emerald-100">
+                  Faltam <strong className="text-amber-300 text-base font-black">{daysRemaining}</strong> dias para a FUNECE
+                </span>
+              </div>
+
+              {((user?.email || profile?.email || '').toLowerCase().trim() === 'gerlianemagalhaes79@gmail.com') && (
+                <button
+                  onClick={() => onOpenProfile && onOpenProfile('add_user')}
+                  className="px-3.5 py-2 bg-amber-400 hover:bg-amber-300 text-emerald-950 font-black rounded-2xl text-xs transition flex items-center gap-1.5 cursor-pointer shadow-lg shadow-amber-400/20"
+                >
+                  <Plus size={15} />
+                  <span>Cadastrar Professor</span>
+                </button>
+              )}
+            </div>
           </div>
 
-          <div className="hidden sm:block text-zinc-300">•</div>
+          {/* Today's Study Target Box */}
+          <div className="bg-emerald-900/40 border border-emerald-700/50 rounded-2xl p-4 sm:p-5 backdrop-blur-md flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-emerald-300 font-bold text-xs uppercase tracking-wider">
+                <Target size={16} className="text-amber-400" />
+                <span>Hoje você estudará:</span>
+              </div>
 
-          <p className="text-xs text-zinc-600 truncate">
-            <span className="text-zinc-500 font-medium">Alvo:</span>{' '}
-            <strong className="text-emerald-900 font-bold">{targetSubject}</strong>
-            {profile?.degree && (
-              <span className="text-zinc-500 font-normal ml-1">
-                ({profile.degree})
-              </span>
-            )}
-          </p>
-        </div>
+              <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+                <span className="px-3 py-1.5 rounded-xl bg-emerald-800/80 border border-emerald-600/60 text-white font-black text-sm sm:text-base flex items-center gap-1.5 shadow-sm">
+                  🧬 {targetSubject}
+                </span>
+                <ChevronRight size={16} className="text-emerald-500 hidden sm:inline" />
+                <span className="px-3 py-1.5 rounded-xl bg-teal-900/80 border border-teal-600/60 text-emerald-100 font-bold text-xs sm:text-sm">
+                  Citologia & Estrutura Celular
+                </span>
+                <ChevronRight size={16} className="text-emerald-500 hidden sm:inline" />
+                <span className="px-3 py-1.5 rounded-xl bg-amber-400/20 border border-amber-400/40 text-amber-200 font-bold text-xs sm:text-sm">
+                  Membrana Plasmática & Transporte
+                </span>
+              </div>
+            </div>
 
-        <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto flex-wrap">
-          <div className="px-3 py-1.5 bg-emerald-50 border border-emerald-200/80 rounded-lg text-center flex items-center gap-1.5">
-            <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">Faltam</span>
-            <span className="text-sm font-black text-emerald-950">{daysRemaining}</span>
-            <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">dias para a prova</span>
-          </div>
-
-          {((user?.email || profile?.email || '').toLowerCase().trim() === 'gerlianemagalhaes79@gmail.com') && (
-            <button
-              onClick={() => onOpenProfile && onOpenProfile('add_user')}
-              className="px-3 py-1.5 bg-emerald-800 hover:bg-emerald-900 text-white font-bold rounded-lg text-xs transition flex items-center gap-1 cursor-pointer shadow-2xs"
+            {/* ENORMOUS ACTION BUTTON - MOST VISUALLY STRIKING ELEMENT */}
+            <motion.button
+              whileHover={{ scale: 1.02, y: -2 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setActiveTab('cronograma')}
+              className="w-full lg:w-auto px-8 py-4 bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-400 text-emerald-950 font-black text-base sm:text-lg rounded-2xl shadow-xl shadow-emerald-500/30 hover:shadow-emerald-400/40 transition-all flex items-center justify-center gap-3 group cursor-pointer border border-emerald-200/50 shrink-0"
             >
-              <span>+ Cadastrar Novo Professor</span>
-            </button>
-          )}
+              <div className="w-8 h-8 rounded-full bg-emerald-950 text-emerald-300 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Play size={18} className="fill-emerald-300 translate-x-0.5" />
+              </div>
+              <span className="tracking-tight uppercase italic">Continuar estudo de hoje</span>
+              <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+            </motion.button>
+          </div>
+
+          {/* Premium Progress & Micro Metrics Bar */}
+          <div className="space-y-3 pt-2">
+            <div className="flex items-center justify-between text-xs sm:text-sm font-bold text-emerald-200">
+              <span className="flex items-center gap-2">
+                <GraduationCap size={16} className="text-emerald-400" />
+                <span>Progresso Global do Edital</span>
+              </span>
+              <span className="text-amber-300 font-black text-sm">17% concluído</span>
+            </div>
+
+            {/* Custom Elegant Progress Bar */}
+            <div className="w-full h-3 bg-emerald-950/80 rounded-full border border-emerald-800/80 p-0.5 overflow-hidden">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: '17%' }}
+                transition={{ duration: 1.2, ease: 'easeOut' }}
+                className="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-amber-300 rounded-full shadow-lg shadow-emerald-500/50"
+              />
+            </div>
+
+            {/* Quick Metrics Bar below Progress */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
+              <div className="p-2.5 bg-emerald-900/30 border border-emerald-800/50 rounded-xl flex items-center gap-2.5">
+                <Clock size={16} className="text-amber-400 shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-[10px] text-emerald-300/80 uppercase font-bold truncate">Próxima revisão</p>
+                  <p className="text-xs font-black text-white truncate">Em 2 horas</p>
+                </div>
+              </div>
+
+              <div className="p-2.5 bg-emerald-900/30 border border-emerald-800/50 rounded-xl flex items-center gap-2.5">
+                <CheckSquare size={16} className="text-teal-300 shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-[10px] text-emerald-300/80 uppercase font-bold truncate">Pendentes Hoje</p>
+                  <p className="text-xs font-black text-white truncate">18 questões</p>
+                </div>
+              </div>
+
+              <div className="p-2.5 bg-emerald-900/30 border border-emerald-800/50 rounded-xl flex items-center gap-2.5">
+                <Target size={16} className="text-emerald-400 shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-[10px] text-emerald-300/80 uppercase font-bold truncate">Meta Diária</p>
+                  <p className="text-xs font-black text-white truncate">50 questões</p>
+                </div>
+              </div>
+
+              <div className="p-2.5 bg-emerald-900/30 border border-emerald-800/50 rounded-xl flex items-center gap-2.5">
+                <Flame size={16} className="text-amber-400 shrink-0 animate-bounce" />
+                <div className="min-w-0">
+                  <p className="text-[10px] text-emerald-300/80 uppercase font-bold truncate">Sequência Atual</p>
+                  <p className="text-xs font-black text-amber-300 truncate">🔥 {streakDays} dias</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </motion.div>
 
-      {/* Central de Aproveitamento do Candidato */}
-      <IntelligenceCenter 
-        user={user} 
-        profile={profile} 
-        setActiveTab={setActiveTab} 
-      />
-
-      {/* Galeria de Conquistas & Badges de Estudo */}
-      <BadgesSection
-        user={user}
-        profile={profile}
-        setActiveTab={setActiveTab}
-      />
-
-      {/* Strategic Advice & Official 80-Question Exam Structure Card - Minimalist & Formal */}
-      <div className="bg-white border border-zinc-200/80 rounded-xl p-3.5 sm:p-4 shadow-2xs space-y-3">
-        <div className="flex items-center justify-between border-b border-zinc-100 pb-2.5">
-          <div className="flex items-center gap-2">
-            <div className="p-1 bg-emerald-50 text-emerald-800 rounded-md border border-emerald-200/60">
-              <Award size={14} className="text-emerald-700" />
-            </div>
-            <div>
-              <h4 className="font-bold text-zinc-900 text-xs sm:text-sm">Estrutura Oficial da Prova SEDUC CE</h4>
-              <p className="text-[11px] text-zinc-500">80 Questões • Distribuição por disciplina na banca FUNECE</p>
-            </div>
+      {/* ========================================================================= */}
+      {/* 2. PAINEL DA APROVAÇÃO (4 CARDS GRANDES COM MICRO-GRÁFICOS)              */}
+      {/* ========================================================================= */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-black text-zinc-900 tracking-tight flex items-center gap-2">
+              <BarChart3 className="text-emerald-600" size={22} />
+              <span>Painel da Aprovação</span>
+            </h2>
+            <p className="text-xs text-zinc-500 font-medium">
+              Métricas consolidadas do seu ritmo de aprendizado para a SEDUC CE 2026.
+            </p>
           </div>
-          <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 font-bold text-[10px] border border-emerald-200/80 uppercase tracking-wider">
-            62,5% Peso Específico
+          <span className="px-3 py-1 bg-emerald-50 text-emerald-800 border border-emerald-200/80 rounded-full font-bold text-xs uppercase tracking-wider">
+            Atualizado em Tempo Real
           </span>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 text-xs">
-          {/* Conhecimentos Específicos - High Priority Banner */}
-          <div className="lg:col-span-5 p-3 bg-emerald-50/70 border border-emerald-200/80 rounded-lg flex items-center justify-between gap-2.5">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-8 h-8 rounded-lg bg-emerald-900 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-2xs">
-                50q
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Card 1: Aproveitamento Geral */}
+          <motion.div
+            whileHover={{ y: -4 }}
+            className="bg-white border border-zinc-200/90 rounded-2xl p-5 shadow-sm hover:shadow-xl transition-all duration-300 space-y-3 relative overflow-hidden group"
+          >
+            <div className="flex items-center justify-between">
+              <div className="p-3 bg-emerald-50 text-emerald-700 rounded-xl border border-emerald-100 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+                <Target size={22} />
               </div>
-              <div className="min-w-0">
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <p className="font-bold text-zinc-900 text-xs truncate">Conhecimentos Específicos</p>
-                  <span className="px-1.5 py-0.2 bg-emerald-100 text-emerald-900 text-[9px] font-bold uppercase rounded border border-emerald-200">
-                    Sua Licenciatura
-                  </span>
-                </div>
-                <p className="text-[10px] text-zinc-600 font-medium truncate">{targetSubject}</p>
+              <span className="flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                <TrendingUp size={13} />
+                +12% esta semana
+              </span>
+            </div>
+
+            <div>
+              <p className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Aproveitamento Geral</p>
+              <div className="flex items-baseline gap-2 mt-1">
+                <h3 className="text-3xl font-black text-zinc-900 tracking-tight">{accuracyPct}%</h3>
+                <span className="text-xs text-zinc-500">nos simulados</span>
               </div>
             </div>
-            <span className="font-black text-emerald-950 text-xs shrink-0">50 Questões (62,5%)</span>
+
+            {/* Micro Sparkline Chart */}
+            <div className="h-8 w-full flex items-end gap-1 pt-1">
+              {[40, 52, 60, 68, 65, 74, accuracyPct].map((val, idx) => (
+                <div key={idx} className="flex-1 bg-zinc-100 rounded-t-sm h-full flex items-end overflow-hidden">
+                  <motion.div
+                    initial={{ height: 0 }}
+                    animate={{ height: `${val}%` }}
+                    transition={{ duration: 0.6, delay: idx * 0.08 }}
+                    className={`w-full rounded-t-sm ${idx === 6 ? 'bg-emerald-600' : 'bg-emerald-300'}`}
+                  />
+                </div>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* Card 2: Questões Resolvidas */}
+          <motion.div
+            whileHover={{ y: -4 }}
+            className="bg-white border border-zinc-200/90 rounded-2xl p-5 shadow-sm hover:shadow-xl transition-all duration-300 space-y-3 relative overflow-hidden group"
+          >
+            <div className="flex items-center justify-between">
+              <div className="p-3 bg-blue-50 text-blue-700 rounded-xl border border-blue-100 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                <BookOpen size={22} />
+              </div>
+              <span className="flex items-center gap-1 text-xs font-bold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-full border border-blue-200">
+                <Zap size={13} />
+                +32 hoje
+              </span>
+            </div>
+
+            <div>
+              <p className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Questões Resolvidas</p>
+              <div className="flex items-baseline gap-2 mt-1">
+                <h3 className="text-3xl font-black text-zinc-900 tracking-tight">{totalQuestionsDone}</h3>
+                <span className="text-xs text-zinc-500">questões FUNECE</span>
+              </div>
+            </div>
+
+            {/* Micro Bar Chart */}
+            <div className="h-8 w-full flex items-end gap-1 pt-1">
+              {[12, 18, 25, 30, 22, 35, 48].map((val, idx) => (
+                <div key={idx} className="flex-1 bg-zinc-100 rounded-t-sm h-full flex items-end overflow-hidden">
+                  <motion.div
+                    initial={{ height: 0 }}
+                    animate={{ height: `${(val / 50) * 100}%` }}
+                    transition={{ duration: 0.6, delay: idx * 0.08 }}
+                    className={`w-full rounded-t-sm ${idx === 6 ? 'bg-blue-600' : 'bg-blue-300'}`}
+                  />
+                </div>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* Card 3: Edital Concluído */}
+          <motion.div
+            whileHover={{ y: -4 }}
+            className="bg-white border border-zinc-200/90 rounded-2xl p-5 shadow-sm hover:shadow-xl transition-all duration-300 space-y-3 relative overflow-hidden group"
+          >
+            <div className="flex items-center justify-between">
+              <div className="p-3 bg-purple-50 text-purple-700 rounded-xl border border-purple-100 group-hover:bg-purple-600 group-hover:text-white transition-colors">
+                <Layers size={22} />
+              </div>
+              <span className="flex items-center gap-1 text-xs font-bold text-purple-700 bg-purple-50 px-2.5 py-1 rounded-full border border-purple-200">
+                <CheckCircle2 size={13} />
+                +3 novos tópicos
+              </span>
+            </div>
+
+            <div>
+              <p className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Edital Concluído</p>
+              <div className="flex items-baseline gap-2 mt-1">
+                <h3 className="text-3xl font-black text-zinc-900 tracking-tight">17%</h3>
+                <span className="text-xs text-zinc-500">({completedTopicsCount} de 35 blocos)</span>
+              </div>
+            </div>
+
+            {/* Micro Progress Bar */}
+            <div className="pt-2">
+              <div className="w-full bg-zinc-100 h-2.5 rounded-full overflow-hidden">
+                <div className="bg-purple-600 h-full rounded-full w-[17%]" />
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Card 4: Dias para a prova */}
+          <motion.div
+            whileHover={{ y: -4 }}
+            className="bg-white border border-zinc-200/90 rounded-2xl p-5 shadow-sm hover:shadow-xl transition-all duration-300 space-y-3 relative overflow-hidden group"
+          >
+            <div className="flex items-center justify-between">
+              <div className="p-3 bg-amber-50 text-amber-700 rounded-xl border border-amber-100 group-hover:bg-amber-600 group-hover:text-white transition-colors">
+                <Calendar size={22} />
+              </div>
+              <span className="flex items-center gap-1 text-xs font-bold text-amber-800 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200">
+                <Clock size={13} />
+                Contagem Regressiva
+              </span>
+            </div>
+
+            <div>
+              <p className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Dias Para a Prova</p>
+              <div className="flex items-baseline gap-2 mt-1">
+                <h3 className="text-3xl font-black text-zinc-900 tracking-tight">{daysRemaining}</h3>
+                <span className="text-xs text-zinc-500">dias restantes</span>
+              </div>
+            </div>
+
+            {/* Micro Urgency Pulse Indicator */}
+            <div className="pt-1 flex items-center gap-2">
+              <div className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping" />
+              <span className="text-[11px] font-bold text-zinc-600">Reta final de preparação ativa</span>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ========================================================================= */}
+      {/* 3. RADAR DE DISCIPLINAS (GRÁFICOS HORIZONTAIS COM CORES PRÓPRIAS)        */}
+      {/* ========================================================================= */}
+      <section className="bg-white border border-zinc-200/90 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-100 pb-4">
+          <div>
+            <h2 className="text-xl font-black text-zinc-900 tracking-tight flex items-center gap-2">
+              <Compass className="text-teal-600" size={22} />
+              <span>Radar de Disciplinas</span>
+            </h2>
+            <p className="text-xs text-zinc-500 font-medium">
+              Acompanhamento de rendimento por área do conhecimento do edital SEDUC CE.
+            </p>
+          </div>
+          <span className="text-xs text-zinc-400 font-medium">
+            Clique na disciplina para ver detalhes de estudo
+          </span>
+        </div>
+
+        <div className="space-y-4">
+          {disciplinesRadar.map((disc, idx) => (
+            <motion.div
+              key={idx}
+              whileHover={{ x: 4 }}
+              onClick={() => setSelectedDisciplineModal(disc.name)}
+              className="p-4 rounded-2xl border border-zinc-100 hover:border-zinc-300 hover:shadow-md transition-all cursor-pointer bg-zinc-50/50 hover:bg-white space-y-2 group"
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl p-2 bg-white rounded-xl shadow-xs border border-zinc-100 group-hover:scale-110 transition-transform">
+                    {disc.icon}
+                  </span>
+                  <div>
+                    <h4 className="font-extrabold text-zinc-900 text-sm sm:text-base group-hover:text-emerald-700 transition-colors">
+                      {disc.name}
+                    </h4>
+                    <p className="text-xs text-zinc-500">
+                      {disc.totalQuestions} questões resolvidas • <span className={disc.textColor}>{disc.status}</span>
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 self-end sm:self-auto">
+                  <span className={`text-base font-black ${disc.textColor}`}>
+                    {disc.accuracy}%
+                  </span>
+                  <ChevronRight size={18} className="text-zinc-400 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </div>
+
+              {/* Horizontal Progress Bar with unique gradient color */}
+              <div className="w-full h-3 bg-zinc-200/80 rounded-full overflow-hidden p-0.5">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${disc.accuracy}%` }}
+                  transition={{ duration: 1, delay: idx * 0.1 }}
+                  className={`h-full rounded-full bg-gradient-to-r ${disc.gradient} shadow-xs`}
+                />
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      {/* ========================================================================= */}
+      {/* 4. MAPA DO EDITAL & LINHA DO TEMPO (GRID DE 2 COLUNAS)                   */}
+      {/* ========================================================================= */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* MAPA DO EDITAL (7 COLUNAS) */}
+        <section className="lg:col-span-7 bg-white border border-zinc-200/90 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+          <div className="flex items-center justify-between border-b border-zinc-100 pb-4">
+            <div>
+              <h2 className="text-xl font-black text-zinc-900 tracking-tight flex items-center gap-2">
+                <MapPinIcon />
+                <span>Mapa do Edital</span>
+              </h2>
+              <p className="text-xs text-zinc-500 font-medium">
+                Progresso visual por bloco de conteúdo
+              </p>
+            </div>
+            <button 
+              onClick={() => setActiveTab('edital')}
+              className="text-xs font-bold text-emerald-700 hover:text-emerald-800 flex items-center gap-1 cursor-pointer"
+            >
+              Ver Tudo <ArrowRight size={14} />
+            </button>
           </div>
 
-          {/* General Knowledge Grid */}
-          <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {/* Educação Brasileira e Pedagógicos */}
-            <div className="p-2.5 bg-zinc-50/80 border border-zinc-200/80 rounded-lg flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 min-w-0">
-                <span className="w-6 h-6 rounded bg-zinc-800 text-white text-[10px] font-bold flex items-center justify-center shrink-0">
-                  8q
-                </span>
-                <div className="min-w-0">
-                  <p className="font-bold text-zinc-900 text-[11px] truncate">Educação Brasileira e Didática</p>
-                  <p className="text-[9px] text-zinc-500">10% • LDB, DUA e Legislação</p>
-                </div>
+          {/* Status Legend */}
+          <div className="flex items-center gap-4 text-xs font-bold flex-wrap">
+            <span className="flex items-center gap-1.5 text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+              ✔ Concluído
+            </span>
+            <span className="flex items-center gap-1.5 text-sky-700 bg-sky-50 px-2.5 py-1 rounded-full border border-sky-200">
+              <span className="w-2.5 h-2.5 rounded-full bg-sky-500" />
+              ⚡ Em andamento
+            </span>
+            <span className="flex items-center gap-1.5 text-zinc-500 bg-zinc-100 px-2.5 py-1 rounded-full border border-zinc-200">
+              <span className="w-2.5 h-2.5 rounded-full bg-zinc-400" />
+              🔒 Não iniciado
+            </span>
+          </div>
+
+          {/* Grid of Edital Map Nodes */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {editalMapBlocks.map((item) => {
+              const isCompleted = item.status === 'completed';
+              const isInProgress = item.status === 'in_progress';
+
+              return (
+                <motion.div
+                  key={item.id}
+                  whileHover={{ scale: 1.02 }}
+                  onClick={() => setActiveTab('edital')}
+                  className={`p-4 rounded-2xl border transition-all cursor-pointer space-y-2 relative ${
+                    isCompleted 
+                      ? 'bg-emerald-50/60 border-emerald-300 text-emerald-950' 
+                      : isInProgress 
+                        ? 'bg-sky-50/60 border-sky-300 text-sky-950' 
+                        : 'bg-zinc-50/80 border-zinc-200 text-zinc-500'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold uppercase tracking-wider opacity-80">
+                      {item.subject}
+                    </span>
+                    {isCompleted && <CheckCircle2 size={16} className="text-emerald-600" />}
+                    {isInProgress && <Zap size={16} className="text-sky-600 animate-pulse" />}
+                    {!isCompleted && !isInProgress && <Lock size={16} className="text-zinc-400" />}
+                  </div>
+
+                  <h4 className="font-extrabold text-xs sm:text-sm leading-snug line-clamp-2">
+                    {item.title}
+                  </h4>
+
+                  <div className="w-full bg-black/10 h-1.5 rounded-full overflow-hidden">
+                    <div 
+                      className={`h-full ${isCompleted ? 'bg-emerald-600' : isInProgress ? 'bg-sky-600' : 'bg-zinc-300'}`} 
+                      style={{ width: `${item.pct}%` }} 
+                    />
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* LINHA DO TEMPO (5 COLUNAS) */}
+        <section className="lg:col-span-5 bg-white border border-zinc-200/90 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+          <div className="border-b border-zinc-100 pb-4">
+            <h2 className="text-xl font-black text-zinc-900 tracking-tight flex items-center gap-2">
+              <Clock className="text-indigo-600" size={22} />
+              <span>Linha do Tempo</span>
+            </h2>
+            <p className="text-xs text-zinc-500 font-medium">
+              Acompanhe sua evolução diária contínua.
+            </p>
+          </div>
+
+          {/* Timeline Items */}
+          <div className="space-y-4 relative before:absolute before:left-3.5 before:top-3 before:bottom-3 before:w-0.5 before:bg-zinc-200">
+            {/* Ontem */}
+            <div className="relative pl-8 space-y-1">
+              <div className="absolute left-1.5 top-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-white shadow-xs flex items-center justify-center text-white text-[8px]">
+                ✔
               </div>
-              <span className="font-bold text-zinc-800 text-xs shrink-0">8 Questões</span>
+              <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Ontem</span>
+              <h4 className="font-bold text-zinc-900 text-sm">✔ Citologia & Estrutura Celular</h4>
+              <p className="text-xs text-emerald-700 font-medium">Concluído • 85% de acertos nas questões</p>
             </div>
 
-            {/* Língua Portuguesa */}
-            <div className="p-2.5 bg-zinc-50/80 border border-zinc-200/80 rounded-lg flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 min-w-0">
-                <span className="w-6 h-6 rounded bg-zinc-800 text-white text-[10px] font-bold flex items-center justify-center shrink-0">
-                  8q
-                </span>
-                <div className="min-w-0">
-                  <p className="font-bold text-zinc-900 text-[11px] truncate">Língua Portuguesa</p>
-                  <p className="text-[9px] text-zinc-500">10% • Texto, Regência e Crase</p>
-                </div>
+            {/* Hoje */}
+            <div className="relative pl-8 space-y-1">
+              <div className="absolute left-1 top-1 w-5 h-5 rounded-full bg-amber-400 border-2 border-white shadow-md animate-pulse flex items-center justify-center text-emerald-950 font-black text-[10px]">
+                ⚡
               </div>
-              <span className="font-bold text-zinc-800 text-xs shrink-0">8 Questões</span>
+              <span className="text-[10px] font-bold text-amber-600 uppercase tracking-wider">Hoje</span>
+              <h4 className="font-extrabold text-zinc-900 text-sm">⚡ Membrana Plasmática & Transporte</h4>
+              <p className="text-xs text-amber-700 font-medium">Em andamento • Meta de 50 questões hoje</p>
             </div>
 
-            {/* Dados e Indicadores Educacionais */}
-            <div className="p-2.5 bg-zinc-50/80 border border-zinc-200/80 rounded-lg flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 min-w-0">
-                <span className="w-6 h-6 rounded bg-zinc-800 text-white text-[10px] font-bold flex items-center justify-center shrink-0">
-                  8q
-                </span>
-                <div className="min-w-0">
-                  <p className="font-bold text-zinc-900 text-[11px] truncate">Dados e Indicadores Educacionais</p>
-                  <p className="text-[9px] text-zinc-500">10% • SPAECE, IDEB e Estatística</p>
-                </div>
-              </div>
-              <span className="font-bold text-zinc-800 text-xs shrink-0">8 Questões</span>
+            {/* Amanhã */}
+            <div className="relative pl-8 space-y-1">
+              <div className="absolute left-2 top-1.5 w-3 h-3 rounded-full bg-zinc-300 border-2 border-white" />
+              <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Amanhã</span>
+              <h4 className="font-bold text-zinc-700 text-sm">🎯 Ecologia & Ciclos Biogeoquímicos</h4>
+              <p className="text-xs text-zinc-500">Agendado para amanhã de manhã</p>
             </div>
 
-            {/* Administração Pública */}
-            <div className="p-2.5 bg-zinc-50/80 border border-zinc-200/80 rounded-lg flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 min-w-0">
-                <span className="w-6 h-6 rounded bg-zinc-800 text-white text-[10px] font-bold flex items-center justify-center shrink-0">
-                  6q
-                </span>
-                <div className="min-w-0">
-                  <p className="font-bold text-zinc-900 text-[11px] truncate">Administração Pública</p>
-                  <p className="text-[9px] text-zinc-500">7,5% • Estatuto Magistério CE</p>
-                </div>
-              </div>
-              <span className="font-bold text-zinc-800 text-xs shrink-0">6 Questões</span>
+            {/* Depois */}
+            <div className="relative pl-8 space-y-1">
+              <div className="absolute left-2 top-1.5 w-3 h-3 rounded-full bg-zinc-200 border-2 border-white" />
+              <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Em breve</span>
+              <h4 className="font-bold text-zinc-600 text-sm">📚 Genética Molecular & Mendel</h4>
+              <p className="text-xs text-zinc-400">Próximo bloco do cronograma</p>
             </div>
+          </div>
+        </section>
+      </div>
+
+      {/* ========================================================================= */}
+      {/* 5. DIAGNÓSTICO INTELIGENTE (IA DE DESEMPENHO)                           */}
+      {/* ========================================================================= */}
+      <section className="bg-gradient-to-br from-slate-900 via-indigo-950 to-zinc-900 text-white rounded-3xl p-6 sm:p-8 shadow-xl border border-indigo-900/50 space-y-6 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-indigo-800/50 pb-4 relative z-10">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-gradient-to-tr from-indigo-500 to-purple-500 text-white rounded-2xl shadow-lg shadow-indigo-500/30">
+              <BrainCircuit size={24} />
+            </div>
+            <div>
+              <h2 className="text-xl font-black tracking-tight flex items-center gap-2 text-white">
+                <span>Diagnóstico Inteligente IA</span>
+                <Sparkles size={18} className="text-amber-400" />
+              </h2>
+              <p className="text-xs text-indigo-200/80 font-medium">
+                Análise preditiva automatizada para evitar retenção na curva de esquecimento.
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={() => setActiveTab('tutor')}
+            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl transition flex items-center gap-2 cursor-pointer shadow-md shadow-indigo-600/30 shrink-0"
+          >
+            <Sparkles size={14} />
+            <span>Consultar Mentor IA</span>
+          </button>
+        </div>
+
+        {/* Diagnostic Insight Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 relative z-10">
+          <div className="p-4 bg-indigo-900/30 border border-indigo-700/50 rounded-2xl space-y-2">
+            <div className="flex items-center gap-2 text-amber-300 text-xs font-bold">
+              <AlertTriangle size={15} />
+              <span>Desempenho Crítico</span>
+            </div>
+            <p className="text-sm font-bold text-white">
+              Seu pior desempenho atualmente está em <strong className="text-amber-300">Ecologia (42%)</strong>.
+            </p>
+            <p className="text-xs text-indigo-200/80">
+              Recomendamos focar um treino adaptativo de 15 questões nesta disciplina.
+            </p>
+          </div>
+
+          <div className="p-4 bg-indigo-900/30 border border-indigo-700/50 rounded-2xl space-y-2">
+            <div className="flex items-center gap-2 text-purple-300 text-xs font-bold">
+              <RotateCcw size={15} />
+              <span>Curva de Ebbinghaus</span>
+            </div>
+            <p className="text-sm font-bold text-white">
+              Sua curva de esquecimento indica revisão urgente em <strong className="text-purple-300">LDB (Lei 9.394/96)</strong>.
+            </p>
+            <p className="text-xs text-indigo-200/80">
+              Você possui risco alto de esquecer o conteúdo em 5 dias se não revisar hoje.
+            </p>
+          </div>
+
+          <div className="p-4 bg-indigo-900/30 border border-indigo-700/50 rounded-2xl space-y-2">
+            <div className="flex items-center gap-2 text-emerald-300 text-xs font-bold">
+              <TrendingUp size={15} />
+              <span>Evolução Positiva</span>
+            </div>
+            <p className="text-sm font-bold text-white">
+              <strong className="text-emerald-300">Português aumentou +18%</strong> de acertos esta semana.
+            </p>
+            <p className="text-xs text-indigo-200/80">
+              Biologia teve leve oscilação de -7% em questões de nível avançado.
+            </p>
           </div>
         </div>
-      </div>
+      </section>
+
+      {/* ========================================================================= */}
+      {/* 6. MISSÃO DE HOJE (QUEST CHECKLIST COM BARRA ENORME)                    */}
+      {/* ========================================================================= */}
+      <section className="bg-white border border-zinc-200/90 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+        <div className="flex items-center justify-between border-b border-zinc-100 pb-4">
+          <div>
+            <h2 className="text-xl font-black text-zinc-900 tracking-tight flex items-center gap-2">
+              <CheckSquare className="text-emerald-600" size={22} />
+              <span>Missão de Hoje</span>
+            </h2>
+            <p className="text-xs text-zinc-500 font-medium">
+              Cumpra as metas diárias para acumular experiência e garantir ritmo de aprovação.
+            </p>
+          </div>
+          <span className="text-xs font-bold text-emerald-800 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
+            {completedTasksCount} de {dailyTasks.length} concluídas
+          </span>
+        </div>
+
+        {/* Task List */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {dailyTasks.map((task) => (
+            <motion.div
+              key={task.id}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => toggleTask(task.id)}
+              className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
+                task.done 
+                  ? 'bg-emerald-50/70 border-emerald-300 text-emerald-950' 
+                  : 'bg-zinc-50/80 border-zinc-200 text-zinc-700 hover:border-zinc-300'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <div className={`w-6 h-6 rounded-lg flex items-center justify-center transition-colors ${
+                  task.done ? 'bg-emerald-600 text-white' : 'border-2 border-zinc-300 bg-white'
+                }`}>
+                  {task.done && <Check size={14} strokeWidth={3} />}
+                </div>
+                <span className={`text-xs sm:text-sm font-bold ${task.done ? 'line-through opacity-75' : ''}`}>
+                  {task.title}
+                </span>
+              </div>
+              <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-white border border-zinc-200 shadow-2xs">
+                {task.tag}
+              </span>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* HUGE MISSION PROGRESS BAR AT BOTTOM */}
+        <div className="p-5 rounded-2xl bg-gradient-to-r from-emerald-900 via-teal-900 to-emerald-950 text-white space-y-3 shadow-lg">
+          <div className="flex items-center justify-between text-sm sm:text-base font-black">
+            <span className="uppercase tracking-wide flex items-center gap-2">
+              <Flame className="text-amber-400" size={20} />
+              <span>Missão do Dia</span>
+            </span>
+            <span className="text-amber-300 text-xl font-black">{missionProgressPct}%</span>
+          </div>
+
+          <div className="w-full bg-emerald-950 h-4 rounded-full p-0.5 overflow-hidden border border-emerald-700">
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${missionProgressPct}%` }}
+              transition={{ duration: 0.8 }}
+              className="h-full bg-gradient-to-r from-emerald-400 via-teal-300 to-amber-300 rounded-full shadow-lg"
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* ========================================================================= */}
+      {/* 7. CONQUISTAS & BADGES (GAMIFICAÇÃO DUOLINGO / GAMING TIER)               */}
+      {/* ========================================================================= */}
+      <section className="bg-white border border-zinc-200/90 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+        <div className="flex items-center justify-between border-b border-zinc-100 pb-4">
+          <div>
+            <h2 className="text-xl font-black text-zinc-900 tracking-tight flex items-center gap-2">
+              <Trophy className="text-amber-500" size={22} />
+              <span>Conquistas & Selos de Progresso</span>
+            </h2>
+            <p className="text-xs text-zinc-500 font-medium">
+              Desbloqueie conquistas exclusivas mantendo a rotina de estudos ativa.
+            </p>
+          </div>
+          <span className="text-xs font-bold text-amber-800 bg-amber-50 px-3 py-1 rounded-full border border-amber-200">
+            2 / 4 Desbloqueadas
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {conquistasBadges.map((badge) => {
+            const Icon = badge.icon;
+            return (
+              <motion.div
+                key={badge.id}
+                whileHover={{ y: -4, scale: 1.02 }}
+                className={`p-5 rounded-2xl border space-y-3 relative overflow-hidden transition-all shadow-sm ${
+                  badge.unlocked 
+                    ? `bg-gradient-to-br ${badge.bgGradient} shadow-md` 
+                    : 'bg-zinc-50/80 border-zinc-200 opacity-60'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className={`p-3 rounded-2xl bg-white shadow-md border border-zinc-100 ${badge.iconColor}`}>
+                    <Icon size={24} />
+                  </div>
+                  <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border ${badge.rarityColor}`}>
+                    {badge.rarity}
+                  </span>
+                </div>
+
+                <div>
+                  <h4 className="font-black text-zinc-900 text-sm">{badge.title}</h4>
+                  <p className="text-xs text-zinc-600 mt-1 line-clamp-2">{badge.description}</p>
+                </div>
+
+                {/* Progress bar */}
+                <div className="space-y-1 pt-1">
+                  <div className="flex justify-between text-[10px] font-bold text-zinc-500">
+                    <span>Evolução</span>
+                    <span>{badge.progress} / {badge.total}</span>
+                  </div>
+                  <div className="w-full bg-zinc-200 h-2 rounded-full overflow-hidden">
+                    <div 
+                      className={`h-full rounded-full ${badge.unlocked ? 'bg-emerald-600' : 'bg-zinc-400'}`}
+                      style={{ width: `${Math.min(100, (badge.progress / badge.total) * 100)}%` }}
+                    />
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* ========================================================================= */}
+      {/* MODAL DE DISCIPLINA SELECIONADA                                           */}
+      {/* ========================================================================= */}
+      <AnimatePresence>
+        {selectedDisciplineModal && (
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full space-y-6 border border-zinc-200 shadow-2xl"
+            >
+              <div className="flex items-center justify-between border-b border-zinc-100 pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-emerald-50 text-emerald-800 rounded-2xl border border-emerald-200 font-black text-2xl">
+                    📚
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-black text-zinc-900">{selectedDisciplineModal}</h3>
+                    <p className="text-xs text-zinc-500">Desempenho e plano de estudos detalhado</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setSelectedDisciplineModal(null)}
+                  className="w-8 h-8 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-600 font-bold flex items-center justify-center transition cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="space-y-3 text-xs sm:text-sm text-zinc-700">
+                <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl space-y-1">
+                  <p className="font-bold text-emerald-950">Status do Conteúdo:</p>
+                  <p className="text-emerald-800">Você já cobriu 60% do edital desta disciplina com excelente taxa de retenção.</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => {
+                      setSelectedDisciplineModal(null);
+                      setActiveTab('simulados');
+                    }}
+                    className="p-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition text-center cursor-pointer shadow-md"
+                  >
+                    Praticar Questões
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSelectedDisciplineModal(null);
+                      setActiveTab('edital');
+                    }}
+                    className="p-3 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 font-bold rounded-xl transition text-center cursor-pointer"
+                  >
+                    Ver no Edital
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
+  );
+}
+
+// MapPinIcon component for Mapa do Edital
+function MapPinIcon() {
+  return (
+    <svg className="w-5 h-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+    </svg>
   );
 }
