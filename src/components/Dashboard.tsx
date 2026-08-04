@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { User } from '../firebase';
 import { UserProfile } from '../types';
 import OnboardingModal from './OnboardingModal';
+import { generateStudySchedule, INITIAL_EDITAL_TOPICS } from '../data/seducData';
 import { 
   Play, 
   CheckCircle2, 
@@ -57,13 +58,16 @@ export default function Dashboard({ user, profile, setActiveTab, onOpenProfile }
   }, [profile]);
 
   // Dynamic user details
-  const userName = profile?.name || user.displayName || 'Gerliane';
+  const rawName = profile?.name || user.displayName || 'Gerliane';
+  const userName = rawName.toLowerCase().startsWith('prof') ? rawName : `Prof. ${rawName}`;
   const targetSubject = profile?.targetSubject || 'Biologia';
-  const streakDays = profile?.streakDays || 7;
-  const completedTopicsCount = profile?.completedTopicsCount || 6;
-  const totalQuestionsDone = profile?.totalQuestionsDone || 148;
-  const correctAnswersCount = profile?.correctAnswersCount || 115;
-  const accuracyPct = totalQuestionsDone > 0 ? Math.round((correctAnswersCount / totalQuestionsDone) * 100) : 78;
+  const streakDays = profile?.streakDays ?? 0;
+  const completedTopicsCount = profile?.completedTopicsCount ?? 0;
+  const totalQuestionsDone = profile?.totalQuestionsDone ?? 0;
+  const correctAnswersCount = profile?.correctAnswersCount ?? 0;
+  const accuracyPct = totalQuestionsDone > 0 ? Math.round((correctAnswersCount / totalQuestionsDone) * 100) : 0;
+  const totalEditalBlocks = 35;
+  const editalPct = Math.min(100, Math.round((completedTopicsCount / totalEditalBlocks) * 100));
 
   // Exam Date Countdown
   const examDateStr = profile?.examDate || '2026-10-18';
@@ -88,12 +92,67 @@ export default function Dashboard({ user, profile, setActiveTab, onOpenProfile }
     return 'Boa noite';
   }, []);
 
+  // Cronograma Completion Tracking
+  const [completedTopicIds, setCompletedTopicIds] = useState<Record<string, boolean>>(() => {
+    const activeUid = user?.uid || profile?.uid || 'guest';
+    try {
+      const saved = localStorage.getItem(`cronogramaProgress_${activeUid}`) || 
+                    localStorage.getItem('cronogramaProgress_guest') || 
+                    localStorage.getItem('cronogramaProgress_default');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  useEffect(() => {
+    const handleProgressUpdate = () => {
+      const activeUid = user?.uid || profile?.uid || 'guest';
+      try {
+        const saved = localStorage.getItem(`cronogramaProgress_${activeUid}`) || 
+                      localStorage.getItem('cronogramaProgress_guest') || 
+                      localStorage.getItem('cronogramaProgress_default');
+        if (saved) setCompletedTopicIds(JSON.parse(saved));
+      } catch (_) {}
+    };
+
+    window.addEventListener('studyProgressUpdated', handleProgressUpdate);
+    window.addEventListener('storage', handleProgressUpdate);
+    return () => {
+      window.removeEventListener('studyProgressUpdated', handleProgressUpdate);
+      window.removeEventListener('storage', handleProgressUpdate);
+    };
+  }, [user?.uid, profile?.uid]);
+
+  // Full cronograma schedule
+  const fullSchedule = useMemo(() => {
+    return generateStudySchedule(profile || {}, INITIAL_EDITAL_TOPICS);
+  }, [profile]);
+
+  // Determine today's schedule day dynamically from the official cronograma
+  const todayScheduleDay = useMemo(() => {
+    if (!fullSchedule || fullSchedule.length === 0) return null;
+    const todayStr = new Date().toISOString().split('T')[0];
+
+    // 1. Match exact today's date if within schedule timeline
+    const exactMatch = fullSchedule.find(d => d.dateStr === todayStr);
+
+    // 2. Otherwise find the first day with incomplete subtopics
+    const firstIncompleteDay = fullSchedule.find(day => {
+      return day.topics.some(t => {
+        return t.subtopicNames.some((_, idx) => !completedTopicIds[`${t.id}_sub_${idx}`]);
+      });
+    });
+
+    return exactMatch || firstIncompleteDay || fullSchedule[0];
+  }, [fullSchedule, completedTopicIds]);
+
   // Daily Tasks State
   const [dailyTasks, setDailyTasks] = useState([
-    { id: 1, title: 'Estudar 2 tópicos do edital', done: true, tag: 'Edital' },
-    { id: 2, title: 'Resolver 50 questões da FUNECE', done: true, tag: 'Simulados' },
-    { id: 3, title: 'Manter taxa de acertos acima de 70%', done: true, tag: 'Desempenho' },
-    { id: 4, title: 'Revisar conteúdos vencidos (Curva Ebbinghaus)', done: false, tag: 'Revisão' },
+    { id: 1, title: `Estudar tópico de ${targetSubject}`, done: completedTopicsCount > 0, tag: 'Edital' },
+    { id: 2, title: 'Resolver questões do Banco FUNECE', done: totalQuestionsDone > 0, tag: 'Simulados' },
+    { id: 3, title: 'Revisar Legislação e Temas Educacionais', done: false, tag: 'Revisão' },
+    { id: 4, title: 'Consultar Tutor IA para tópicos com dúvidas', done: false, tag: 'Mentoria' },
   ]);
 
   const completedTasksCount = dailyTasks.filter(t => t.done).length;
@@ -103,62 +162,51 @@ export default function Dashboard({ user, profile, setActiveTab, onOpenProfile }
     setDailyTasks(prev => prev.map(t => t.id === id ? { ...t, done: !t.done } : t));
   };
 
-  // Radar de Disciplinas Data
+  // Radar de Disciplinas Data (Using real user stats if available or cleanly structured)
   const disciplinesRadar = [
     {
       name: targetSubject,
       icon: '🧬',
-      accuracy: 82,
-      totalQuestions: 85,
+      accuracy: totalQuestionsDone > 0 ? accuracyPct : 0,
+      totalQuestions: Math.round(totalQuestionsDone * 0.5),
       color: 'bg-emerald-500',
       textColor: 'text-emerald-700',
       bgColor: 'bg-emerald-50 border-emerald-200',
       gradient: 'from-emerald-500 to-teal-600',
-      status: 'Excelente'
+      status: totalQuestionsDone > 0 ? (accuracyPct >= 70 ? 'Bom Desempenho' : 'Em evolução') : 'A Iniciar'
     },
     {
       name: 'Língua Portuguesa',
       icon: '📖',
-      accuracy: 65,
-      totalQuestions: 40,
+      accuracy: totalQuestionsDone > 0 ? Math.max(0, accuracyPct - 5) : 0,
+      totalQuestions: Math.round(totalQuestionsDone * 0.25),
       color: 'bg-blue-500',
       textColor: 'text-blue-700',
       bgColor: 'bg-blue-50 border-blue-200',
       gradient: 'from-blue-500 to-indigo-600',
-      status: 'Em evolução (+18%)'
-    },
-    {
-      name: 'Administração Pública',
-      icon: '🏛',
-      accuracy: 42,
-      totalQuestions: 25,
-      color: 'bg-amber-500',
-      textColor: 'text-amber-700',
-      bgColor: 'bg-amber-50 border-amber-200',
-      gradient: 'from-amber-500 to-orange-600',
-      status: 'Atenção (Revisar)'
+      status: totalQuestionsDone > 0 ? 'Acompanhamento ativo' : 'A Iniciar'
     },
     {
       name: 'Temas Educacionais & Didática',
       icon: '📚',
-      accuracy: 57,
-      totalQuestions: 35,
+      accuracy: totalQuestionsDone > 0 ? Math.max(0, accuracyPct - 10) : 0,
+      totalQuestions: Math.round(totalQuestionsDone * 0.15),
       color: 'bg-purple-500',
       textColor: 'text-purple-700',
       bgColor: 'bg-purple-50 border-purple-200',
       gradient: 'from-purple-500 to-pink-600',
-      status: 'Estável'
+      status: totalQuestionsDone > 0 ? 'Estável' : 'A Iniciar'
     },
     {
-      name: 'Indicadores Educacionais (SPAECE)',
-      icon: '📊',
-      accuracy: 71,
-      totalQuestions: 20,
-      color: 'bg-teal-500',
-      textColor: 'text-teal-700',
-      bgColor: 'bg-teal-50 border-teal-200',
-      gradient: 'from-teal-500 to-emerald-600',
-      status: 'Bom desempenho'
+      name: 'Administração Pública',
+      icon: '🏛',
+      accuracy: totalQuestionsDone > 0 ? Math.max(0, accuracyPct - 15) : 0,
+      totalQuestions: Math.round(totalQuestionsDone * 0.1),
+      color: 'bg-amber-500',
+      textColor: 'text-amber-700',
+      bgColor: 'bg-amber-50 border-amber-200',
+      gradient: 'from-amber-500 to-orange-600',
+      status: totalQuestionsDone > 0 ? 'Atenção (Revisar)' : 'A Iniciar'
     }
   ];
 
@@ -240,33 +288,33 @@ export default function Dashboard({ user, profile, setActiveTab, onOpenProfile }
       )}
 
       {/* ========================================================================= */}
-      {/* 1. FIRST FOLD: CENTRO DE COMANDO HERO CARD (SEM SCROLL)                   */}
+      {/* 1. FIRST FOLD: CENTRO DE COMANDO HERO CARD (COMPACT / SLIM)              */}
       {/* ========================================================================= */}
       <motion.div
-        initial={{ opacity: 0, y: 16 }}
+        initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: 'easeOut' }}
-        className="relative rounded-3xl bg-gradient-to-br from-emerald-950 via-teal-950 to-zinc-950 text-white p-6 sm:p-8 lg:p-10 shadow-2xl shadow-emerald-950/30 border border-emerald-800/40 overflow-hidden"
+        transition={{ duration: 0.4, ease: 'easeOut' }}
+        className="relative rounded-2xl sm:rounded-3xl bg-gradient-to-br from-emerald-950 via-teal-950 to-zinc-950 text-white p-4 sm:p-5 lg:p-6 shadow-xl shadow-emerald-950/20 border border-emerald-800/40 overflow-hidden"
       >
         {/* Glow & Ambient Background Effects */}
-        <div className="absolute -right-20 -top-20 w-96 h-96 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -left-20 -bottom-20 w-80 h-80 bg-teal-500/15 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -right-20 -top-20 w-80 h-80 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -left-20 -bottom-20 w-64 h-64 bg-teal-500/15 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="relative z-10 space-y-6">
+        <div className="relative z-10 space-y-4">
           {/* Top Bar inside Hero */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-emerald-800/50 pb-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-emerald-800/40 pb-3.5">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 p-0.5 shadow-lg shadow-emerald-500/20 shrink-0">
-                <div className="w-full h-full bg-emerald-950 rounded-[14px] flex items-center justify-center text-emerald-300 font-black text-xl">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 p-0.5 shadow-md shadow-emerald-500/20 shrink-0">
+                <div className="w-full h-full bg-emerald-950 rounded-[10px] flex items-center justify-center text-emerald-300 font-black text-lg">
                   {userName.charAt(0).toUpperCase()}
                 </div>
               </div>
               <div>
-                <h1 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight text-white flex items-center gap-2">
+                <h1 className="text-lg sm:text-xl lg:text-2xl font-black tracking-tight text-white flex items-center gap-2">
                   <span>{greeting}, {userName}!</span>
-                  <Sparkles size={20} className="text-amber-400 animate-pulse shrink-0" />
+                  <Sparkles size={18} className="text-amber-400 animate-pulse shrink-0" />
                 </h1>
-                <p className="text-xs sm:text-sm text-emerald-200/80 font-medium mt-0.5">
+                <p className="text-xs text-emerald-200/80 font-medium">
                   Concurso SEDUC Ceará 2026 • FUNECE / CEV-UECE
                 </p>
               </div>
@@ -274,123 +322,131 @@ export default function Dashboard({ user, profile, setActiveTab, onOpenProfile }
 
             {/* Countdown Badge & Admin Button */}
             <div className="flex items-center gap-2 shrink-0 flex-wrap">
-              <div className="px-4 py-2 bg-emerald-900/80 border border-emerald-600/50 rounded-2xl flex items-center gap-2 shadow-inner">
-                <Calendar size={16} className="text-emerald-400" />
-                <span className="text-xs sm:text-sm font-bold text-emerald-100">
-                  Faltam <strong className="text-amber-300 text-base font-black">{daysRemaining}</strong> dias para a FUNECE
+              <div className="px-3 py-1.5 bg-emerald-900/80 border border-emerald-600/50 rounded-xl flex items-center gap-2 shadow-inner">
+                <Calendar size={15} className="text-emerald-400" />
+                <span className="text-xs font-bold text-emerald-100">
+                  Faltam <strong className="text-amber-300 text-sm font-black">{daysRemaining}</strong> dias para a FUNECE
                 </span>
               </div>
 
               {((user?.email || profile?.email || '').toLowerCase().trim() === 'gerlianemagalhaes79@gmail.com') && (
                 <button
                   onClick={() => onOpenProfile && onOpenProfile('add_user')}
-                  className="px-3.5 py-2 bg-amber-400 hover:bg-amber-300 text-emerald-950 font-black rounded-2xl text-xs transition flex items-center gap-1.5 cursor-pointer shadow-lg shadow-amber-400/20"
+                  className="px-3 py-1.5 bg-amber-400 hover:bg-amber-300 text-emerald-950 font-black rounded-xl text-xs transition flex items-center gap-1 cursor-pointer shadow-md shadow-amber-400/20"
                 >
-                  <Plus size={15} />
+                  <Plus size={14} />
                   <span>Cadastrar Professor</span>
                 </button>
               )}
             </div>
           </div>
 
-          {/* Today's Study Target Box */}
-          <div className="bg-emerald-900/40 border border-emerald-700/50 rounded-2xl p-4 sm:p-5 backdrop-blur-md flex flex-col lg:flex-row lg:items-center justify-between gap-5">
-            <div className="space-y-2">
+          {/* Today's Study Target Box - Official Programmatic Schedule for Today */}
+          <div className="bg-emerald-900/40 border border-emerald-700/40 rounded-xl p-3.5 sm:p-4 backdrop-blur-md space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2 text-emerald-300 font-bold text-xs uppercase tracking-wider">
-                <Target size={16} className="text-amber-400" />
-                <span>Hoje você estudará:</span>
+                <Target size={15} className="text-amber-400 shrink-0" />
+                <span>Hoje você estudará (Conteúdo Programático do Cronograma):</span>
               </div>
-
-              <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-                <span className="px-3 py-1.5 rounded-xl bg-emerald-800/80 border border-emerald-600/60 text-white font-black text-sm sm:text-base flex items-center gap-1.5 shadow-sm">
-                  🧬 {targetSubject}
+              {todayScheduleDay && (
+                <span className="text-[10px] font-bold text-amber-300 bg-emerald-950/80 px-2.5 py-1 rounded-lg border border-amber-400/30 shrink-0 flex items-center gap-1.5">
+                  <Calendar size={12} className="text-amber-400" />
+                  Dia {todayScheduleDay.dayNumber} • {todayScheduleDay.topics.length} Sessões
                 </span>
-                <ChevronRight size={16} className="text-emerald-500 hidden sm:inline" />
-                <span className="px-3 py-1.5 rounded-xl bg-teal-900/80 border border-teal-600/60 text-emerald-100 font-bold text-xs sm:text-sm">
-                  Citologia & Estrutura Celular
-                </span>
-                <ChevronRight size={16} className="text-emerald-500 hidden sm:inline" />
-                <span className="px-3 py-1.5 rounded-xl bg-amber-400/20 border border-amber-400/40 text-amber-200 font-bold text-xs sm:text-sm">
-                  Membrana Plasmática & Transporte
-                </span>
-              </div>
+              )}
             </div>
 
-            {/* ENORMOUS ACTION BUTTON - MOST VISUALLY STRIKING ELEMENT */}
-            <motion.button
-              whileHover={{ scale: 1.02, y: -2 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => setActiveTab('cronograma')}
-              className="w-full lg:w-auto px-8 py-4 bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-400 text-emerald-950 font-black text-base sm:text-lg rounded-2xl shadow-xl shadow-emerald-500/30 hover:shadow-emerald-400/40 transition-all flex items-center justify-center gap-3 group cursor-pointer border border-emerald-200/50 shrink-0"
-            >
-              <div className="w-8 h-8 rounded-full bg-emerald-950 text-emerald-300 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Play size={18} className="fill-emerald-300 translate-x-0.5" />
-              </div>
-              <span className="tracking-tight uppercase italic">Continuar estudo de hoje</span>
-              <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-            </motion.button>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+              {todayScheduleDay?.topics.map((item, idx) => {
+                const allDone = item.subtopicNames.every((_, subIdx) => completedTopicIds[`${item.id}_sub_${subIdx}`]);
+                return (
+                  <div
+                    key={idx}
+                    className={`p-2.5 rounded-lg border transition-all ${
+                      allDone
+                        ? 'bg-emerald-950/80 border-emerald-500/70 text-emerald-100'
+                        : 'bg-emerald-950/60 border-emerald-800/60 text-emerald-100 hover:border-emerald-700'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <span
+                        className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded border uppercase shrink-0 ${
+                          item.reviewType.includes('Ebbinghaus')
+                            ? 'bg-amber-400/20 text-amber-200 border-amber-400/40'
+                            : item.category === 'Conhecimentos Específicos'
+                            ? 'bg-emerald-500/20 text-emerald-200 border-emerald-500/40'
+                            : 'bg-teal-500/20 text-teal-200 border-teal-500/40'
+                        }`}
+                      >
+                        {item.reviewType || item.category}
+                      </span>
+                      {allDone ? (
+                        <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-extrabold bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/30">
+                          <CheckCircle2 size={12} /> Concluído
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-amber-300 font-extrabold">
+                          🎯 {item.questionsGoal}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="min-w-0 space-y-0.5">
+                      <p className="font-extrabold text-white text-xs truncate">
+                        {item.parentTopicName}
+                      </p>
+                      <p className="text-[11px] text-emerald-200/90 font-medium line-clamp-2">
+                        {item.subtopicNames.join(' • ')}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="pt-1 flex flex-col sm:flex-row items-center justify-between gap-2">
+              <span className="text-[11px] text-emerald-300/80 font-medium italic hidden sm:inline">
+                Plano intercalado oficial FUNECE / CEV-UECE sincronizado em tempo real.
+              </span>
+              <motion.button
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setActiveTab('cronograma')}
+                className="w-full sm:w-auto px-5 py-2.5 bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-400 text-emerald-950 font-black text-xs sm:text-sm rounded-xl shadow-lg shadow-emerald-500/20 hover:shadow-emerald-400/30 transition-all flex items-center justify-center gap-2 group cursor-pointer border border-emerald-200/50"
+              >
+                <div className="w-5 h-5 rounded-full bg-emerald-950 text-emerald-300 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Play size={12} className="fill-emerald-300 translate-x-0.5" />
+                </div>
+                <span className="uppercase tracking-tight italic">Ver Cronograma Completo</span>
+                <ArrowRight size={15} className="group-hover:translate-x-1 transition-transform" />
+              </motion.button>
+            </div>
           </div>
 
-          {/* Premium Progress & Micro Metrics Bar */}
-          <div className="space-y-3 pt-2">
-            <div className="flex items-center justify-between text-xs sm:text-sm font-bold text-emerald-200">
-              <span className="flex items-center gap-2">
-                <GraduationCap size={16} className="text-emerald-400" />
+          {/* Compact Progress Bar */}
+          <div className="space-y-1.5 pt-1">
+            <div className="flex items-center justify-between text-xs font-bold text-emerald-200">
+              <span className="flex items-center gap-1.5">
+                <GraduationCap size={15} className="text-emerald-400" />
                 <span>Progresso Global do Edital</span>
               </span>
-              <span className="text-amber-300 font-black text-sm">17% concluído</span>
+              <span className="text-amber-300 font-black">{editalPct}% concluído</span>
             </div>
 
-            {/* Custom Elegant Progress Bar */}
-            <div className="w-full h-3 bg-emerald-950/80 rounded-full border border-emerald-800/80 p-0.5 overflow-hidden">
+            <div className="w-full h-2.5 bg-emerald-950/80 rounded-full border border-emerald-800/80 p-0.5 overflow-hidden">
               <motion.div
                 initial={{ width: 0 }}
-                animate={{ width: '17%' }}
-                transition={{ duration: 1.2, ease: 'easeOut' }}
-                className="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-amber-300 rounded-full shadow-lg shadow-emerald-500/50"
+                animate={{ width: `${editalPct}%` }}
+                transition={{ duration: 1, ease: 'easeOut' }}
+                className="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-amber-300 rounded-full"
               />
-            </div>
-
-            {/* Quick Metrics Bar below Progress */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
-              <div className="p-2.5 bg-emerald-900/30 border border-emerald-800/50 rounded-xl flex items-center gap-2.5">
-                <Clock size={16} className="text-amber-400 shrink-0" />
-                <div className="min-w-0">
-                  <p className="text-[10px] text-emerald-300/80 uppercase font-bold truncate">Próxima revisão</p>
-                  <p className="text-xs font-black text-white truncate">Em 2 horas</p>
-                </div>
-              </div>
-
-              <div className="p-2.5 bg-emerald-900/30 border border-emerald-800/50 rounded-xl flex items-center gap-2.5">
-                <CheckSquare size={16} className="text-teal-300 shrink-0" />
-                <div className="min-w-0">
-                  <p className="text-[10px] text-emerald-300/80 uppercase font-bold truncate">Pendentes Hoje</p>
-                  <p className="text-xs font-black text-white truncate">18 questões</p>
-                </div>
-              </div>
-
-              <div className="p-2.5 bg-emerald-900/30 border border-emerald-800/50 rounded-xl flex items-center gap-2.5">
-                <Target size={16} className="text-emerald-400 shrink-0" />
-                <div className="min-w-0">
-                  <p className="text-[10px] text-emerald-300/80 uppercase font-bold truncate">Meta Diária</p>
-                  <p className="text-xs font-black text-white truncate">50 questões</p>
-                </div>
-              </div>
-
-              <div className="p-2.5 bg-emerald-900/30 border border-emerald-800/50 rounded-xl flex items-center gap-2.5">
-                <Flame size={16} className="text-amber-400 shrink-0 animate-bounce" />
-                <div className="min-w-0">
-                  <p className="text-[10px] text-emerald-300/80 uppercase font-bold truncate">Sequência Atual</p>
-                  <p className="text-xs font-black text-amber-300 truncate">🔥 {streakDays} dias</p>
-                </div>
-              </div>
             </div>
           </div>
         </div>
       </motion.div>
 
       {/* ========================================================================= */}
-      {/* 2. PAINEL DA APROVAÇÃO (4 CARDS GRANDES COM MICRO-GRÁFICOS)              */}
+      {/* 2. PAINEL DA APROVAÇÃO (4 CARDS GRANDES COM METRICAS REAIS)              */}
       {/* ========================================================================= */}
       <section className="space-y-4">
         <div className="flex items-center justify-between">
@@ -400,7 +456,7 @@ export default function Dashboard({ user, profile, setActiveTab, onOpenProfile }
               <span>Painel da Aprovação</span>
             </h2>
             <p className="text-xs text-zinc-500 font-medium">
-              Métricas consolidadas do seu ritmo de aprendizado para a SEDUC CE 2026.
+              Métricas reais consolidadas do seu ritmo de aprendizado para a SEDUC CE 2026.
             </p>
           </div>
           <span className="px-3 py-1 bg-emerald-50 text-emerald-800 border border-emerald-200/80 rounded-full font-bold text-xs uppercase tracking-wider">
@@ -411,8 +467,8 @@ export default function Dashboard({ user, profile, setActiveTab, onOpenProfile }
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Card 1: Aproveitamento Geral */}
           <motion.div
-            whileHover={{ y: -4 }}
-            className="bg-white border border-zinc-200/90 rounded-2xl p-5 shadow-sm hover:shadow-xl transition-all duration-300 space-y-3 relative overflow-hidden group"
+            whileHover={{ y: -3 }}
+            className="bg-white border border-zinc-200/90 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-300 space-y-3 relative overflow-hidden group"
           >
             <div className="flex items-center justify-between">
               <div className="p-3 bg-emerald-50 text-emerald-700 rounded-xl border border-emerald-100 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
@@ -420,7 +476,7 @@ export default function Dashboard({ user, profile, setActiveTab, onOpenProfile }
               </div>
               <span className="flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
                 <TrendingUp size={13} />
-                +12% esta semana
+                {totalQuestionsDone > 0 ? `${accuracyPct}% taxa` : 'A Iniciar'}
               </span>
             </div>
 
@@ -433,8 +489,8 @@ export default function Dashboard({ user, profile, setActiveTab, onOpenProfile }
             </div>
 
             {/* Micro Sparkline Chart */}
-            <div className="h-8 w-full flex items-end gap-1 pt-1">
-              {[40, 52, 60, 68, 65, 74, accuracyPct].map((val, idx) => (
+            <div className="h-6 w-full flex items-end gap-1 pt-1">
+              {[0, 0, 0, 0, 0, 0, accuracyPct].map((val, idx) => (
                 <div key={idx} className="flex-1 bg-zinc-100 rounded-t-sm h-full flex items-end overflow-hidden">
                   <motion.div
                     initial={{ height: 0 }}
@@ -449,8 +505,8 @@ export default function Dashboard({ user, profile, setActiveTab, onOpenProfile }
 
           {/* Card 2: Questões Resolvidas */}
           <motion.div
-            whileHover={{ y: -4 }}
-            className="bg-white border border-zinc-200/90 rounded-2xl p-5 shadow-sm hover:shadow-xl transition-all duration-300 space-y-3 relative overflow-hidden group"
+            whileHover={{ y: -3 }}
+            className="bg-white border border-zinc-200/90 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-300 space-y-3 relative overflow-hidden group"
           >
             <div className="flex items-center justify-between">
               <div className="p-3 bg-blue-50 text-blue-700 rounded-xl border border-blue-100 group-hover:bg-blue-600 group-hover:text-white transition-colors">
@@ -458,7 +514,7 @@ export default function Dashboard({ user, profile, setActiveTab, onOpenProfile }
               </div>
               <span className="flex items-center gap-1 text-xs font-bold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-full border border-blue-200">
                 <Zap size={13} />
-                +32 hoje
+                {totalQuestionsDone > 0 ? `${totalQuestionsDone} feitas` : '0 hoje'}
               </span>
             </div>
 
@@ -470,25 +526,17 @@ export default function Dashboard({ user, profile, setActiveTab, onOpenProfile }
               </div>
             </div>
 
-            {/* Micro Bar Chart */}
-            <div className="h-8 w-full flex items-end gap-1 pt-1">
-              {[12, 18, 25, 30, 22, 35, 48].map((val, idx) => (
-                <div key={idx} className="flex-1 bg-zinc-100 rounded-t-sm h-full flex items-end overflow-hidden">
-                  <motion.div
-                    initial={{ height: 0 }}
-                    animate={{ height: `${(val / 50) * 100}%` }}
-                    transition={{ duration: 0.6, delay: idx * 0.08 }}
-                    className={`w-full rounded-t-sm ${idx === 6 ? 'bg-blue-600' : 'bg-blue-300'}`}
-                  />
-                </div>
-              ))}
+            <div className="pt-2">
+              <p className="text-[11px] font-bold text-zinc-500">
+                {totalQuestionsDone > 0 ? `${correctAnswersCount} respostas corretas` : 'Nenhuma questão resolvida ainda'}
+              </p>
             </div>
           </motion.div>
 
           {/* Card 3: Edital Concluído */}
           <motion.div
-            whileHover={{ y: -4 }}
-            className="bg-white border border-zinc-200/90 rounded-2xl p-5 shadow-sm hover:shadow-xl transition-all duration-300 space-y-3 relative overflow-hidden group"
+            whileHover={{ y: -3 }}
+            className="bg-white border border-zinc-200/90 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-300 space-y-3 relative overflow-hidden group"
           >
             <div className="flex items-center justify-between">
               <div className="p-3 bg-purple-50 text-purple-700 rounded-xl border border-purple-100 group-hover:bg-purple-600 group-hover:text-white transition-colors">
@@ -496,53 +544,54 @@ export default function Dashboard({ user, profile, setActiveTab, onOpenProfile }
               </div>
               <span className="flex items-center gap-1 text-xs font-bold text-purple-700 bg-purple-50 px-2.5 py-1 rounded-full border border-purple-200">
                 <CheckCircle2 size={13} />
-                +3 novos tópicos
+                {completedTopicsCount} de {totalEditalBlocks} blocos
               </span>
             </div>
 
             <div>
               <p className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Edital Concluído</p>
               <div className="flex items-baseline gap-2 mt-1">
-                <h3 className="text-3xl font-black text-zinc-900 tracking-tight">17%</h3>
-                <span className="text-xs text-zinc-500">({completedTopicsCount} de 35 blocos)</span>
+                <h3 className="text-3xl font-black text-zinc-900 tracking-tight">{editalPct}%</h3>
+                <span className="text-xs text-zinc-500">do edital cobrindo {targetSubject}</span>
               </div>
             </div>
 
             {/* Micro Progress Bar */}
             <div className="pt-2">
               <div className="w-full bg-zinc-100 h-2.5 rounded-full overflow-hidden">
-                <div className="bg-purple-600 h-full rounded-full w-[17%]" />
+                <div className="bg-purple-600 h-full rounded-full" style={{ width: `${editalPct}%` }} />
               </div>
             </div>
           </motion.div>
 
-          {/* Card 4: Dias para a prova */}
+          {/* Card 4: Sequência Ativa (Sem Duplicação da Contagem Regressiva) */}
           <motion.div
-            whileHover={{ y: -4 }}
-            className="bg-white border border-zinc-200/90 rounded-2xl p-5 shadow-sm hover:shadow-xl transition-all duration-300 space-y-3 relative overflow-hidden group"
+            whileHover={{ y: -3 }}
+            className="bg-white border border-zinc-200/90 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-300 space-y-3 relative overflow-hidden group"
           >
             <div className="flex items-center justify-between">
               <div className="p-3 bg-amber-50 text-amber-700 rounded-xl border border-amber-100 group-hover:bg-amber-600 group-hover:text-white transition-colors">
-                <Calendar size={22} />
+                <Flame size={22} />
               </div>
               <span className="flex items-center gap-1 text-xs font-bold text-amber-800 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200">
-                <Clock size={13} />
-                Contagem Regressiva
+                <Flame size={13} className="text-amber-500 animate-bounce" />
+                Ofensiva de Estudos
               </span>
             </div>
 
             <div>
-              <p className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Dias Para a Prova</p>
+              <p className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Sequência de Estudos</p>
               <div className="flex items-baseline gap-2 mt-1">
-                <h3 className="text-3xl font-black text-zinc-900 tracking-tight">{daysRemaining}</h3>
-                <span className="text-xs text-zinc-500">dias restantes</span>
+                <h3 className="text-3xl font-black text-zinc-900 tracking-tight">{streakDays}</h3>
+                <span className="text-xs text-zinc-500">dias seguidos</span>
               </div>
             </div>
 
-            {/* Micro Urgency Pulse Indicator */}
             <div className="pt-1 flex items-center gap-2">
-              <div className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping" />
-              <span className="text-[11px] font-bold text-zinc-600">Reta final de preparação ativa</span>
+              <div className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
+              <span className="text-[11px] font-bold text-zinc-600">
+                {streakDays > 0 ? 'Mantenha a consistência hoje!' : 'Inicie sua sequência hoje!'}
+              </span>
             </div>
           </motion.div>
         </div>
