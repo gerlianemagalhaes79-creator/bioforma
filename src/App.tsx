@@ -79,85 +79,115 @@ export default function App() {
       if (currentUser) {
         const cleanEmail = (currentUser.email || '').toLowerCase().trim();
         const userRef = doc(db, 'users', currentUser.uid);
-        const userSnap = await getDoc(userRef);
 
-        if (!userSnap.exists()) {
-          // Check if there is a pre-registered profile with this email
-          let preRegDocId: string | null = null;
-          let preRegProfile: any = null;
+        try {
+          const userSnap = await getDoc(userRef);
 
-          if (cleanEmail) {
-            try {
-              const q = query(collection(db, 'users'), where('email', '==', cleanEmail));
-              const preRegSnap = await getDocs(q);
-              if (!preRegSnap.empty) {
-                const docFound = preRegSnap.docs[0];
-                preRegDocId = docFound.id;
-                preRegProfile = docFound.data();
-              }
-            } catch (err) {
-              console.warn('Erro ao consultar pré-cadastro por e-mail:', err);
-            }
-          }
+          if (!userSnap.exists()) {
+            // Check if there is a pre-registered profile with this email
+            let preRegDocId: string | null = null;
+            let preRegProfile: any = null;
 
-          if (preRegProfile) {
-            // Migrate pre-registered profile to currentUser.uid
-            const mergedProfile: UserProfile = {
-              ...preRegProfile,
-              uid: currentUser.uid,
-              name: currentUser.displayName || preRegProfile.name || 'Professor(a)',
-              email: cleanEmail || preRegProfile.email,
-              onboardingCompleted: true,
-              createdAt: preRegProfile.createdAt || Timestamp.now()
-            };
-            await setDoc(userRef, mergedProfile);
-            if (preRegDocId && preRegDocId !== currentUser.uid) {
+            if (cleanEmail) {
               try {
-                await deleteDoc(doc(db, 'users', preRegDocId));
-              } catch (_) {}
+                const q = query(collection(db, 'users'), where('email', '==', cleanEmail));
+                const preRegSnap = await getDocs(q);
+                if (!preRegSnap.empty) {
+                  const docFound = preRegSnap.docs[0];
+                  preRegDocId = docFound.id;
+                  preRegProfile = docFound.data();
+                }
+              } catch (err) {
+                console.warn('Erro ao consultar pré-cadastro por e-mail:', err);
+              }
+            }
+
+            if (preRegProfile) {
+              // Migrate pre-registered profile to currentUser.uid
+              const mergedProfile: UserProfile = {
+                ...preRegProfile,
+                uid: currentUser.uid,
+                name: currentUser.displayName || preRegProfile.name || 'Professor(a)',
+                email: cleanEmail || preRegProfile.email,
+                onboardingCompleted: true,
+                createdAt: preRegProfile.createdAt || Timestamp.now()
+              };
+              await setDoc(userRef, mergedProfile);
+              if (preRegDocId && preRegDocId !== currentUser.uid) {
+                try {
+                  await deleteDoc(doc(db, 'users', preRegDocId));
+                } catch (_) {}
+              }
+            } else {
+              // Create fresh profile
+              const isSuperAdmin = cleanEmail === 'gerlianemagalhaes79@gmail.com';
+              const newProfile: UserProfile = {
+                uid: currentUser.uid,
+                name: currentUser.displayName || 'Professor(a)',
+                email: cleanEmail,
+                role: isSuperAdmin ? 'admin' : 'professor',
+                isAdmin: isSuperAdmin,
+                targetSubject: 'Língua Portuguesa',
+                degree: 'Licenciatura em Língua Portuguesa / Letras',
+                dailyGoalMinutes: 180,
+                hoursPerDay: 3,
+                streakDays: 1,
+                completedTopicsCount: 6,
+                totalQuestionsDone: 18,
+                correctAnswersCount: 14,
+                onboardingCompleted: true,
+                createdAt: Timestamp.now()
+              };
+              await setDoc(userRef, newProfile);
             }
           } else {
-            // Create fresh profile
+            // Ensure role is set accurately
+            const existingData = userSnap.data();
             const isSuperAdmin = cleanEmail === 'gerlianemagalhaes79@gmail.com';
-            const newProfile: UserProfile = {
-              uid: currentUser.uid,
-              name: currentUser.displayName || 'Professor(a)',
-              email: cleanEmail,
-              role: isSuperAdmin ? 'admin' : 'professor',
-              isAdmin: isSuperAdmin,
-              targetSubject: 'Língua Portuguesa',
-              degree: 'Licenciatura em Língua Portuguesa / Letras',
-              dailyGoalMinutes: 180,
-              hoursPerDay: 3,
-              streakDays: 1,
-              completedTopicsCount: 6,
-              totalQuestionsDone: 18,
-              correctAnswersCount: 14,
-              onboardingCompleted: true,
-              createdAt: Timestamp.now()
-            };
-            await setDoc(userRef, newProfile);
+            if (isSuperAdmin && (!existingData.role || existingData.role !== 'admin')) {
+              await setDoc(userRef, { role: 'admin', isAdmin: true }, { merge: true });
+            } else if (!isSuperAdmin && existingData.role === 'admin') {
+              await setDoc(userRef, { role: 'professor', isAdmin: false }, { merge: true });
+            }
           }
-        } else {
-          // Ensure role is set accurately
-          const existingData = userSnap.data();
+        } catch (fetchErr) {
+          console.warn('Perfil offline ou instabilidade na conexão ao carregar Firestore:', fetchErr);
+          // Set fallback local profile if missing
           const isSuperAdmin = cleanEmail === 'gerlianemagalhaes79@gmail.com';
-          if (isSuperAdmin && (!existingData.role || existingData.role !== 'admin')) {
-            await setDoc(userRef, { role: 'admin', isAdmin: true }, { merge: true });
-          } else if (!isSuperAdmin && existingData.role === 'admin') {
-            await setDoc(userRef, { role: 'professor', isAdmin: false }, { merge: true });
-          }
+          setUserProfile(prev => prev || {
+            uid: currentUser.uid,
+            name: currentUser.displayName || 'Professor(a)',
+            email: cleanEmail,
+            role: isSuperAdmin ? 'admin' : 'professor',
+            isAdmin: isSuperAdmin,
+            targetSubject: 'Língua Portuguesa',
+            degree: 'Licenciatura em Língua Portuguesa / Letras',
+            dailyGoalMinutes: 180,
+            hoursPerDay: 3,
+            streakDays: 1,
+            completedTopicsCount: 6,
+            totalQuestionsDone: 18,
+            correctAnswersCount: 14,
+            onboardingCompleted: true,
+            createdAt: Timestamp.now()
+          });
         }
 
         // Record activity and calculate streak dynamically
         recordUserActivity(currentUser.uid).catch(() => {});
 
-        // Listen to changes in real-time
-        unsubscribeProfile = onSnapshot(userRef, (snapshot) => {
-          if (snapshot.exists()) {
-            setUserProfile(snapshot.data() as UserProfile);
-          }
-        });
+        // Listen to changes in real-time with error handler
+        try {
+          unsubscribeProfile = onSnapshot(userRef, (snapshot) => {
+            if (snapshot.exists()) {
+              setUserProfile(snapshot.data() as UserProfile);
+            }
+          }, (err) => {
+            console.warn('Erro na sincronização em tempo real do perfil (offline/permissão):', err);
+          });
+        } catch (subErr) {
+          console.warn('Erro ao registrar listener onSnapshot:', subErr);
+        }
       } else {
         if (unsubscribeProfile) {
           unsubscribeProfile();

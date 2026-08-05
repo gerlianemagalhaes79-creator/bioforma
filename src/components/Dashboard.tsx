@@ -288,51 +288,54 @@ export default function Dashboard({ user, profile, setActiveTab, onOpenProfile }
       )}
 
       {/* ========================================================================= */}
-      {/* 1. FIRST FOLD: CENTRO DE COMANDO HERO CARD (COMPACT / SLIM)              */}
+      {/* 1. FIRST FOLD: CENTRO DE COMANDO HERO CARD (ELEGANT LIGHT MINT HERO)     */}
       {/* ========================================================================= */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: 'easeOut' }}
-        className="relative rounded-2xl sm:rounded-3xl bg-gradient-to-br from-emerald-950 via-teal-950 to-zinc-950 text-white p-4 sm:p-5 lg:p-6 shadow-xl shadow-emerald-950/20 border border-emerald-800/40 overflow-hidden"
+        className="relative rounded-2xl sm:rounded-3xl bg-gradient-to-br from-emerald-50 via-teal-50/60 to-emerald-100/80 text-emerald-950 p-6 sm:p-8 lg:p-9 shadow-xl shadow-emerald-950/5 border border-emerald-200/90 overflow-hidden"
       >
-        {/* Glow & Ambient Background Effects */}
-        <div className="absolute -right-20 -top-20 w-80 h-80 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -left-20 -bottom-20 w-64 h-64 bg-teal-500/15 rounded-full blur-3xl pointer-events-none" />
+        {/* Subtle Glows and Mesh Highlights */}
+        <div className="absolute -right-20 -top-20 w-96 h-96 bg-emerald-200/40 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -left-20 -bottom-20 w-80 h-80 bg-teal-200/30 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="relative z-10 space-y-4">
+        <div className="relative z-10 space-y-6 sm:space-y-7">
           {/* Top Bar inside Hero */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-emerald-800/40 pb-3.5">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 p-0.5 shadow-md shadow-emerald-500/20 shrink-0">
-                <div className="w-full h-full bg-emerald-950 rounded-[10px] flex items-center justify-center text-emerald-300 font-black text-lg">
-                  {userName.charAt(0).toUpperCase()}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-emerald-200/70 pb-5 sm:pb-6">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-white border border-emerald-200 p-0.5 shadow-sm shrink-0 flex items-center justify-center text-emerald-800 font-extrabold text-xl">
+                <div className="w-full h-full bg-emerald-100/80 rounded-[14px] flex items-center justify-center text-emerald-900 font-black">
+                  {userName.replace('Prof. ', '').charAt(0).toUpperCase()}
                 </div>
               </div>
-              <div>
-                <h1 className="text-lg sm:text-xl lg:text-2xl font-black tracking-tight text-white flex items-center gap-2">
-                  <span>{greeting}, {userName}!</span>
-                  <Sparkles size={18} className="text-amber-400 animate-pulse shrink-0" />
+              <div className="space-y-0.5">
+                <p className="text-xs font-bold text-emerald-800/70 uppercase tracking-widest flex items-center gap-1.5">
+                  <span>{greeting}</span>
+                  <Sparkles size={14} className="text-amber-500 shrink-0" />
+                </p>
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-emerald-950">
+                  {userName}
                 </h1>
-                <p className="text-xs text-emerald-200/80 font-medium">
-                  Concurso SEDUC Ceará 2026 • FUNECE / CEV-UECE
+                <p className="text-xs text-emerald-800/80 font-medium pt-0.5">
+                  Concurso SEDUC Ceará 2026 • <span className="text-emerald-900 font-bold">FUNECE / CEV-UECE</span>
                 </p>
               </div>
             </div>
 
-            {/* Countdown Badge & Admin Button */}
-            <div className="flex items-center gap-2 shrink-0 flex-wrap">
-              <div className="px-3 py-1.5 bg-emerald-900/80 border border-emerald-600/50 rounded-xl flex items-center gap-2 shadow-inner">
-                <Calendar size={15} className="text-emerald-400" />
-                <span className="text-xs font-bold text-emerald-100">
-                  Faltam <strong className="text-amber-300 text-sm font-black">{daysRemaining}</strong> dias para a FUNECE
+            {/* Countdown Badge & Admin Action */}
+            <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
+              <div className="px-3.5 py-2 bg-white/90 border border-emerald-200/90 rounded-xl flex items-center gap-2 shadow-xs">
+                <Calendar size={15} className="text-emerald-700" />
+                <span className="text-xs text-emerald-950 font-medium">
+                  Faltam <strong className="text-emerald-900 font-black text-sm">{daysRemaining}</strong> dias para a prova FUNECE
                 </span>
               </div>
 
               {((user?.email || profile?.email || '').toLowerCase().trim() === 'gerlianemagalhaes79@gmail.com') && (
                 <button
                   onClick={() => onOpenProfile && onOpenProfile('add_user')}
-                  className="px-3 py-1.5 bg-amber-400 hover:bg-amber-300 text-emerald-950 font-black rounded-xl text-xs transition flex items-center gap-1 cursor-pointer shadow-md shadow-amber-400/20"
+                  className="px-3.5 py-2 bg-emerald-900 hover:bg-emerald-950 text-white rounded-xl text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer shadow-sm"
                 >
                   <Plus size={14} />
                   <span>Cadastrar Professor</span>
@@ -341,106 +344,122 @@ export default function Dashboard({ user, profile, setActiveTab, onOpenProfile }
             </div>
           </div>
 
-          {/* Today's Study Target Box - Official Programmatic Schedule for Today */}
-          <div className="bg-emerald-900/40 border border-emerald-700/40 rounded-xl p-3.5 sm:p-4 backdrop-blur-md space-y-3">
+          {/* "HOJE VOCÊ ESTUDARÁ" - BREADCRUMB HIERARCHICAL TRAIL */}
+          <div className="space-y-3.5">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-2 text-emerald-300 font-bold text-xs uppercase tracking-wider">
-                <Target size={15} className="text-amber-400 shrink-0" />
-                <span>Hoje você estudará (Conteúdo Programático do Cronograma):</span>
+              <div className="flex items-center gap-2 text-emerald-950 font-bold text-xs uppercase tracking-wider">
+                <Target size={15} className="text-emerald-700 shrink-0" />
+                <span>Hoje você estudará — Trilha Programática do Cronograma</span>
               </div>
               {todayScheduleDay && (
-                <span className="text-[10px] font-bold text-amber-300 bg-emerald-950/80 px-2.5 py-1 rounded-lg border border-amber-400/30 shrink-0 flex items-center gap-1.5">
-                  <Calendar size={12} className="text-amber-400" />
+                <span className="text-[11px] font-semibold text-emerald-900 bg-white/90 px-2.5 py-1 rounded-md border border-emerald-200 shrink-0 flex items-center gap-1.5 font-mono shadow-xs">
+                  <Calendar size={12} className="text-emerald-700" />
                   Dia {todayScheduleDay.dayNumber} • {todayScheduleDay.topics.length} Sessões
                 </span>
               )}
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+            {/* Breadcrumb List of Study Sessions */}
+            <div className="space-y-2.5">
               {todayScheduleDay?.topics.map((item, idx) => {
                 const allDone = item.subtopicNames.every((_, subIdx) => completedTopicIds[`${item.id}_sub_${subIdx}`]);
                 return (
                   <div
                     key={idx}
-                    className={`p-2.5 rounded-lg border transition-all ${
+                    className={`p-3.5 sm:p-4 rounded-xl border transition-all ${
                       allDone
-                        ? 'bg-emerald-950/80 border-emerald-500/70 text-emerald-100'
-                        : 'bg-emerald-950/60 border-emerald-800/60 text-emerald-100 hover:border-emerald-700'
+                        ? 'bg-emerald-100/80 border-emerald-300 text-emerald-950'
+                        : 'bg-white/85 border-emerald-200/90 text-emerald-950 hover:border-emerald-300 shadow-xs'
                     }`}
                   >
-                    <div className="flex items-center justify-between gap-2 mb-1">
-                      <span
-                        className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded border uppercase shrink-0 ${
-                          item.reviewType.includes('Ebbinghaus')
-                            ? 'bg-amber-400/20 text-amber-200 border-amber-400/40'
-                            : item.category === 'Conhecimentos Específicos'
-                            ? 'bg-emerald-500/20 text-emerald-200 border-emerald-500/40'
-                            : 'bg-teal-500/20 text-teal-200 border-teal-500/40'
-                        }`}
-                      >
-                        {item.reviewType || item.category}
-                      </span>
+                    <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                      {/* Breadcrumb Path Hierarchy Header */}
+                      <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-800/90 flex-wrap">
+                        <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-900 font-bold text-[10px] uppercase border border-emerald-200 shrink-0">
+                          Sessão 0{idx + 1}
+                        </span>
+                        <ChevronRight size={13} className="text-emerald-400 shrink-0" />
+                        <span
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded border uppercase shrink-0 ${
+                            item.reviewType?.includes('Ebbinghaus')
+                              ? 'bg-amber-100 text-amber-950 border-amber-300/80'
+                              : 'bg-emerald-100 text-emerald-950 border-emerald-300/80'
+                          }`}
+                        >
+                          {item.reviewType || item.category}
+                        </span>
+                        <ChevronRight size={13} className="text-emerald-400 shrink-0" />
+                        <span className="text-emerald-950 font-extrabold text-xs">{item.parentTopicName}</span>
+                      </div>
+
                       {allDone ? (
-                        <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-extrabold bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/30">
-                          <CheckCircle2 size={12} /> Concluído
+                        <span className="flex items-center gap-1 text-[11px] text-emerald-900 font-bold bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300">
+                          <CheckCircle2 size={13} /> Concluído
                         </span>
                       ) : (
-                        <span className="text-[10px] text-amber-300 font-extrabold">
-                          🎯 {item.questionsGoal}
+                        <span className="text-[11px] text-emerald-800 font-medium">
+                          Meta: <strong className="text-emerald-900 font-bold">{item.questionsGoal} questões</strong>
                         </span>
                       )}
                     </div>
 
-                    <div className="min-w-0 space-y-0.5">
-                      <p className="font-extrabold text-white text-xs truncate">
-                        {item.parentTopicName}
-                      </p>
-                      <p className="text-[11px] text-emerald-200/90 font-medium line-clamp-2">
-                        {item.subtopicNames.join(' • ')}
-                      </p>
+                    {/* Subtopic Breadcrumb Chain */}
+                    <div className="flex items-center gap-1.5 text-xs text-emerald-900 font-medium pl-1 overflow-x-auto py-0.5 scrollbar-none">
+                      <span className="text-emerald-700/80 text-[11px] font-mono shrink-0">Conteúdo:</span>
+                      {item.subtopicNames.map((subName, subIdx) => (
+                        <React.Fragment key={subIdx}>
+                          {subIdx > 0 && <ChevronRight size={12} className="text-emerald-400 shrink-0" />}
+                          <span className={`px-2 py-1 rounded bg-emerald-50/90 border text-[11px] whitespace-nowrap ${
+                            completedTopicIds[`${item.id}_sub_${subIdx}`]
+                              ? 'border-emerald-300 text-emerald-900 bg-emerald-100/90 line-through opacity-80'
+                              : 'border-emerald-200/90 text-emerald-950 shadow-2xs'
+                          }`}>
+                            {subName}
+                          </span>
+                        </React.Fragment>
+                      ))}
                     </div>
                   </div>
                 );
               })}
             </div>
-
-            <div className="pt-1 flex flex-col sm:flex-row items-center justify-between gap-2">
-              <span className="text-[11px] text-emerald-300/80 font-medium italic hidden sm:inline">
-                Plano intercalado oficial FUNECE / CEV-UECE sincronizado em tempo real.
-              </span>
-              <motion.button
-                whileHover={{ scale: 1.01 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => setActiveTab('cronograma')}
-                className="w-full sm:w-auto px-5 py-2.5 bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-400 text-emerald-950 font-black text-xs sm:text-sm rounded-xl shadow-lg shadow-emerald-500/20 hover:shadow-emerald-400/30 transition-all flex items-center justify-center gap-2 group cursor-pointer border border-emerald-200/50"
-              >
-                <div className="w-5 h-5 rounded-full bg-emerald-950 text-emerald-300 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <Play size={12} className="fill-emerald-300 translate-x-0.5" />
-                </div>
-                <span className="uppercase tracking-tight italic">Ver Cronograma Completo</span>
-                <ArrowRight size={15} className="group-hover:translate-x-1 transition-transform" />
-              </motion.button>
-            </div>
           </div>
 
-          {/* Compact Progress Bar */}
-          <div className="space-y-1.5 pt-1">
-            <div className="flex items-center justify-between text-xs font-bold text-emerald-200">
-              <span className="flex items-center gap-1.5">
-                <GraduationCap size={15} className="text-emerald-400" />
-                <span>Progresso Global do Edital</span>
-              </span>
-              <span className="text-amber-300 font-black">{editalPct}% concluído</span>
+          {/* Bottom Bar: Progress Bar + High Contrast CTA Button */}
+          <div className="pt-2 sm:pt-3 flex flex-col lg:flex-row lg:items-center justify-between gap-5 border-t border-emerald-200/70">
+            {/* Global Edital Progress Bar */}
+            <div className="space-y-2 flex-1 max-w-xl">
+              <div className="flex items-center justify-between text-xs font-semibold text-emerald-900">
+                <span className="flex items-center gap-1.5">
+                  <GraduationCap size={15} className="text-emerald-700" />
+                  <span>Progresso do Edital Verticalizado SEDUC CE</span>
+                </span>
+                <span className="text-emerald-900 font-bold font-mono text-xs">{editalPct}% concluído</span>
+              </div>
+
+              <div className="w-full h-2.5 bg-white/90 rounded-full border border-emerald-200 p-0.5 overflow-hidden shadow-inner">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${editalPct}%` }}
+                  transition={{ duration: 1, ease: 'easeOut' }}
+                  className="h-full bg-emerald-600 rounded-full"
+                />
+              </div>
             </div>
 
-            <div className="w-full h-2.5 bg-emerald-950/80 rounded-full border border-emerald-800/80 p-0.5 overflow-hidden">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${editalPct}%` }}
-                transition={{ duration: 1, ease: 'easeOut' }}
-                className="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-amber-300 rounded-full"
-              />
-            </div>
+            {/* High-Contrast CTA Button */}
+            <motion.button
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setActiveTab('cronograma')}
+              className="w-full lg:w-auto px-7 py-3.5 bg-emerald-800 hover:bg-emerald-900 text-white font-extrabold text-sm sm:text-base rounded-xl shadow-lg shadow-emerald-800/20 transition-all duration-200 flex items-center justify-center gap-3 group cursor-pointer shrink-0"
+            >
+              <div className="w-6 h-6 rounded-lg bg-emerald-950/60 text-white flex items-center justify-center group-hover:scale-105 transition-transform">
+                <Play size={13} className="fill-white translate-x-0.5" />
+              </div>
+              <span>Continuar Estudo de Hoje</span>
+              <ArrowRight size={18} className="text-emerald-100 group-hover:translate-x-1 transition-transform" />
+            </motion.button>
           </div>
         </div>
       </motion.div>

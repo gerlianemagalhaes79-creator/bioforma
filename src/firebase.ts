@@ -70,12 +70,15 @@ async function testConnection() {
   try {
     await getDocFromServer(doc(db, 'test', 'connection'));
   } catch (error) {
-    if(error instanceof Error && error.message.includes('the client is offline')) {
-      console.error("Please check your Firebase configuration. ");
+    const errMsg = error instanceof Error ? error.message : String(error);
+    if (errMsg.toLowerCase().includes('offline') || errMsg.toLowerCase().includes('failed to get document')) {
+      console.warn("Firebase client notice: currently operating in offline mode or waiting for connection.");
+    } else {
+      console.warn("Firebase test connection notice:", errMsg);
     }
   }
 }
-testConnection();
+testConnection().catch(() => {});
 
 export { 
   collection, doc, setDoc, getDoc, getDocs, query, where, onSnapshot, addDoc, updateDoc, deleteDoc, Timestamp, orderBy, limit, onAuthStateChanged 
