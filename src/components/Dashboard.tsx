@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { User } from '../firebase';
-import { UserProfile } from '../types';
+import { User, db } from '../firebase';
+import { collection, query, onSnapshot } from 'firebase/firestore';
+import { UserProfile, QuestionAnswerLog } from '../types';
 import OnboardingModal from './OnboardingModal';
 import { generateStudySchedule, INITIAL_EDITAL_TOPICS } from '../data/seducData';
 import { 
@@ -117,9 +118,11 @@ export default function Dashboard({ user, profile, setActiveTab, onOpenProfile }
     };
 
     window.addEventListener('studyProgressUpdated', handleProgressUpdate);
+    window.addEventListener('cronogramaProgressUpdated', handleProgressUpdate);
     window.addEventListener('storage', handleProgressUpdate);
     return () => {
       window.removeEventListener('studyProgressUpdated', handleProgressUpdate);
+      window.removeEventListener('cronogramaProgressUpdated', handleProgressUpdate);
       window.removeEventListener('storage', handleProgressUpdate);
     };
   }, [user?.uid, profile?.uid]);
@@ -162,62 +165,242 @@ export default function Dashboard({ user, profile, setActiveTab, onOpenProfile }
     setDailyTasks(prev => prev.map(t => t.id === id ? { ...t, done: !t.done } : t));
   };
 
-  // Radar de Disciplinas Data (Using real user stats if available or cleanly structured)
+  // Real Question Logs State for 100% Real Disciplines Radar
+  const [questionLogs, setQuestionLogs] = useState<QuestionAnswerLog[]>([]);
+
+  useEffect(() => {
+    let unsubFirestore: (() => void) | null = null;
+    const activeUid = user?.uid || profile?.uid;
+
+    const readLocalLogs = (): QuestionAnswerLog[] => {
+      try {
+        const keys = activeUid 
+          ? [`questionLogs_${activeUid}`, 'questionLogs_guest'] 
+          : ['questionLogs_guest'];
+
+        const map = new Map<string, QuestionAnswerLog>();
+        keys.forEach(k => {
+          const raw = localStorage.getItem(k);
+          if (raw) {
+            try {
+              const arr: QuestionAnswerLog[] = JSON.parse(raw);
+              arr.forEach(item => {
+                if (item.id?.startsWith('synth_log_')) return;
+                const itemKey = item.id || `${item.questionId || item.topicName || item.topic || 'q'}_${item.timestamp}`;
+                map.set(itemKey, item);
+              });
+            } catch (_) {}
+          }
+        });
+        return Array.from(map.values());
+      } catch {
+        return [];
+      }
+    };
+
+    const syncLogs = () => {
+      const local = readLocalLogs();
+      setQuestionLogs(local);
+
+      if (activeUid) {
+        try {
+          const logsRef = collection(db, 'users', activeUid, 'questionLogs');
+          const q = query(logsRef);
+          if (unsubFirestore) unsubFirestore();
+          unsubFirestore = onSnapshot(q, (snapshot) => {
+            const dbLogs: QuestionAnswerLog[] = [];
+            snapshot.forEach((doc) => {
+              dbLogs.push({ id: doc.id, ...doc.data() } as QuestionAnswerLog);
+            });
+            const combined = new Map<string, QuestionAnswerLog>();
+            local.forEach(l => combined.set(l.id || `${l.questionId || l.topicName || l.topic || 'q'}_${l.timestamp}`, l));
+            dbLogs.forEach(l => combined.set(l.id || `${l.questionId || l.topicName || l.topic || 'q'}_${l.timestamp}`, l));
+            setQuestionLogs(Array.from(combined.values()));
+          }, (err) => {
+            console.warn("Firestore question logs listener error:", err);
+          });
+        } catch (_) {}
+      }
+    };
+
+    syncLogs();
+
+    const handleUpdate = () => syncLogs();
+    window.addEventListener('questionLogUpdated', handleUpdate);
+    window.addEventListener('storage', handleUpdate);
+
+    return () => {
+      if (unsubFirestore) unsubFirestore();
+      window.removeEventListener('questionLogUpdated', handleUpdate);
+      window.removeEventListener('storage', handleUpdate);
+    };
+  }, [user?.uid, profile?.uid]);
+
+  // Helper to get dynamic icon based on specific subject name
+  const getSubjectIcon = (subjectName: string) => {
+    const norm = (subjectName || '').toLowerCase();
+    if (norm.includes('biologia') || norm.includes('ciencias')) return '🧬';
+    if (norm.includes('matematica')) return '📐';
+    if (norm.includes('portugues') || norm.includes('letras')) return '📖';
+    if (norm.includes('historia')) return '📜';
+    if (norm.includes('geografia')) return '🌍';
+    if (norm.includes('quimica')) return '🧪';
+    if (norm.includes('fisica')) return '⚛️';
+    if (norm.includes('educacao fisica')) return '⚽';
+    if (norm.includes('pedagog') || norm.includes('educa')) return '🎓';
+    if (norm.includes('ingles') || norm.includes('espanhol')) return '🗣️';
+    if (norm.includes('filosofia') || norm.includes('sociologia')) return '🧠';
+    return '🎓';
+  };
+
+  // 100% Real Radar Stats Matcher
+  const matchLogDiscipline = (log: QuestionAnswerLog, targetSub: string): 'specific' | 'portugues' | 'pedagogia' | 'admin' | 'other' => {
+    const rawSub = log.discipline || log.subject || log.blockName || '';
+    const rawTopic = log.topicName || log.topic || '';
+    const normSub = rawSub.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const normTopic = rawTopic.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const normTarget = (targetSub || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const combined = `${normSub} ${normTopic}`;
+
+    const isTargetLP = normTarget.includes('portugues');
+
+    if (!isTargetLP) {
+      if (combined.includes(normTarget) || normSub.includes('especific')) {
+        return 'specific';
+      }
+    } else {
+      if (normSub.includes('especific') || normTopic.includes('redacao') || normTopic.includes('literatura')) {
+        return 'specific';
+      }
+    }
+
+    if (combined.includes('portugues') || combined.includes('lingua portuguesa') || combined.includes('gramatica')) {
+      return isTargetLP ? 'specific' : 'portugues';
+    }
+
+    if (
+      combined.includes('educa') || 
+      combined.includes('pedagog') || 
+      combined.includes('didatica') || 
+      combined.includes('temas educacionais') || 
+      combined.includes('ensino') || 
+      combined.includes('bncc') ||
+      combined.includes('avaliaca')
+    ) {
+      return 'pedagogia';
+    }
+
+    if (
+      combined.includes('administracao') || 
+      combined.includes('legislaca') || 
+      combined.includes('ldb') || 
+      combined.includes('estatuto') || 
+      combined.includes('direito') || 
+      combined.includes('indicadores') ||
+      combined.includes('gestao')
+    ) {
+      return 'admin';
+    }
+
+    if (combined.includes(normTarget)) {
+      return 'specific';
+    }
+
+    return 'other';
+  };
+
+  const getRadarStats = (disciplineKey: 'specific' | 'portugues' | 'pedagogia' | 'admin') => {
+    const matching = questionLogs.filter(log => {
+      const key = matchLogDiscipline(log, targetSubject);
+      if (key === disciplineKey) return true;
+      if (disciplineKey === 'specific' && key === 'other') return true;
+      return false;
+    });
+
+    const totalQuestions = matching.length;
+    const correct = matching.filter(l => l.isCorrect).length;
+    const accuracy = totalQuestions > 0 ? Math.round((correct / totalQuestions) * 100) : 0;
+
+    let status = 'A iniciar';
+    let textColor = 'text-zinc-500';
+
+    if (totalQuestions > 0) {
+      if (accuracy >= 80) {
+        status = 'Excelente';
+        textColor = 'text-emerald-700';
+      } else if (accuracy >= 60) {
+        status = 'Bom Desempenho';
+        textColor = 'text-blue-700';
+      } else {
+        status = 'Precisa de atenção';
+        textColor = 'text-amber-700';
+      }
+    }
+
+    return { totalQuestions, correct, accuracy, status, textColor };
+  };
+
+  const specificStats = getRadarStats('specific');
+  const portuguesStats = getRadarStats('portugues');
+  const pedagogiaStats = getRadarStats('pedagogia');
+  const adminStats = getRadarStats('admin');
+
+  const isTargetLP = targetSubject.toLowerCase().includes('portugues');
+
+  // Radar de Disciplinas Data (100% Real User Stats)
   const disciplinesRadar = [
     {
-      name: targetSubject,
-      icon: '🧬',
-      accuracy: totalQuestionsDone > 0 ? accuracyPct : 0,
-      totalQuestions: Math.round(totalQuestionsDone * 0.5),
+      key: 'specific',
+      name: isTargetLP ? 'Língua Portuguesa (Específica)' : targetSubject,
+      icon: getSubjectIcon(targetSubject),
+      accuracy: specificStats.accuracy,
+      totalQuestions: specificStats.totalQuestions,
+      correctCount: specificStats.correct,
       color: 'bg-emerald-500',
-      textColor: 'text-emerald-700',
+      textColor: specificStats.textColor,
       bgColor: 'bg-emerald-50 border-emerald-200',
       gradient: 'from-emerald-500 to-teal-600',
-      status: totalQuestionsDone > 0 ? (accuracyPct >= 70 ? 'Bom Desempenho' : 'Em evolução') : 'A Iniciar'
+      status: specificStats.status
     },
     {
-      name: 'Língua Portuguesa',
+      key: 'portugues',
+      name: isTargetLP ? 'Língua Portuguesa (Geral)' : 'Língua Portuguesa',
       icon: '📖',
-      accuracy: totalQuestionsDone > 0 ? Math.max(0, accuracyPct - 5) : 0,
-      totalQuestions: Math.round(totalQuestionsDone * 0.25),
+      accuracy: portuguesStats.accuracy,
+      totalQuestions: portuguesStats.totalQuestions,
+      correctCount: portuguesStats.correct,
       color: 'bg-blue-500',
-      textColor: 'text-blue-700',
+      textColor: portuguesStats.textColor,
       bgColor: 'bg-blue-50 border-blue-200',
       gradient: 'from-blue-500 to-indigo-600',
-      status: totalQuestionsDone > 0 ? 'Acompanhamento ativo' : 'A Iniciar'
+      status: portuguesStats.status
     },
     {
+      key: 'pedagogia',
       name: 'Temas Educacionais & Didática',
       icon: '📚',
-      accuracy: totalQuestionsDone > 0 ? Math.max(0, accuracyPct - 10) : 0,
-      totalQuestions: Math.round(totalQuestionsDone * 0.15),
+      accuracy: pedagogiaStats.accuracy,
+      totalQuestions: pedagogiaStats.totalQuestions,
+      correctCount: pedagogiaStats.correct,
       color: 'bg-purple-500',
-      textColor: 'text-purple-700',
+      textColor: pedagogiaStats.textColor,
       bgColor: 'bg-purple-50 border-purple-200',
       gradient: 'from-purple-500 to-pink-600',
-      status: totalQuestionsDone > 0 ? 'Estável' : 'A Iniciar'
+      status: pedagogiaStats.status
     },
     {
+      key: 'admin',
       name: 'Administração Pública',
       icon: '🏛',
-      accuracy: totalQuestionsDone > 0 ? Math.max(0, accuracyPct - 15) : 0,
-      totalQuestions: Math.round(totalQuestionsDone * 0.1),
+      accuracy: adminStats.accuracy,
+      totalQuestions: adminStats.totalQuestions,
+      correctCount: adminStats.correct,
       color: 'bg-amber-500',
-      textColor: 'text-amber-700',
+      textColor: adminStats.textColor,
       bgColor: 'bg-amber-50 border-amber-200',
       gradient: 'from-amber-500 to-orange-600',
-      status: totalQuestionsDone > 0 ? 'Atenção (Revisar)' : 'A Iniciar'
+      status: adminStats.status
     }
-  ];
-
-  // Mapa do Edital Nodes Data
-  const editalMapBlocks = [
-    { id: 1, title: 'Citologia & Estrutura Celular', subject: targetSubject, status: 'completed', pct: 100 },
-    { id: 2, title: 'Membrana Plasmática & Transporte', subject: targetSubject, status: 'in_progress', pct: 60 },
-    { id: 3, title: 'Organelas & Bioenergética (Mitocôndrias)', subject: targetSubject, status: 'not_started', pct: 0 },
-    { id: 4, title: 'LDB (Lei 9.394/96) e Diretrizes', subject: 'Temas Educacionais', status: 'completed', pct: 100 },
-    { id: 5, title: 'Crase & Regência Verbal FUNECE', subject: 'Língua Portuguesa', status: 'in_progress', pct: 45 },
-    { id: 6, title: 'Estatuto do Magistério do Ceará', subject: 'Administração Pública', status: 'not_started', pct: 0 }
   ];
 
   // Gamified Badges Data
@@ -288,34 +471,34 @@ export default function Dashboard({ user, profile, setActiveTab, onOpenProfile }
       )}
 
       {/* ========================================================================= */}
-      {/* 1. FIRST FOLD: CENTRO DE COMANDO HERO CARD (BOAS-VINDAS SIMPLES E ELEGANTE) */}
+      {/* 1. FIRST FOLD: CENTRO DE COMANDO HERO CARD (BOAS-VINDAS COMPACTAS E ELEGANTES) */}
       {/* ========================================================================= */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: 'easeOut' }}
-        className="relative rounded-2xl sm:rounded-3xl bg-gradient-to-br from-emerald-50 via-teal-50/60 to-emerald-100/80 text-emerald-950 p-6 sm:p-8 shadow-lg shadow-emerald-950/5 border border-emerald-200/90 overflow-hidden"
+        className="relative rounded-2xl bg-gradient-to-br from-emerald-50 via-teal-50/60 to-emerald-100/80 text-emerald-950 p-4 sm:p-5 shadow-sm border border-emerald-200/90 overflow-hidden"
       >
         {/* Subtle Glows and Mesh Highlights */}
         <div className="absolute -right-20 -top-20 w-80 h-80 bg-emerald-200/40 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -left-20 -bottom-20 w-64 h-64 bg-teal-200/30 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-white border border-emerald-200 p-0.5 shadow-sm shrink-0 flex items-center justify-center text-emerald-800 font-extrabold text-2xl">
-              <div className="w-full h-full bg-emerald-100/80 rounded-[14px] flex items-center justify-center text-emerald-900 font-black">
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-white border border-emerald-200 p-0.5 shadow-2xs shrink-0 flex items-center justify-center text-emerald-800 font-extrabold text-lg">
+              <div className="w-full h-full bg-emerald-100/80 rounded-[10px] flex items-center justify-center text-emerald-900 font-black">
                 {userName.replace('Prof. ', '').charAt(0).toUpperCase()}
               </div>
             </div>
-            <div className="space-y-1">
-              <p className="text-xs font-bold text-emerald-800/80 uppercase tracking-widest flex items-center gap-1.5">
+            <div className="space-y-0.5 min-w-0">
+              <p className="text-[11px] font-bold text-emerald-800/80 uppercase tracking-wider flex items-center gap-1.5">
                 <span>{greeting}</span>
-                <Sparkles size={14} className="text-amber-500 shrink-0" />
+                <Sparkles size={12} className="text-amber-500 shrink-0" />
               </p>
-              <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-emerald-950">
+              <h1 className="text-lg sm:text-xl font-black tracking-tight text-emerald-950 truncate">
                 {userName}
               </h1>
-              <p className="text-xs sm:text-sm text-emerald-800/80 font-medium">
+              <p className="text-xs text-emerald-800/80 font-medium line-clamp-1 sm:line-clamp-none">
                 Seja bem-vindo(a) ao seu portal de estudos e preparação para o concurso SEDUC CE 2026.
               </p>
             </div>
@@ -324,9 +507,9 @@ export default function Dashboard({ user, profile, setActiveTab, onOpenProfile }
           {((user?.email || profile?.email || '').toLowerCase().trim() === 'gerlianemagalhaes79@gmail.com') && (
             <button
               onClick={() => onOpenProfile && onOpenProfile('add_user')}
-              className="px-4 py-2.5 bg-emerald-900 hover:bg-emerald-950 text-white rounded-xl text-xs font-semibold transition flex items-center gap-2 cursor-pointer shadow-sm shrink-0 self-start sm:self-center"
+              className="px-3 py-1.5 bg-emerald-900 hover:bg-emerald-950 text-white rounded-lg text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer shadow-2xs shrink-0 self-start sm:self-center"
             >
-              <Plus size={15} />
+              <Plus size={14} />
               <span>Cadastrar Professor</span>
             </button>
           )}
@@ -343,17 +526,11 @@ export default function Dashboard({ user, profile, setActiveTab, onOpenProfile }
               <BarChart3 className="text-emerald-600" size={22} />
               <span>Painel da Aprovação</span>
             </h2>
-            <p className="text-xs text-zinc-500 font-medium">
-              Métricas reais consolidadas do seu ritmo de aprendizado para a SEDUC CE 2026.
-            </p>
           </div>
-          <span className="self-start sm:self-auto px-3 py-1 bg-emerald-50 text-emerald-800 border border-emerald-200/80 rounded-full font-bold text-xs uppercase tracking-wider">
-            Atualizado em Tempo Real
-          </span>
         </div>
 
-        {/* Responsive Grid: 2 columns on mobile (side by side), 3 on sm, 5 on lg */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-4">
+        {/* Responsive Grid: 2 columns on mobile, 4 on sm/lg */}
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
           {/* Card 1: Dias para a Prova (Contagem Regressiva FUNECE) */}
           <motion.div
             whileHover={{ y: -3 }}
@@ -476,312 +653,62 @@ export default function Dashboard({ user, profile, setActiveTab, onOpenProfile }
               </div>
             </div>
           </motion.div>
-
-          {/* Card 5: Sequência Ativa */}
-          <motion.div
-            whileHover={{ y: -3 }}
-            className="bg-white border border-zinc-200/90 rounded-2xl p-3.5 sm:p-5 shadow-sm hover:shadow-md transition-all duration-300 space-y-2 sm:space-y-3 relative overflow-hidden group col-span-2 sm:col-span-1"
-          >
-            <div className="flex items-center justify-between">
-              <div className="p-2.5 sm:p-3 bg-amber-50 text-amber-700 rounded-xl border border-amber-100 group-hover:bg-amber-600 group-hover:text-white transition-colors">
-                <Flame size={20} className="sm:w-5 sm:h-5" />
-              </div>
-              <span className="flex items-center gap-1 text-[10px] sm:text-xs font-bold text-amber-800 bg-amber-50 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full border border-amber-200">
-                <Flame size={12} className="text-amber-500 animate-bounce" />
-                Ofensiva
-              </span>
-            </div>
-
-            <div>
-              <p className="text-[10px] sm:text-xs font-bold text-zinc-500 uppercase tracking-wider">Sequência</p>
-              <div className="flex items-baseline gap-1.5 mt-0.5 sm:mt-1">
-                <h3 className="text-2xl sm:text-3xl font-black text-zinc-900 tracking-tight">{streakDays}</h3>
-                <span className="text-[10px] sm:text-xs text-zinc-500">dias</span>
-              </div>
-            </div>
-
-            <div className="pt-0.5 flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse shrink-0" />
-              <span className="text-[10px] sm:text-[11px] font-bold text-zinc-600 truncate">
-                {streakDays > 0 ? 'Consistência ativa' : 'Estude hoje'}
-              </span>
-            </div>
-          </motion.div>
         </div>
       </section>
 
       {/* ========================================================================= */}
-      {/* 3. RADAR DE DISCIPLINAS (GRÁFICOS HORIZONTAIS COM CORES PRÓPRIAS)        */}
+      {/* 3. RADAR DE DISCIPLINAS (LAYOUT COMPACTO EM GRID)                         */}
       {/* ========================================================================= */}
-      <section className="bg-white border border-zinc-200/90 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-100 pb-4">
-          <div>
-            <h2 className="text-xl font-black text-zinc-900 tracking-tight flex items-center gap-2">
-              <Compass className="text-teal-600" size={22} />
-              <span>Radar de Disciplinas</span>
-            </h2>
-            <p className="text-xs text-zinc-500 font-medium">
-              Acompanhamento de rendimento por área do conhecimento do edital SEDUC CE.
-            </p>
-          </div>
-          <span className="text-xs text-zinc-400 font-medium">
-            Clique na disciplina para ver detalhes de estudo
-          </span>
+      <section className="bg-white border border-zinc-200/90 rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-sm space-y-3">
+        <div className="flex items-center justify-between border-b border-zinc-100 pb-2.5">
+          <h2 className="text-base sm:text-lg font-black text-zinc-900 tracking-tight flex items-center gap-2">
+            <Compass className="text-teal-600" size={20} />
+            <span>Radar de Disciplinas</span>
+          </h2>
         </div>
 
-        <div className="space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
           {disciplinesRadar.map((disc, idx) => (
             <motion.div
               key={idx}
-              whileHover={{ x: 4 }}
+              whileHover={{ y: -2 }}
               onClick={() => setSelectedDisciplineModal(disc.name)}
-              className="p-4 rounded-2xl border border-zinc-100 hover:border-zinc-300 hover:shadow-md transition-all cursor-pointer bg-zinc-50/50 hover:bg-white space-y-2 group"
+              className="p-3 rounded-xl border border-zinc-100 hover:border-zinc-300 hover:shadow-sm transition-all cursor-pointer bg-zinc-50/50 hover:bg-white space-y-2 group"
             >
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl p-2 bg-white rounded-xl shadow-xs border border-zinc-100 group-hover:scale-110 transition-transform">
+              <div className="flex items-center justify-between gap-1.5">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-lg p-1.5 bg-white rounded-lg shadow-2xs border border-zinc-100 group-hover:scale-105 transition-transform shrink-0">
                     {disc.icon}
                   </span>
-                  <div>
-                    <h4 className="font-extrabold text-zinc-900 text-sm sm:text-base group-hover:text-emerald-700 transition-colors">
+                  <div className="min-w-0">
+                    <h4 className="font-extrabold text-zinc-900 text-xs sm:text-sm group-hover:text-emerald-700 transition-colors truncate">
                       {disc.name}
                     </h4>
-                    <p className="text-xs text-zinc-500">
-                      {disc.totalQuestions} questões resolvidas • <span className={disc.textColor}>{disc.status}</span>
+                    <p className="text-[10px] sm:text-[11px] text-zinc-500 truncate">
+                      {disc.totalQuestions} questões • <span className={disc.textColor}>{disc.status}</span>
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 self-end sm:self-auto">
-                  <span className={`text-base font-black ${disc.textColor}`}>
+                <div className="flex items-center gap-1 shrink-0">
+                  <span className={`text-sm font-black ${disc.textColor}`}>
                     {disc.accuracy}%
                   </span>
-                  <ChevronRight size={18} className="text-zinc-400 group-hover:translate-x-1 transition-transform" />
+                  <ChevronRight size={14} className="text-zinc-400 group-hover:translate-x-0.5 transition-transform" />
                 </div>
               </div>
 
-              {/* Horizontal Progress Bar with unique gradient color */}
-              <div className="w-full h-3 bg-zinc-200/80 rounded-full overflow-hidden p-0.5">
+              {/* Horizontal Progress Bar */}
+              <div className="w-full h-2 bg-zinc-200/80 rounded-full overflow-hidden p-0.5">
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${disc.accuracy}%` }}
-                  transition={{ duration: 1, delay: idx * 0.1 }}
-                  className={`h-full rounded-full bg-gradient-to-r ${disc.gradient} shadow-xs`}
+                  transition={{ duration: 0.8, delay: idx * 0.08 }}
+                  className={`h-full rounded-full bg-gradient-to-r ${disc.gradient} shadow-2xs`}
                 />
               </div>
             </motion.div>
           ))}
-        </div>
-      </section>
-
-      {/* ========================================================================= */}
-      {/* 4. MAPA DO EDITAL & LINHA DO TEMPO (GRID DE 2 COLUNAS)                   */}
-      {/* ========================================================================= */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* MAPA DO EDITAL (7 COLUNAS) */}
-        <section className="lg:col-span-7 bg-white border border-zinc-200/90 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
-          <div className="flex items-center justify-between border-b border-zinc-100 pb-4">
-            <div>
-              <h2 className="text-xl font-black text-zinc-900 tracking-tight flex items-center gap-2">
-                <MapPinIcon />
-                <span>Mapa do Edital</span>
-              </h2>
-              <p className="text-xs text-zinc-500 font-medium">
-                Progresso visual por bloco de conteúdo
-              </p>
-            </div>
-            <button 
-              onClick={() => setActiveTab('edital')}
-              className="text-xs font-bold text-emerald-700 hover:text-emerald-800 flex items-center gap-1 cursor-pointer"
-            >
-              Ver Tudo <ArrowRight size={14} />
-            </button>
-          </div>
-
-          {/* Status Legend */}
-          <div className="flex items-center gap-4 text-xs font-bold flex-wrap">
-            <span className="flex items-center gap-1.5 text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-              ✔ Concluído
-            </span>
-            <span className="flex items-center gap-1.5 text-sky-700 bg-sky-50 px-2.5 py-1 rounded-full border border-sky-200">
-              <span className="w-2.5 h-2.5 rounded-full bg-sky-500" />
-              ⚡ Em andamento
-            </span>
-            <span className="flex items-center gap-1.5 text-zinc-500 bg-zinc-100 px-2.5 py-1 rounded-full border border-zinc-200">
-              <span className="w-2.5 h-2.5 rounded-full bg-zinc-400" />
-              🔒 Não iniciado
-            </span>
-          </div>
-
-          {/* Grid of Edital Map Nodes */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {editalMapBlocks.map((item) => {
-              const isCompleted = item.status === 'completed';
-              const isInProgress = item.status === 'in_progress';
-
-              return (
-                <motion.div
-                  key={item.id}
-                  whileHover={{ scale: 1.02 }}
-                  onClick={() => setActiveTab('edital')}
-                  className={`p-4 rounded-2xl border transition-all cursor-pointer space-y-2 relative ${
-                    isCompleted 
-                      ? 'bg-emerald-50/60 border-emerald-300 text-emerald-950' 
-                      : isInProgress 
-                        ? 'bg-sky-50/60 border-sky-300 text-sky-950' 
-                        : 'bg-zinc-50/80 border-zinc-200 text-zinc-500'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold uppercase tracking-wider opacity-80">
-                      {item.subject}
-                    </span>
-                    {isCompleted && <CheckCircle2 size={16} className="text-emerald-600" />}
-                    {isInProgress && <Zap size={16} className="text-sky-600 animate-pulse" />}
-                    {!isCompleted && !isInProgress && <Lock size={16} className="text-zinc-400" />}
-                  </div>
-
-                  <h4 className="font-extrabold text-xs sm:text-sm leading-snug line-clamp-2">
-                    {item.title}
-                  </h4>
-
-                  <div className="w-full bg-black/10 h-1.5 rounded-full overflow-hidden">
-                    <div 
-                      className={`h-full ${isCompleted ? 'bg-emerald-600' : isInProgress ? 'bg-sky-600' : 'bg-zinc-300'}`} 
-                      style={{ width: `${item.pct}%` }} 
-                    />
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
-        </section>
-
-        {/* LINHA DO TEMPO (5 COLUNAS) */}
-        <section className="lg:col-span-5 bg-white border border-zinc-200/90 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
-          <div className="border-b border-zinc-100 pb-4">
-            <h2 className="text-xl font-black text-zinc-900 tracking-tight flex items-center gap-2">
-              <Clock className="text-indigo-600" size={22} />
-              <span>Linha do Tempo</span>
-            </h2>
-            <p className="text-xs text-zinc-500 font-medium">
-              Acompanhe sua evolução diária contínua.
-            </p>
-          </div>
-
-          {/* Timeline Items */}
-          <div className="space-y-4 relative before:absolute before:left-3.5 before:top-3 before:bottom-3 before:w-0.5 before:bg-zinc-200">
-            {/* Ontem */}
-            <div className="relative pl-8 space-y-1">
-              <div className="absolute left-1.5 top-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-white shadow-xs flex items-center justify-center text-white text-[8px]">
-                ✔
-              </div>
-              <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Ontem</span>
-              <h4 className="font-bold text-zinc-900 text-sm">✔ Citologia & Estrutura Celular</h4>
-              <p className="text-xs text-emerald-700 font-medium">Concluído • 85% de acertos nas questões</p>
-            </div>
-
-            {/* Hoje */}
-            <div className="relative pl-8 space-y-1">
-              <div className="absolute left-1 top-1 w-5 h-5 rounded-full bg-amber-400 border-2 border-white shadow-md animate-pulse flex items-center justify-center text-emerald-950 font-black text-[10px]">
-                ⚡
-              </div>
-              <span className="text-[10px] font-bold text-amber-600 uppercase tracking-wider">Hoje</span>
-              <h4 className="font-extrabold text-zinc-900 text-sm">⚡ Membrana Plasmática & Transporte</h4>
-              <p className="text-xs text-amber-700 font-medium">Em andamento • Meta de 50 questões hoje</p>
-            </div>
-
-            {/* Amanhã */}
-            <div className="relative pl-8 space-y-1">
-              <div className="absolute left-2 top-1.5 w-3 h-3 rounded-full bg-zinc-300 border-2 border-white" />
-              <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Amanhã</span>
-              <h4 className="font-bold text-zinc-700 text-sm">🎯 Ecologia & Ciclos Biogeoquímicos</h4>
-              <p className="text-xs text-zinc-500">Agendado para amanhã de manhã</p>
-            </div>
-
-            {/* Depois */}
-            <div className="relative pl-8 space-y-1">
-              <div className="absolute left-2 top-1.5 w-3 h-3 rounded-full bg-zinc-200 border-2 border-white" />
-              <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Em breve</span>
-              <h4 className="font-bold text-zinc-600 text-sm">📚 Genética Molecular & Mendel</h4>
-              <p className="text-xs text-zinc-400">Próximo bloco do cronograma</p>
-            </div>
-          </div>
-        </section>
-      </div>
-
-      {/* ========================================================================= */}
-      {/* 5. DIAGNÓSTICO INTELIGENTE (IA DE DESEMPENHO)                           */}
-      {/* ========================================================================= */}
-      <section className="bg-gradient-to-br from-slate-900 via-indigo-950 to-zinc-900 text-white rounded-3xl p-6 sm:p-8 shadow-xl border border-indigo-900/50 space-y-6 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-indigo-800/50 pb-4 relative z-10">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-gradient-to-tr from-indigo-500 to-purple-500 text-white rounded-2xl shadow-lg shadow-indigo-500/30">
-              <BrainCircuit size={24} />
-            </div>
-            <div>
-              <h2 className="text-xl font-black tracking-tight flex items-center gap-2 text-white">
-                <span>Diagnóstico Inteligente IA</span>
-                <Sparkles size={18} className="text-amber-400" />
-              </h2>
-              <p className="text-xs text-indigo-200/80 font-medium">
-                Análise preditiva automatizada para evitar retenção na curva de esquecimento.
-              </p>
-            </div>
-          </div>
-
-          <button
-            onClick={() => setActiveTab('tutor')}
-            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl transition flex items-center gap-2 cursor-pointer shadow-md shadow-indigo-600/30 shrink-0"
-          >
-            <Sparkles size={14} />
-            <span>Consultar Mentor IA</span>
-          </button>
-        </div>
-
-        {/* Diagnostic Insight Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 relative z-10">
-          <div className="p-4 bg-indigo-900/30 border border-indigo-700/50 rounded-2xl space-y-2">
-            <div className="flex items-center gap-2 text-amber-300 text-xs font-bold">
-              <AlertTriangle size={15} />
-              <span>Desempenho Crítico</span>
-            </div>
-            <p className="text-sm font-bold text-white">
-              Seu pior desempenho atualmente está em <strong className="text-amber-300">Ecologia (42%)</strong>.
-            </p>
-            <p className="text-xs text-indigo-200/80">
-              Recomendamos focar um treino adaptativo de 15 questões nesta disciplina.
-            </p>
-          </div>
-
-          <div className="p-4 bg-indigo-900/30 border border-indigo-700/50 rounded-2xl space-y-2">
-            <div className="flex items-center gap-2 text-purple-300 text-xs font-bold">
-              <RotateCcw size={15} />
-              <span>Curva de Ebbinghaus</span>
-            </div>
-            <p className="text-sm font-bold text-white">
-              Sua curva de esquecimento indica revisão urgente em <strong className="text-purple-300">LDB (Lei 9.394/96)</strong>.
-            </p>
-            <p className="text-xs text-indigo-200/80">
-              Você possui risco alto de esquecer o conteúdo em 5 dias se não revisar hoje.
-            </p>
-          </div>
-
-          <div className="p-4 bg-indigo-900/30 border border-indigo-700/50 rounded-2xl space-y-2">
-            <div className="flex items-center gap-2 text-emerald-300 text-xs font-bold">
-              <TrendingUp size={15} />
-              <span>Evolução Positiva</span>
-            </div>
-            <p className="text-sm font-bold text-white">
-              <strong className="text-emerald-300">Português aumentou +18%</strong> de acertos esta semana.
-            </p>
-            <p className="text-xs text-indigo-200/80">
-              Biologia teve leve oscilação de -7% em questões de nível avançado.
-            </p>
-          </div>
         </div>
       </section>
 
@@ -950,47 +877,54 @@ export default function Dashboard({ user, profile, setActiveTab, onOpenProfile }
                 </button>
               </div>
 
-              <div className="space-y-3 text-xs sm:text-sm text-zinc-700">
-                <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl space-y-1">
-                  <p className="font-bold text-emerald-950">Status do Conteúdo:</p>
-                  <p className="text-emerald-800">Você já cobriu 60% do edital desta disciplina com excelente taxa de retenção.</p>
-                </div>
+              {(() => {
+                const modalDisc = disciplinesRadar.find(d => d.name === selectedDisciplineModal);
+                return (
+                  <div className="space-y-4 text-xs sm:text-sm text-zinc-700">
+                    <div className="p-4 bg-emerald-50/80 border border-emerald-200 rounded-2xl space-y-2">
+                      <p className="font-bold text-emerald-950 flex items-center justify-between">
+                        <span>Desempenho Real em Exercícios:</span>
+                        <span className="text-emerald-700 font-extrabold">{modalDisc?.status || 'A iniciar'}</span>
+                      </p>
+                      {modalDisc && modalDisc.totalQuestions > 0 ? (
+                        <p className="text-emerald-900 leading-relaxed">
+                          Você respondeu <strong>{modalDisc.totalQuestions} questão(ões)</strong> com{' '}
+                          <strong>{modalDisc.correctCount} acerto(s)</strong> ({modalDisc.accuracy}% de aproveitamento).
+                        </p>
+                      ) : (
+                        <p className="text-emerald-900 leading-relaxed">
+                          Nenhuma questão foi resolvida nesta disciplina ainda. Clique em 'Praticar Questões' para iniciar simulados e alimentar suas estatísticas reais.
+                        </p>
+                      )}
+                    </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    onClick={() => {
-                      setSelectedDisciplineModal(null);
-                      setActiveTab('simulados');
-                    }}
-                    className="p-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition text-center cursor-pointer shadow-md"
-                  >
-                    Praticar Questões
-                  </button>
-                  <button
-                    onClick={() => {
-                      setSelectedDisciplineModal(null);
-                      setActiveTab('edital');
-                    }}
-                    className="p-3 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 font-bold rounded-xl transition text-center cursor-pointer"
-                  >
-                    Ver no Edital
-                  </button>
-                </div>
-              </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        onClick={() => {
+                          setSelectedDisciplineModal(null);
+                          setActiveTab('simulados');
+                        }}
+                        className="p-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition text-center cursor-pointer shadow-md"
+                      >
+                        Praticar Questões
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSelectedDisciplineModal(null);
+                          setActiveTab('edital');
+                        }}
+                        className="p-3 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 font-bold rounded-xl transition text-center cursor-pointer"
+                      >
+                        Ver no Edital
+                      </button>
+                    </div>
+                  </div>
+                );
+              })()}
             </motion.div>
           </div>
         )}
       </AnimatePresence>
     </div>
-  );
-}
-
-// MapPinIcon component for Mapa do Edital
-function MapPinIcon() {
-  return (
-    <svg className="w-5 h-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-    </svg>
   );
 }

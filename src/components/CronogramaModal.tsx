@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { db, doc, getDoc, setDoc } from '../firebase';
 import { UserProfile, EditalTopic, ScheduleDay } from '../types';
 import { generateStudySchedule, INITIAL_EDITAL_TOPICS } from '../data/seducData';
+import { syncCronogramaToEdital } from '../utils/syncCronogramaEdital';
 import { Calendar, Printer, CheckCircle, Clock, BookOpen, User, GraduationCap, X, ChevronLeft, ChevronRight, Sparkles, Filter } from 'lucide-react';
 import { motion } from 'motion/react';
 
@@ -95,6 +96,8 @@ export default function CronogramaModal({ profile, onClose, onOpenEditProfile }:
           updatedAt: new Date().toISOString()
         }, { merge: true }).catch(() => {});
       }
+
+      syncCronogramaToEdital(updated, profile?.degree || profile?.targetSubject, uid);
 
       return updated;
     });

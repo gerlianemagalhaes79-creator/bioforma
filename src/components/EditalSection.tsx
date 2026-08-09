@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { User, db, doc, setDoc, collection, query, where, getDocs } from '../firebase';
 import { UserProfile, EditalBlock, EditalTopicItem, EditalSubtopic, TopicStatus, GeneralCategoryKey } from '../types';
 import { OFFICIAL_EDITAL_TREE, getBlocksForDegree } from '../data/seducData';
+import { syncEditalToCronograma } from '../utils/syncCronogramaEdital';
 import { 
   BookOpen, 
   CheckCircle2, 
@@ -108,10 +109,12 @@ export default function EditalSection({ user, profile, setActiveTab }: EditalSec
     };
 
     window.addEventListener('studyProgressUpdated', handleProgressUpdate);
+    window.addEventListener('cronogramaProgressUpdated', handleProgressUpdate);
     window.addEventListener('storage', handleProgressUpdate);
 
     return () => {
       window.removeEventListener('studyProgressUpdated', handleProgressUpdate);
+      window.removeEventListener('cronogramaProgressUpdated', handleProgressUpdate);
       window.removeEventListener('storage', handleProgressUpdate);
     };
   }, [user?.uid, storageKey]);
@@ -129,7 +132,11 @@ export default function EditalSection({ user, profile, setActiveTab }: EditalSec
       const updated = { ...prev, [id]: newStatus };
       try {
         localStorage.setItem(storageKey, JSON.stringify(updated));
+        localStorage.setItem('studyProgress_guest', JSON.stringify(updated));
       } catch (_) {}
+
+      syncEditalToCronograma(updated, userDegree, uid);
+
       return updated;
     });
 

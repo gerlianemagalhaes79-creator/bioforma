@@ -682,23 +682,22 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
                   <Filter size={16} className="text-emerald-700" />
                   Hierarquia do Edital Matricial
                 </h3>
-                <p className="text-[11px] text-zinc-500">Selecione os subtópicos exatos onde as questões devem se concentrar</p>
               </div>
 
               {/* Selection Summary Pill */}
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-black text-emerald-900 bg-emerald-50 px-3 py-1 rounded-xl border border-emerald-200">
-                  {selectedCount} selecionado(s)
-                </span>
-                {selectedCount > 0 && (
+              {selectedCount > 0 && (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-black text-emerald-900 bg-emerald-50 px-3 py-1 rounded-xl border border-emerald-200">
+                    {selectedCount} selecionado(s)
+                  </span>
                   <button
                     onClick={handleClearAllSelections}
                     className="text-[11px] font-bold text-rose-600 hover:underline cursor-pointer"
                   >
                     Limpar
                   </button>
-                )}
-              </div>
+                </div>
+              )}
             </div>
 
             {/* Discipline Selector Bar */}

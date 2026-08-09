@@ -599,56 +599,30 @@ ${secondaryTopics.length > 0 ? secondaryTopics.map(t => {
   };
 
   return (
-    <div className="space-y-3 flex flex-col h-[78vh]">
-      {/* Header */}
-      <div className="bg-white rounded-2xl p-3.5 sm:p-4 border border-emerald-100 shadow-xs flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-gradient-to-br from-emerald-800 to-teal-900 text-amber-300 rounded-xl shadow-xs">
-            <GraduationCap size={22} />
-          </div>
-          <div>
-            <h2 className="text-sm font-black text-zinc-900">Professor Mentor IA</h2>
-            <p className="text-[11px] text-zinc-500 font-medium">Mentor Pedagógico Conectado ao Cronograma Oficial FUNECE / SEDUC CE</p>
-          </div>
-        </div>
-
-        <span className="px-2.5 py-1 bg-emerald-100 text-emerald-800 text-[10px] font-black rounded-full uppercase tracking-wider shrink-0">
-          Ativo
-        </span>
-      </div>
-
-      {/* Live Cronograma Banner */}
-      <div className="bg-gradient-to-r from-emerald-900 via-teal-900 to-emerald-950 text-white rounded-2xl p-3 border border-emerald-700/80 shadow-xs flex flex-wrap items-center justify-between gap-2 shrink-0">
+    <div className="space-y-2 flex flex-col h-[82vh]">
+      {/* Compact Header */}
+      <div className="bg-white rounded-xl px-3.5 py-2.5 border border-emerald-100 shadow-2xs flex items-center justify-between gap-2 shrink-0">
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className="p-1.5 bg-amber-400 text-emerald-950 rounded-xl font-black text-xs flex items-center gap-1 shrink-0">
-            <Calendar size={14} />
-            <span>Dia {currentDay?.dayNumber || 1}</span>
+          <div className="p-1.5 bg-gradient-to-br from-emerald-800 to-teal-900 text-amber-300 rounded-lg shadow-2xs shrink-0">
+            <GraduationCap size={18} />
           </div>
-          <div className="min-w-0">
-            <p className="text-[11px] font-extrabold text-amber-300 flex items-center gap-1">
-              <Sparkles size={12} />
-              <span>Cronograma Conectado: {userSubject}</span>
-            </p>
-            <p className="text-[10px] text-emerald-100/90 font-medium truncate">
-              <strong>Meta de Hoje:</strong> {currentDay?.topics.map(t => `${t.parentTopicName}`).join(' • ') || 'Carregando metas do dia...'}
-            </p>
+          <div className="min-w-0 flex items-center gap-2">
+            <h2 className="text-sm font-black text-zinc-900 shrink-0">Professor Mentor IA</h2>
+            <span className="text-[10px] font-extrabold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/80 truncate">
+              Dia {currentDay?.dayNumber || 1} • {userSubject}
+            </span>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
-          <span className="text-[10px] font-black bg-emerald-800/80 text-emerald-200 px-2.5 py-1 rounded-lg border border-emerald-700">
-            {completedCount}/{totalSubtopics} Subtópicos ({progressPercent}%)
-          </span>
-          {setActiveTab && (
-            <button
-              onClick={() => setActiveTab('cronograma')}
-              className="text-[10px] font-black bg-white text-emerald-950 hover:bg-emerald-100 px-2.5 py-1 rounded-lg transition cursor-pointer flex items-center gap-1 shadow-2xs"
-            >
-              <span>Ver Cronograma</span>
-              <ArrowRight size={12} />
-            </button>
-          )}
-        </div>
+        {setActiveTab && (
+          <button
+            onClick={() => setActiveTab('cronograma')}
+            className="text-[11px] font-bold text-emerald-700 hover:text-emerald-900 flex items-center gap-1 cursor-pointer shrink-0"
+          >
+            <span>Ver Cronograma</span>
+            <ArrowRight size={12} />
+          </button>
+        )}
       </div>
 
       {/* Quick Prompt Chips */}

@@ -161,9 +161,12 @@ export interface QuestionAnswerLog {
   uid: string;
   questionId: string;
   discipline: string;
+  subject?: string;
   blockName: string;
   topicName: string;
+  topic?: string;
   subtopicName?: string;
+  subtopic?: string;
   banca: string;
   isCorrect: boolean;
   timeSpentSeconds: number;
