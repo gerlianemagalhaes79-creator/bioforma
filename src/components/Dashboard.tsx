@@ -288,187 +288,56 @@ export default function Dashboard({ user, profile, setActiveTab, onOpenProfile }
       )}
 
       {/* ========================================================================= */}
-      {/* 1. FIRST FOLD: CENTRO DE COMANDO HERO CARD (ELEGANT LIGHT MINT HERO)     */}
+      {/* 1. FIRST FOLD: CENTRO DE COMANDO HERO CARD (BOAS-VINDAS SIMPLES E ELEGANTE) */}
       {/* ========================================================================= */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: 'easeOut' }}
-        className="relative rounded-2xl sm:rounded-3xl bg-gradient-to-br from-emerald-50 via-teal-50/60 to-emerald-100/80 text-emerald-950 p-6 sm:p-8 lg:p-9 shadow-xl shadow-emerald-950/5 border border-emerald-200/90 overflow-hidden"
+        className="relative rounded-2xl sm:rounded-3xl bg-gradient-to-br from-emerald-50 via-teal-50/60 to-emerald-100/80 text-emerald-950 p-6 sm:p-8 shadow-lg shadow-emerald-950/5 border border-emerald-200/90 overflow-hidden"
       >
         {/* Subtle Glows and Mesh Highlights */}
-        <div className="absolute -right-20 -top-20 w-96 h-96 bg-emerald-200/40 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -left-20 -bottom-20 w-80 h-80 bg-teal-200/30 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -right-20 -top-20 w-80 h-80 bg-emerald-200/40 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -left-20 -bottom-20 w-64 h-64 bg-teal-200/30 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="relative z-10 space-y-6 sm:space-y-7">
-          {/* Top Bar inside Hero */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-emerald-200/70 pb-5 sm:pb-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-white border border-emerald-200 p-0.5 shadow-sm shrink-0 flex items-center justify-center text-emerald-800 font-extrabold text-xl">
-                <div className="w-full h-full bg-emerald-100/80 rounded-[14px] flex items-center justify-center text-emerald-900 font-black">
-                  {userName.replace('Prof. ', '').charAt(0).toUpperCase()}
-                </div>
-              </div>
-              <div className="space-y-0.5">
-                <p className="text-xs font-bold text-emerald-800/70 uppercase tracking-widest flex items-center gap-1.5">
-                  <span>{greeting}</span>
-                  <Sparkles size={14} className="text-amber-500 shrink-0" />
-                </p>
-                <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-emerald-950">
-                  {userName}
-                </h1>
-                <p className="text-xs text-emerald-800/80 font-medium pt-0.5">
-                  Concurso SEDUC Ceará 2026 • <span className="text-emerald-900 font-bold">FUNECE / CEV-UECE</span>
-                </p>
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-white border border-emerald-200 p-0.5 shadow-sm shrink-0 flex items-center justify-center text-emerald-800 font-extrabold text-2xl">
+              <div className="w-full h-full bg-emerald-100/80 rounded-[14px] flex items-center justify-center text-emerald-900 font-black">
+                {userName.replace('Prof. ', '').charAt(0).toUpperCase()}
               </div>
             </div>
-
-            {/* Countdown Badge & Admin Action */}
-            <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
-              <div className="px-3.5 py-2 bg-white/90 border border-emerald-200/90 rounded-xl flex items-center gap-2 shadow-xs">
-                <Calendar size={15} className="text-emerald-700" />
-                <span className="text-xs text-emerald-950 font-medium">
-                  Faltam <strong className="text-emerald-900 font-black text-sm">{daysRemaining}</strong> dias para a prova FUNECE
-                </span>
-              </div>
-
-              {((user?.email || profile?.email || '').toLowerCase().trim() === 'gerlianemagalhaes79@gmail.com') && (
-                <button
-                  onClick={() => onOpenProfile && onOpenProfile('add_user')}
-                  className="px-3.5 py-2 bg-emerald-900 hover:bg-emerald-950 text-white rounded-xl text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer shadow-sm"
-                >
-                  <Plus size={14} />
-                  <span>Cadastrar Professor</span>
-                </button>
-              )}
+            <div className="space-y-1">
+              <p className="text-xs font-bold text-emerald-800/80 uppercase tracking-widest flex items-center gap-1.5">
+                <span>{greeting}</span>
+                <Sparkles size={14} className="text-amber-500 shrink-0" />
+              </p>
+              <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-emerald-950">
+                {userName}
+              </h1>
+              <p className="text-xs sm:text-sm text-emerald-800/80 font-medium">
+                Seja bem-vindo(a) ao seu portal de estudos e preparação para o concurso SEDUC CE 2026.
+              </p>
             </div>
           </div>
 
-          {/* "HOJE VOCÊ ESTUDARÁ" - BREADCRUMB HIERARCHICAL TRAIL */}
-          <div className="space-y-3.5">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-2 text-emerald-950 font-bold text-xs uppercase tracking-wider">
-                <Target size={15} className="text-emerald-700 shrink-0" />
-                <span>Hoje você estudará — Trilha Programática do Cronograma</span>
-              </div>
-              {todayScheduleDay && (
-                <span className="text-[11px] font-semibold text-emerald-900 bg-white/90 px-2.5 py-1 rounded-md border border-emerald-200 shrink-0 flex items-center gap-1.5 font-mono shadow-xs">
-                  <Calendar size={12} className="text-emerald-700" />
-                  Dia {todayScheduleDay.dayNumber} • {todayScheduleDay.topics.length} Sessões
-                </span>
-              )}
-            </div>
-
-            {/* Breadcrumb List of Study Sessions */}
-            <div className="space-y-2.5">
-              {todayScheduleDay?.topics.map((item, idx) => {
-                const allDone = item.subtopicNames.every((_, subIdx) => completedTopicIds[`${item.id}_sub_${subIdx}`]);
-                return (
-                  <div
-                    key={idx}
-                    className={`p-3.5 sm:p-4 rounded-xl border transition-all ${
-                      allDone
-                        ? 'bg-emerald-100/80 border-emerald-300 text-emerald-950'
-                        : 'bg-white/85 border-emerald-200/90 text-emerald-950 hover:border-emerald-300 shadow-xs'
-                    }`}
-                  >
-                    <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-                      {/* Breadcrumb Path Hierarchy Header */}
-                      <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-800/90 flex-wrap">
-                        <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-900 font-bold text-[10px] uppercase border border-emerald-200 shrink-0">
-                          Sessão 0{idx + 1}
-                        </span>
-                        <ChevronRight size={13} className="text-emerald-400 shrink-0" />
-                        <span
-                          className={`text-[10px] font-bold px-2 py-0.5 rounded border uppercase shrink-0 ${
-                            item.reviewType?.includes('Ebbinghaus')
-                              ? 'bg-amber-100 text-amber-950 border-amber-300/80'
-                              : 'bg-emerald-100 text-emerald-950 border-emerald-300/80'
-                          }`}
-                        >
-                          {item.reviewType || item.category}
-                        </span>
-                        <ChevronRight size={13} className="text-emerald-400 shrink-0" />
-                        <span className="text-emerald-950 font-extrabold text-xs">{item.parentTopicName}</span>
-                      </div>
-
-                      {allDone ? (
-                        <span className="flex items-center gap-1 text-[11px] text-emerald-900 font-bold bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300">
-                          <CheckCircle2 size={13} /> Concluído
-                        </span>
-                      ) : (
-                        <span className="text-[11px] text-emerald-800 font-medium">
-                          Meta: <strong className="text-emerald-900 font-bold">{item.questionsGoal} questões</strong>
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Subtopic Breadcrumb Chain */}
-                    <div className="flex items-center gap-1.5 text-xs text-emerald-900 font-medium pl-1 overflow-x-auto py-0.5 scrollbar-none">
-                      <span className="text-emerald-700/80 text-[11px] font-mono shrink-0">Conteúdo:</span>
-                      {item.subtopicNames.map((subName, subIdx) => (
-                        <React.Fragment key={subIdx}>
-                          {subIdx > 0 && <ChevronRight size={12} className="text-emerald-400 shrink-0" />}
-                          <span className={`px-2 py-1 rounded bg-emerald-50/90 border text-[11px] whitespace-nowrap ${
-                            completedTopicIds[`${item.id}_sub_${subIdx}`]
-                              ? 'border-emerald-300 text-emerald-900 bg-emerald-100/90 line-through opacity-80'
-                              : 'border-emerald-200/90 text-emerald-950 shadow-2xs'
-                          }`}>
-                            {subName}
-                          </span>
-                        </React.Fragment>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Bottom Bar: Progress Bar + High Contrast CTA Button */}
-          <div className="pt-2 sm:pt-3 flex flex-col lg:flex-row lg:items-center justify-between gap-5 border-t border-emerald-200/70">
-            {/* Global Edital Progress Bar */}
-            <div className="space-y-2 flex-1 max-w-xl">
-              <div className="flex items-center justify-between text-xs font-semibold text-emerald-900">
-                <span className="flex items-center gap-1.5">
-                  <GraduationCap size={15} className="text-emerald-700" />
-                  <span>Progresso do Edital Verticalizado SEDUC CE</span>
-                </span>
-                <span className="text-emerald-900 font-bold font-mono text-xs">{editalPct}% concluído</span>
-              </div>
-
-              <div className="w-full h-2.5 bg-white/90 rounded-full border border-emerald-200 p-0.5 overflow-hidden shadow-inner">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${editalPct}%` }}
-                  transition={{ duration: 1, ease: 'easeOut' }}
-                  className="h-full bg-emerald-600 rounded-full"
-                />
-              </div>
-            </div>
-
-            {/* High-Contrast CTA Button */}
-            <motion.button
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => setActiveTab('cronograma')}
-              className="w-full lg:w-auto px-7 py-3.5 bg-emerald-800 hover:bg-emerald-900 text-white font-extrabold text-sm sm:text-base rounded-xl shadow-lg shadow-emerald-800/20 transition-all duration-200 flex items-center justify-center gap-3 group cursor-pointer shrink-0"
+          {((user?.email || profile?.email || '').toLowerCase().trim() === 'gerlianemagalhaes79@gmail.com') && (
+            <button
+              onClick={() => onOpenProfile && onOpenProfile('add_user')}
+              className="px-4 py-2.5 bg-emerald-900 hover:bg-emerald-950 text-white rounded-xl text-xs font-semibold transition flex items-center gap-2 cursor-pointer shadow-sm shrink-0 self-start sm:self-center"
             >
-              <div className="w-6 h-6 rounded-lg bg-emerald-950/60 text-white flex items-center justify-center group-hover:scale-105 transition-transform">
-                <Play size={13} className="fill-white translate-x-0.5" />
-              </div>
-              <span>Continuar Estudo de Hoje</span>
-              <ArrowRight size={18} className="text-emerald-100 group-hover:translate-x-1 transition-transform" />
-            </motion.button>
-          </div>
+              <Plus size={15} />
+              <span>Cadastrar Professor</span>
+            </button>
+          )}
         </div>
       </motion.div>
 
       {/* ========================================================================= */}
-      {/* 2. PAINEL DA APROVAÇÃO (4 CARDS GRANDES COM METRICAS REAIS)              */}
+      {/* 2. PAINEL DA APROVAÇÃO (5 CARDS LADO A LADO NO CELULAR E DESKTOP)        */}
       {/* ========================================================================= */}
       <section className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
             <h2 className="text-xl font-black text-zinc-900 tracking-tight flex items-center gap-2">
               <BarChart3 className="text-emerald-600" size={22} />
@@ -478,37 +347,65 @@ export default function Dashboard({ user, profile, setActiveTab, onOpenProfile }
               Métricas reais consolidadas do seu ritmo de aprendizado para a SEDUC CE 2026.
             </p>
           </div>
-          <span className="px-3 py-1 bg-emerald-50 text-emerald-800 border border-emerald-200/80 rounded-full font-bold text-xs uppercase tracking-wider">
+          <span className="self-start sm:self-auto px-3 py-1 bg-emerald-50 text-emerald-800 border border-emerald-200/80 rounded-full font-bold text-xs uppercase tracking-wider">
             Atualizado em Tempo Real
           </span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Card 1: Aproveitamento Geral */}
+        {/* Responsive Grid: 2 columns on mobile (side by side), 3 on sm, 5 on lg */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-4">
+          {/* Card 1: Dias para a Prova (Contagem Regressiva FUNECE) */}
           <motion.div
             whileHover={{ y: -3 }}
-            className="bg-white border border-zinc-200/90 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-300 space-y-3 relative overflow-hidden group"
+            className="bg-white border border-zinc-200/90 rounded-2xl p-3.5 sm:p-5 shadow-sm hover:shadow-md transition-all duration-300 space-y-2 sm:space-y-3 relative overflow-hidden group"
           >
             <div className="flex items-center justify-between">
-              <div className="p-3 bg-emerald-50 text-emerald-700 rounded-xl border border-emerald-100 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
-                <Target size={22} />
+              <div className="p-2.5 sm:p-3 bg-emerald-50 text-emerald-700 rounded-xl border border-emerald-100 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+                <Calendar size={20} className="sm:w-5 sm:h-5" />
               </div>
-              <span className="flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
-                <TrendingUp size={13} />
-                {totalQuestionsDone > 0 ? `${accuracyPct}% taxa` : 'A Iniciar'}
+              <span className="text-[10px] sm:text-xs font-bold text-emerald-800 bg-emerald-50 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full border border-emerald-200">
+                FUNECE
               </span>
             </div>
 
             <div>
-              <p className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Aproveitamento Geral</p>
-              <div className="flex items-baseline gap-2 mt-1">
-                <h3 className="text-3xl font-black text-zinc-900 tracking-tight">{accuracyPct}%</h3>
-                <span className="text-xs text-zinc-500">nos simulados</span>
+              <p className="text-[10px] sm:text-xs font-bold text-zinc-500 uppercase tracking-wider">Dias p/ Prova</p>
+              <div className="flex items-baseline gap-1.5 mt-0.5 sm:mt-1">
+                <h3 className="text-2xl sm:text-3xl font-black text-zinc-900 tracking-tight">{daysRemaining}</h3>
+                <span className="text-[10px] sm:text-xs text-zinc-500 font-medium">dias</span>
+              </div>
+            </div>
+
+            <p className="text-[10px] sm:text-[11px] font-bold text-emerald-700 truncate">
+              Contagem FUNECE 2026
+            </p>
+          </motion.div>
+
+          {/* Card 2: Aproveitamento Geral */}
+          <motion.div
+            whileHover={{ y: -3 }}
+            className="bg-white border border-zinc-200/90 rounded-2xl p-3.5 sm:p-5 shadow-sm hover:shadow-md transition-all duration-300 space-y-2 sm:space-y-3 relative overflow-hidden group"
+          >
+            <div className="flex items-center justify-between">
+              <div className="p-2.5 sm:p-3 bg-emerald-50 text-emerald-700 rounded-xl border border-emerald-100 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+                <Target size={20} className="sm:w-5 sm:h-5" />
+              </div>
+              <span className="flex items-center gap-1 text-[10px] sm:text-xs font-bold text-emerald-700 bg-emerald-50 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full border border-emerald-200">
+                <TrendingUp size={12} />
+                {accuracyPct}%
+              </span>
+            </div>
+
+            <div>
+              <p className="text-[10px] sm:text-xs font-bold text-zinc-500 uppercase tracking-wider">Aproveitamento</p>
+              <div className="flex items-baseline gap-1.5 mt-0.5 sm:mt-1">
+                <h3 className="text-2xl sm:text-3xl font-black text-zinc-900 tracking-tight">{accuracyPct}%</h3>
+                <span className="text-[10px] sm:text-xs text-zinc-500">taxa</span>
               </div>
             </div>
 
             {/* Micro Sparkline Chart */}
-            <div className="h-6 w-full flex items-end gap-1 pt-1">
+            <div className="h-5 sm:h-6 w-full flex items-end gap-1 pt-1">
               {[0, 0, 0, 0, 0, 0, accuracyPct].map((val, idx) => (
                 <div key={idx} className="flex-1 bg-zinc-100 rounded-t-sm h-full flex items-end overflow-hidden">
                   <motion.div
@@ -522,94 +419,91 @@ export default function Dashboard({ user, profile, setActiveTab, onOpenProfile }
             </div>
           </motion.div>
 
-          {/* Card 2: Questões Resolvidas */}
+          {/* Card 3: Questões Resolvidas */}
           <motion.div
             whileHover={{ y: -3 }}
-            className="bg-white border border-zinc-200/90 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-300 space-y-3 relative overflow-hidden group"
+            className="bg-white border border-zinc-200/90 rounded-2xl p-3.5 sm:p-5 shadow-sm hover:shadow-md transition-all duration-300 space-y-2 sm:space-y-3 relative overflow-hidden group"
           >
             <div className="flex items-center justify-between">
-              <div className="p-3 bg-blue-50 text-blue-700 rounded-xl border border-blue-100 group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                <BookOpen size={22} />
+              <div className="p-2.5 sm:p-3 bg-blue-50 text-blue-700 rounded-xl border border-blue-100 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                <BookOpen size={20} className="sm:w-5 sm:h-5" />
               </div>
-              <span className="flex items-center gap-1 text-xs font-bold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-full border border-blue-200">
-                <Zap size={13} />
-                {totalQuestionsDone > 0 ? `${totalQuestionsDone} feitas` : '0 hoje'}
+              <span className="flex items-center gap-1 text-[10px] sm:text-xs font-bold text-blue-700 bg-blue-50 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full border border-blue-200">
+                <Zap size={12} />
+                {totalQuestionsDone}
               </span>
             </div>
 
             <div>
-              <p className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Questões Resolvidas</p>
-              <div className="flex items-baseline gap-2 mt-1">
-                <h3 className="text-3xl font-black text-zinc-900 tracking-tight">{totalQuestionsDone}</h3>
-                <span className="text-xs text-zinc-500">questões FUNECE</span>
+              <p className="text-[10px] sm:text-xs font-bold text-zinc-500 uppercase tracking-wider">Questões Feitas</p>
+              <div className="flex items-baseline gap-1.5 mt-0.5 sm:mt-1">
+                <h3 className="text-2xl sm:text-3xl font-black text-zinc-900 tracking-tight">{totalQuestionsDone}</h3>
+                <span className="text-[10px] sm:text-xs text-zinc-500">feitas</span>
               </div>
             </div>
 
-            <div className="pt-2">
-              <p className="text-[11px] font-bold text-zinc-500">
-                {totalQuestionsDone > 0 ? `${correctAnswersCount} respostas corretas` : 'Nenhuma questão resolvida ainda'}
-              </p>
-            </div>
+            <p className="text-[10px] sm:text-[11px] font-bold text-zinc-500 truncate">
+              {correctAnswersCount} corretas
+            </p>
           </motion.div>
 
-          {/* Card 3: Edital Concluído */}
+          {/* Card 4: Edital Concluído */}
           <motion.div
             whileHover={{ y: -3 }}
-            className="bg-white border border-zinc-200/90 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-300 space-y-3 relative overflow-hidden group"
+            className="bg-white border border-zinc-200/90 rounded-2xl p-3.5 sm:p-5 shadow-sm hover:shadow-md transition-all duration-300 space-y-2 sm:space-y-3 relative overflow-hidden group"
           >
             <div className="flex items-center justify-between">
-              <div className="p-3 bg-purple-50 text-purple-700 rounded-xl border border-purple-100 group-hover:bg-purple-600 group-hover:text-white transition-colors">
-                <Layers size={22} />
+              <div className="p-2.5 sm:p-3 bg-purple-50 text-purple-700 rounded-xl border border-purple-100 group-hover:bg-purple-600 group-hover:text-white transition-colors">
+                <Layers size={20} className="sm:w-5 sm:h-5" />
               </div>
-              <span className="flex items-center gap-1 text-xs font-bold text-purple-700 bg-purple-50 px-2.5 py-1 rounded-full border border-purple-200">
-                <CheckCircle2 size={13} />
-                {completedTopicsCount} de {totalEditalBlocks} blocos
+              <span className="flex items-center gap-1 text-[10px] sm:text-xs font-bold text-purple-700 bg-purple-50 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full border border-purple-200">
+                <CheckCircle2 size={12} />
+                {completedTopicsCount} blocos
               </span>
             </div>
 
             <div>
-              <p className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Edital Concluído</p>
-              <div className="flex items-baseline gap-2 mt-1">
-                <h3 className="text-3xl font-black text-zinc-900 tracking-tight">{editalPct}%</h3>
-                <span className="text-xs text-zinc-500">do edital cobrindo {targetSubject}</span>
+              <p className="text-[10px] sm:text-xs font-bold text-zinc-500 uppercase tracking-wider">Edital Coberto</p>
+              <div className="flex items-baseline gap-1.5 mt-0.5 sm:mt-1">
+                <h3 className="text-2xl sm:text-3xl font-black text-zinc-900 tracking-tight">{editalPct}%</h3>
+                <span className="text-[10px] sm:text-xs text-zinc-500">concluído</span>
               </div>
             </div>
 
-            {/* Micro Progress Bar */}
-            <div className="pt-2">
-              <div className="w-full bg-zinc-100 h-2.5 rounded-full overflow-hidden">
+            <div className="pt-1">
+              <div className="w-full bg-zinc-100 h-2 rounded-full overflow-hidden">
                 <div className="bg-purple-600 h-full rounded-full" style={{ width: `${editalPct}%` }} />
               </div>
             </div>
           </motion.div>
 
-          {/* Card 4: Sequência Ativa (Sem Duplicação da Contagem Regressiva) */}
+          {/* Card 5: Sequência Ativa */}
           <motion.div
             whileHover={{ y: -3 }}
-            className="bg-white border border-zinc-200/90 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-300 space-y-3 relative overflow-hidden group"
+            className="bg-white border border-zinc-200/90 rounded-2xl p-3.5 sm:p-5 shadow-sm hover:shadow-md transition-all duration-300 space-y-2 sm:space-y-3 relative overflow-hidden group col-span-2 sm:col-span-1"
           >
             <div className="flex items-center justify-between">
-              <div className="p-3 bg-amber-50 text-amber-700 rounded-xl border border-amber-100 group-hover:bg-amber-600 group-hover:text-white transition-colors">
-                <Flame size={22} />
+              <div className="p-2.5 sm:p-3 bg-amber-50 text-amber-700 rounded-xl border border-amber-100 group-hover:bg-amber-600 group-hover:text-white transition-colors">
+                <Flame size={20} className="sm:w-5 sm:h-5" />
               </div>
-              <span className="flex items-center gap-1 text-xs font-bold text-amber-800 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200">
-                <Flame size={13} className="text-amber-500 animate-bounce" />
-                Ofensiva de Estudos
+              <span className="flex items-center gap-1 text-[10px] sm:text-xs font-bold text-amber-800 bg-amber-50 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full border border-amber-200">
+                <Flame size={12} className="text-amber-500 animate-bounce" />
+                Ofensiva
               </span>
             </div>
 
             <div>
-              <p className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Sequência de Estudos</p>
-              <div className="flex items-baseline gap-2 mt-1">
-                <h3 className="text-3xl font-black text-zinc-900 tracking-tight">{streakDays}</h3>
-                <span className="text-xs text-zinc-500">dias seguidos</span>
+              <p className="text-[10px] sm:text-xs font-bold text-zinc-500 uppercase tracking-wider">Sequência</p>
+              <div className="flex items-baseline gap-1.5 mt-0.5 sm:mt-1">
+                <h3 className="text-2xl sm:text-3xl font-black text-zinc-900 tracking-tight">{streakDays}</h3>
+                <span className="text-[10px] sm:text-xs text-zinc-500">dias</span>
               </div>
             </div>
 
-            <div className="pt-1 flex items-center gap-2">
-              <div className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
-              <span className="text-[11px] font-bold text-zinc-600">
-                {streakDays > 0 ? 'Mantenha a consistência hoje!' : 'Inicie sua sequência hoje!'}
+            <div className="pt-0.5 flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse shrink-0" />
+              <span className="text-[10px] sm:text-[11px] font-bold text-zinc-600 truncate">
+                {streakDays > 0 ? 'Consistência ativa' : 'Estude hoje'}
               </span>
             </div>
           </motion.div>
