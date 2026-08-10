@@ -580,93 +580,95 @@ Forneça um comentário explicativo completo no estilo FUNECE contendo:
     ).join("\n");
 
     const previousBlock = Array.isArray(previousQuestions) && previousQuestions.length > 0
-      ? `\n## 🚨 DIRETIVA CRÍTICA: EXCLUSIVIDADE DE QUESTÕES (ANTI-REPETIÇÃO)
-Você é um gerador de questões altamente dinâmico e rigoroso. O usuário poderá selecionar o mesmo assunto repetidas vezes. No entanto, é ESTREITAMENTE PROIBIDO repetir qualquer questão, enunciado, contexto ou alternativa já gerada anteriormente em solicitações passadas para o mesmo tema.
+      ? `\n## 🚨 DIRETIVA CRÍTICA OBRIGATÓRIA: ANTI-REPETIÇÃO E INEDITISMO ABSOLUTO
+Você é um elaborador sênior da banca FUNECE (CEV-UECE). O candidato JÁ RESOLVEU as seguintes questões anteriormente sobre estes tópicos em treinos passados:
+${previousQuestions.slice(-60).map((q: string, idx: number) => `   [${idx + 1}] "${q.substring(0, 180)}..."`).join('\n')}
 
-O candidato JÁ RESOLVEU as seguintes questões anteriormente sobre estes tópicos:
-${previousQuestions.slice(-50).map((q: string, idx: number) => `   [${idx + 1}] "${q.substring(0, 160)}..."`).join('\n')}
+### REGRAS DE OURO DA BANCA FUNECE PARA ANTI-REPETIÇÃO:
+1. ZERO DUPLICIDADE DE CONTEÚDO E ESTRUTURA: É ESTRITAMENTE PROIBIDO repetir qualquer enunciado, tese, situação-problema, texto motivador ou estrutura de alternativas já utilizadas acima.
+2. ABORDAGENS INÉDITAS: Se o candidato selecionar o mesmo tema diversas vezes, você DEVE abordar novos ângulos teóricos, exceções da regra, desdobramentos científicos avançados, estudos de caso práticos ou controvérsias conceituais dentro daquele subtópico.
+3. VARIAÇÃO DE FORMATO: Alterne o modelo do enunciado (situação-problema da rotina docente/científica, análise de excerto/hipótese, identificação de causa e efeito, julgamento de proposições técnicas).`
+      : `\n## 🚨 DIRETIVA CRÍTICA OBRIGATÓRIA: INEDITISMO ABSOLUTO (ANTI-REPETIÇÃO)
+Você é um elaborador sênior da banca FUNECE (CEV-UECE). Todas as questões geradas devem ser 100% inéditas, exclusivas e altamente desafiadoras no nível de concurso público para Professor do Estado do Ceará (SEDUC-CE).
 
-### Regras de Ouro de Anti-Repetição:
-1. Zero Duplicidade: Cada nova solicitação deve trazer perguntas 100% inéditas, explorando subtemas diferentes, novos ângulos teóricos, cenários práticos variados ou níveis de complexidade distintos dentro do mesmo assunto selecionado.
-2. Diversidade de Enunciados: Alterne a estrutura das perguntas (estudo de caso, assertivas de verdadeiro/falso, múltipla escolha direta, interpretação de texto/dados, resolução de problemas).
-3. Memória de Escopo: Considere que todas as requisições anteriores para este assunto já foram esgotadas. Nunca reutilize estruturas de perguntas anteriores apenas trocando os valores numéricos ou sinônimos superficiais.`
-      : `\n## 🚨 DIRETIVA CRÍTICA: EXCLUSIVIDADE DE QUESTÕES E INEDITISMO ABSOLUTO (ANTI-REPETIÇÃO)
-Você é um gerador de questões altamente dinâmico e rigoroso. O usuário poderá selecionar o mesmo assunto repetidas vezes. No entanto, é ESTREITAMENTE PROIBIDO repetir qualquer questão, enunciado, contexto ou alternativa.
+### REGRAS DE OURO DA BANCA FUNECE PARA ANTI-REPETIÇÃO:
+1. ZERO DUPLICIDADE: Cada questão deve trazer uma abordagem conceitual única e inovadora.
+2. ABORDAGENS INÉDITAS: Explore subtemas específicos, exceções científicas, aplicações práticas avançadas e análises conceituais profundas.
+3. VARIAÇÃO DE FORMATO: Alterne o modelo do enunciado (situação-problema, exegese técnica, análise comparativa, resolução de problemas científicos).`;
 
-### Regras de Ouro:
-1. Zero Duplicidade: Cada nova solicitação deve trazer perguntas 100% inéditas, explorando subtemas diferentes, novos ângulos teóricos, cenários práticos variados ou níveis de complexidade distintos dentro do mesmo assunto selecionado.
-2. Diversidade de Enunciados: Alterne a estrutura das perguntas (estudo de caso, assertivas de verdadeiro/falso, múltipla escolha direta, interpretação de texto/dados, resolução de problemas).
-3. Memória de Escopo: Nunca reutilize estruturas de perguntas anteriores apenas trocando valores numéricos ou sinônimos superficiais.
-4. Formato e Qualidade: Garanta que a questão seja original, criativa e desafiadora. Caso o assunto seja exaurido em termos básicos, aprofunde para aspectos avançados, exceções da regra ou aplicações práticas do tema.`;
+    const prompt = `Você é um ELABORADOR SÊNIOR E IMPLACÁVEL da comissão examinadora CEV/FUNECE. Seu objetivo é criar questões de ALTO NÍVEL DE DIFICULDADE para o concurso da SEDUC-CE, projetadas para testar o limite da atenção e do conhecimento do candidato.
 
-    const prompt = `Você é o ELABORADOR ESPECIALISTA DE QUESTÕES DE CONCURSO para a SEDUC-CE (FUNECE / CEV-UECE).
+SUA PRIORIDADE ABSOLUTA É EVITAR QUESTÕES ÓBVIAS. AS ALTERNATIVAS DEVEM SER EXTREMAMENTE PARECIDAS ENTRE SI, GERANDO DÚVIDA REAL.
 
-MISSÃO CRÍTICA:
-Gerar exatamente ${requestedCount} questão(ões) inédita(s) de alta qualidade EXCLUSIVAMENTE sobre o conteúdo solicitado.
-O assunto informado é OBRIGATÓRIO. Você NÃO pode alterar, ampliar ou substituir esse assunto.
-
-ASSUNTOS SELECIONADOS PELO SISTEMA:
+ASSUNTOS SELECIONADOS DO EDITAL PARA ESTA PROVA:
 ${topicPaths}
 ${previousBlock}
 
-## REGRA MAIS IMPORTANTE (AVALIAR CONHECIMENTO DA MATÉRIA):
-A questão deve avaliar O CONHECIMENTO TÉCNICO E CIENTÍFICO DA DISCIPLINA (ex: Biologia, Língua Portuguesa, Matemática, História, Química, etc.).
-NUNCA avalie em questões de matérias específicas:
-- A banca examinadora
-- O edital ou matriz de referência
-- A BNCC ou DCRC
-- Legislação educacional, metodologias ou diretrizes
-(A MENOS que o conteúdo solicitado seja EXATAMENTE Legislação Educacional ou Didática).
+---
 
-## TERMOS E FRASES ABSOLUTAMENTE PROIBIDOS NO ENUNCIADO E NAS ALTERNATIVAS:
-É STRICTAMENTE PROIBIDO utilizar frases como:
-❌ "Considerando o edital..."
-❌ "Segundo a matriz de referência..."
-❌ "Assinale a fundamentação correta..."
-❌ "A banca exige..."
-❌ "De acordo com o conteúdo programático..."
-❌ "A abordagem correta..."
-❌ "O conhecimento previsto..."
-❌ "Os referenciais curriculares..."
-❌ "As competências da BNCC..."
+### 🪤 REGRAS OBRIGATÓRIAS PARA A CRIAÇÃO DE DISTRATORES (ALTERNATIVAS)
 
-## COMO A QUESTÃO DEVE SER ESTRUTURADA:
-- Cada questão deve parecer retirada de uma prova real oficial da FUNECE (CEV-UECE).
-- O candidato deve resolver usando conhecimento da matéria (conceitos, definições, processos, comparações, aplicações, causa e efeito, experimentos ou situações-problema).
-- Comece o enunciado DIRETO na questão, excerto ou situação-problema sem enrolação nem metatexto.
+1. **TÉCNICA DO ESPELHO (Efeito Parecido):**
+   - Todas as 4 alternativas (A, B, C, D) DEVEM ter tamanho similar, estrutura sintática idêntica e usar o mesmo vocabulário técnico.
+   - O candidato NÃO pode acertar por exclusão de palavras absurdas ou alternativas claramente estranhas.
 
-## REGRAS DAS ALTERNATIVAS E DISTRATORES:
-- Exatamente 4 alternativas (A, B, C, D) com apenas UMA correta.
-- Os erros das alternativas erradas devem ser baseados em confusões conceituais reais e comuns da matéria (ex: trocar mitose por meiose, osmose por difusão, regência verbal, etc.).
-- PROIBIDO usar alternativas genéricas como: "A teoria e a prática", "Os princípios pedagógicos", "As competências", "A gestão democrática", "A legislação", "O currículo", "A fundamentação".
+2. **DISTRATORES ALTAMENTE ATRATIVOS (Pegadinhas Reais):**
+   - **Distrator Quase Perfeito:** Pelo menos DUAS alternativas devem estar 90% corretas, mudando apenas um detalhe minúsculo no final (ex.: uma exceção, uma conjunção, um prazo ou um adjetivo).
+   - **O Erro do Senso Comum:** Uma das alternativas erradas DEVE ser uma afirmação que soa muito bonita, pedagógica ou juridicamente correta na vida real, mas que CONTRADIZ a literalidade do texto de lei ou do autor.
+   - **O Conceito Trocado:** Troque sutilmente conceitos de autores correlatos (ex.: colocar uma definição de Piaget atribuída a Vygotsky na opção errada, usando as palavras exatas de Vygotsky).
 
-## VALIDAÇÃO FINAL ANTES DE EMITIR O JSON:
-1. A questão trata EXCLUSIVAMENTE do subtópico solicitado?
-2. A questão é 100% inédita em relação a qualquer treino anterior do candidato?
-3. Se retirar qualquer menção à banca, é uma excelente questão técnica da disciplina?
-4. Nenhuma alternativa menciona edital, banca, currículo ou competências?
+3. **CONSTRUÇÃO DO ENUNCIADO:**
+   - Evite enunciados facilitadores.
+   - Priorize enunciados no formato: "Assinale a alternativa INCORRETA", "Marque a opção que apresenta a exceção à regra", "Assinale a opção em que a afirmativa é CORRETA" ou com trechos de leis/textos com trocas imperceptíveis.
+
+---
+
+### 📚 PADRÃO DE COBRANÇA POR DISCIPLINA (FUNECE - SEDUC-CE)
+
+- **Língua Portuguesa:** Foque em exceções gramaticais refinadas. Exemplo: casos em que a crase é facultativa versus proibida em trechos complexos; regência de verbos com múltiplos sentidos; reescrita de frases onde uma simples vírgula altera a classificação de oração explicativa para restritiva.
+- **Legislação (LDB, BNCC, Estatuto, PNE):** Exija a LITERALIDADE ABSOLUTA. Mude apenas termos jurídicos/normativos (ex.: trocar "zelar" por "assegurar", "preferencialmente" por "obrigatoriamente", "órgãos normativos" por "órgãos executivos").
+- **Conhecimentos Pedagógicos:** Aborde pontos de divergência doutrinária entre autores (Libâneo, Luckesi, Saviani, Piaget, Vygotsky). As opções devem usar citações diretas ou parafraseadas com pequenas distorções conceituais.
+- **Disciplinas Específicas (Biologia, História, Matemática, Química, Física, Geografia, etc.):** Exija domínio de conceitos avançados, mecanismos de causa e efeito, modelos teóricos de nível superior e detalhamento técnico minucioso.
+
+---
+
+### 📤 FORMATO DE SAÍDA E ESTRUTURA DO GABARITO COMENTADO
+
+No campo "explanation" de cada questão, você DEVE obrigatoriamente fornecer a análise detalhada no seguinte formato exato:
+
+Gabarito: [Letra Correta]
+
+Gabarito Comentado (Análise de Detalhes):
+- Justificativa da correta: [Por que a alternativa selecionada é a única correta de acordo com a norma/lei/autor].
+- Análise da Pegadinha de cada distrator:
+  * A) [Explique exatamente o detalhe minúsculo que torna esta opção errada ou confirme se é a correta]
+  * B) [Explique exatamente o detalhe minúsculo que torna esta opção errada ou confirme se é a correta]
+  * C) [Explique exatamente o detalhe minúsculo que torna esta opção errada ou confirme se é a correta]
+  * D) [Explique exatamente o detalhe minúsculo que torna esta opção errada ou confirme se é a correta]
+
+---
 
 ## ESTRUTURA OBRIGATÓRIA DO JSON:
 Retorne um objeto JSON contendo a chave "questions" com um array de ${requestedCount} questões:
 {
   "questions": [
     {
-      "question": "Enunciado direto, objetivo e focado exclusivamente no conteúdo científico/técnico da matéria",
+      "question": "Enunciado no padrão FUNECE avançado, desafiador e focado no assunto específico",
       "alternatives": [
-        { "letter": "A", "text": "Texto conceitual/técnico da alternativa A" },
-        { "letter": "B", "text": "Texto conceitual/técnico da alternativa B" },
-        { "letter": "C", "text": "Texto conceitual/técnico da alternativa C" },
-        { "letter": "D", "text": "Texto conceitual/técnico da alternativa D" }
+        { "letter": "A", "text": "Alternativa A com alto grau de similaridade sintática e vocabulário técnico" },
+        { "letter": "B", "text": "Alternativa B com alto grau de similaridade sintática e vocabulário técnico" },
+        { "letter": "C", "text": "Alternativa C com alto grau de similaridade sintática e vocabulário técnico" },
+        { "letter": "D", "text": "Alternativa D com alto grau de similaridade sintática e vocabulário técnico" }
       ],
       "correctAnswer": "A",
-      "explanation": "Explicação técnica detalhada da matéria: por que a correta está certa segundo a ciência/doutrina e qual o erro conceitual dos distratores.",
+      "explanation": "Gabarito: A\\n\\nGabarito Comentado (Análise de Detalhes):\\n- Justificativa da correta: ...\\n- Análise da Pegadinha de cada distrator:\\n  * A) ...\\n  * B) ...\\n  * C) ...\\n  * D) ...",
       "topic": "Nome do tópico exato",
       "subtopic": "Nome do subtópico exato",
-      "difficulty": "${difficulty}",
-      "banca": "${banca}",
-      "skills": ["Conhecimento da matéria"],
-      "commonMistake": "Análise da confusão conceitual mais comum entre os candidatos.",
-      "studyTip": "Gatilho mental ou macete para memorizar este conceito específico da disciplina."
+      "difficulty": "Avançado",
+      "banca": "FUNECE - SEDUC-CE - Nível Avançado",
+      "skills": ["Análise Crítica FUNECE", "Domínio de Distratores Avançados"],
+      "commonMistake": "Explique a pegadinha e o erro do senso comum em que a maioria dos candidatos cai nesta questão.",
+      "studyTip": "Gatilho mental para não cair na pegadinha da FUNECE sobre este tema."
     }
   ]
 }`;
