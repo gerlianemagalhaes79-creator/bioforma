@@ -336,46 +336,54 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
       } else {
         // Build a realistic, high-rigor FUNECE style question dynamically based on subject and topic
         const normDisc = disciplineName.toLowerCase();
-        let qText = `No âmbito de ${disciplineName}, no que concerne especificamente aos aspectos teóricos, científicos e aplicados de "${subtopicName}" (${topicName}), assinale a alternativa que apresenta a proposição CORRETA:`;
+        let qText = `Com base na doutrina pedagógica e na legislação educacional vigente para o concurso de Professor da SEDUC-CE, assinale a alternativa inteiramente correta referente ao tema de estudo:`;
         
         let opts: { letter: 'A' | 'B' | 'C' | 'D' | 'E'; text: string }[] = [
-          { letter: 'A', text: `A compreensão integrada de ${subtopicName} fundamenta-se nos princípios estruturais da área, relacionando causa, efeito e propriedades dinâmicas do sistema.` },
-          { letter: 'B', text: `As manifestações e processos de ${subtopicName} ocorrem de forma puramente aleatória, desprovidas de leis regulatórias ou modelos conceituais consolidados.` },
-          { letter: 'C', text: `A análise de ${subtopicName} nega a interdependência entre os componentes teóricos e a prática analítica da disciplina.` },
-          { letter: 'D', text: `A aplicação de ${subtopicName} limita-se exclusivamente a descrições empíricas sem validade diagnóstica ou metodológica.` }
+          { letter: 'A', text: `As práticas educativas devem articular a dimensão cognitiva e sociocultural dos educandos, promovendo a autonomia intelectual e o domínio dos conteúdos científicos.` },
+          { letter: 'B', text: `A organização curricular deve focar exclusivamente na memorização passiva de dados, dispensando a contextualização crítica da realidade social.` },
+          { letter: 'C', text: `A avaliação da aprendizagem possui caráter estritamente punitivo e classificatório, sendo vedada a utilização de instrumentos formativos contínuos.` },
+          { letter: 'D', text: `A gestão democrática do ensino público limita-se às decisões administrativas dos órgãos centrais, sem a participação dos profissionais da educação.` }
         ];
 
         if (normDisc.includes('português') || normDisc.includes('lingua')) {
-          qText = `Em relação aos aspectos sintático-semânticos e gramaticais referentes a "${subtopicName}", assinale a alternativa inteiramente correta segundo a norma-padrão e os postulados da linguística:`;
+          qText = `No que tange às normas gramaticais e aos recursos sintático-semânticos da Língua Portuguesa, assinale a alternativa inteiramente correta segundo a norma-padrão:`;
           opts = [
-            { letter: 'A', text: `A estruturação das construções ligadas a ${subtopicName} obedece às relações de concordância, regência e coesão textual preconizadas pela gramática normativa.` },
-            { letter: 'B', text: `O emprego dos conectivos e das estruturas de ${subtopicName} prescinde de adequação ao contexto comunicativo e à norma culta.` },
-            { letter: 'C', text: `A análise semântica de ${subtopicName} altera o valor das proposições sem modificar a relação de sentido entre os períodos.` },
-            { letter: 'D', text: `As regras aplicáveis a ${subtopicName} anulam a obrigatoriedade do sinal indicativo de crase em regências verbais de verbos transitivos indiretos.` }
+            { letter: 'A', text: `A concordância verbal e nominal, a regência e a colocação pronominal devem obedecer ao rigor do registro formal nos documentos e textos científicos.` },
+            { letter: 'B', text: `O uso do sinal indicativo de crase é obrigatório antes de verbos e palavras masculinas quando houver sentido indeterminado.` },
+            { letter: 'C', text: `A substituição de uma oração subordinada adjetiva explicativa por uma restritiva não altera o sentido denotativo do período.` },
+            { letter: 'D', text: `Os conectivos de valor adversativo possuem a mesma função semântica e sintática das conjunções subordinativas causais.` }
           ];
         } else if (normDisc.includes('biologia') || normDisc.includes('ciência')) {
-          qText = `Considerando os mecanismos bioquímicos, fisiológicos e ecológicos envolvidos no estudo de "${subtopicName}", assinale a afirmativa CORRETA:`;
+          qText = `Considerando os princípios bioquímicos, celulares e ecológicos da Biologia moderna, assinale a afirmativa CORRETA:`;
           opts = [
-            { letter: 'A', text: `O fenômeno de ${subtopicName} desempenha papel fundamental na homeostase e na adaptação evolutiva das estruturas celulares e ecossistêmicas.` },
-            { letter: 'B', text: `O processo metabólico/estrutural associado a ${subtopicName} independe do suprimento energético e de reações enzimáticas específicas.` },
-            { letter: 'C', text: `A dinâmica de ${subtopicName} ocorre de forma idêntica em organismos procariotos e eucariotos sem distinção compartimental.` },
-            { letter: 'D', text: `Os efeitos de ${subtopicName} restringem-se ao nível molecular sem impactos na fisiologia do organismo ou no ecossistema.` }
+            { letter: 'A', text: `Os processos de sinalização molecular e regulação metabólica asseguram a homeostase celular e a continuidade evolutiva das espécies.` },
+            { letter: 'B', text: `A síntese proteica independe do código genético e das organelas compartimentadas no citoplasma celular.` },
+            { letter: 'C', text: `As relações ecológicas entre populações caracterizam-se por trocas estáticas de energia sem interferência dos fatores abióticos.` },
+            { letter: 'D', text: `A replicação semiconservativa do DNA ocorre sem a ação de complexos enzimáticos específicos.` }
           ];
         } else if (normDisc.includes('matemática') || normDisc.includes('física') || normDisc.includes('química')) {
-          qText = `No contexto dos modelos quantitativos, postulados e equações que regem "${subtopicName}", assinale a afirmativa estritamente correta:`;
+          qText = `No contexto das ciências exatas e das modelos analíticos consolidados, assinale a proposição estritamente correta:`;
           opts = [
-            { letter: 'A', text: `A formulação teórica de ${subtopicName} estabelece relações invariantes entre as variáveis do sistema, permitindo previsões rigorosas de comportamento.` },
-            { letter: 'B', text: `A variação das grandezas em ${subtopicName} apresenta comportamento inversamente proporcional quando, na verdade, é linearmente independente.` },
-            { letter: 'C', text: `As leis que disciplinam ${subtopicName} aplicam-se exclusivamente a sistemas ideais sem validade experimental.` },
-            { letter: 'D', text: `O cálculo associado a ${subtopicName} desconsidera as unidades do Sistema Internacional e os princípios de conservação.` }
+            { letter: 'A', text: `A modelagem matemática dos sistemas permite prever comportamentos invariantes através do equacionamento rigoroso das variáveis envolvidas.` },
+            { letter: 'B', text: `A variação de grandezas físicas e químicas prescinde de conservação de massa ou de energia no sistema isolado.` },
+            { letter: 'C', text: `A aplicação de postulados teóricos restringe-se a cenários abstratos sem validade para medições e experimentos reais.` },
+            { letter: 'D', text: `As funções lineares e quadráticas apresentam taxas de variação idênticas em qualquer intervalo de seu domínio.` }
           ];
         } else if (normDisc.includes('história') || normDisc.includes('geografia') || normDisc.includes('filosofia') || normDisc.includes('sociologia')) {
-          qText = `Na perspectiva da historiografia e das ciências humanas contemporâneas, a análise crítica sobre "${subtopicName}" expressa-se na seguinte proposição:`;
+          qText = `Na perspectiva da historiografia e das ciências humanas contemporâneas, assinale a opção que expressa a análise crítica correta:`;
           opts = [
-            { letter: 'A', text: `O estudo de ${subtopicName} envolve a compreensão dos processos sociohistóricos, das relações de poder e das transformações culturais do período.` },
-            { letter: 'B', text: `A interpretação de ${subtopicName} é estática e linear, desconsiderando as contradições sociais e as narrativas dos sujeitos históricos.` },
-            { letter: 'C', text: `Os fatos e dinâmicas referentes a ${subtopicName} resultam de escolhas individuais isoladas sem ligação com a estrutura social.` },
-            { letter: 'D', text: `A abordagem historiográfica/geográfica sobre ${subtopicName} ignora os condicionantes territoriais e econômicos da região.` }
+            { letter: 'A', text: `A compreensão dos fenômenos sociais exige analisar as relações de poder, as contradições históricas e os condicionantes territoriais.` },
+            { letter: 'B', text: `As transformações culturais e políticas resultam de determinações estáticas e lineares, desprovidas de sujeitos históricos.` },
+            { letter: 'C', text: `A organização espacial do território ocorre de forma neutra, sem relação com as dinâmicas econômicas e sociais.` },
+            { letter: 'D', text: `A análise crítica das fontes historiográficas deve prescindir de contextualização temporal e teórica.` }
+          ];
+        } else if (normDisc.includes('pedagógic') || normDisc.includes('legislaç') || normDisc.includes('educaç')) {
+          qText = `Acerca dos fundamentos pedagógicos, das tendências educacionais e da legislação do ensino (LDB e BNCC), assinale a afirmativa correta:`;
+          opts = [
+            { letter: 'A', text: `A prática pedagógica emancipadora articula a mediação do professor com o desenvolvimento crítico e os conhecimentos historicamente acumulados.` },
+            { letter: 'B', text: `A Lei de Diretrizes e Bases da Educação Nacional (LDB 9.394/96) veda a oferta de ensino religioso nas escolas públicas da rede estadual.` },
+            { letter: 'C', text: `A Base Nacional Comum Curricular (BNCC) substitui integralmente a autonomia dos sistemas estaduais e dos projetos pedagógicos escolares.` },
+            { letter: 'D', text: `A Tendência Pedagógica Tecnicista coloca o educando como centro do processo de auto-organização libertária e comunitária.` }
           ];
         }
 

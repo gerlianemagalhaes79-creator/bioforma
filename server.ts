@@ -50,13 +50,14 @@ async function generateContentWithRetry(aiInstance: any, options: {
     throw new Error("Cota do Gemini temporariamente excedida (em periodo de cooldown). Usando modo offline.");
   }
 
-  const { contents, config = {}, defaultModel = "gemini-3.6-flash", maxRetries = 2 } = options;
+  const { contents, config = {}, defaultModel = "gemini-2.5-flash", maxRetries = 2 } = options;
   // Supported models in current @google/genai SDK
   const modelsToTry = Array.from(new Set([
     defaultModel,
-    "gemini-3.6-flash",
-    "gemini-3.1-flash-lite",
-    "gemini-flash-latest"
+    "gemini-2.5-flash",
+    "gemini-2.5-pro",
+    "gemini-1.5-flash",
+    "gemini-1.5-pro"
   ]));
   
   for (const model of modelsToTry) {
@@ -409,7 +410,7 @@ ${isProactive ? `SITUAÇÃO PROATIVA: Apresente de forma ultra-direta a meta de 
       try {
         const response = await generateContentWithRetry(aiInstance, {
           contents: sysPrompt,
-          defaultModel: "gemini-3.6-flash",
+          defaultModel: "gemini-2.5-flash",
           maxRetries: 2
         });
         if (response && response.text) {
@@ -539,7 +540,7 @@ Forneça um comentário explicativo completo no estilo FUNECE contendo:
       try {
         const response = await generateContentWithRetry(aiInstance, {
           contents: prompt,
-          defaultModel: "gemini-3.6-flash",
+          defaultModel: "gemini-2.5-flash",
           maxRetries: 2
         });
         if (response && response.text) {
@@ -596,9 +597,9 @@ Você é um elaborador sênior da banca FUNECE (CEV-UECE). Todas as questões ge
 2. ABORDAGENS INÉDITAS: Explore subtemas específicos, exceções científicas, aplicações práticas avançadas e análises conceituais profundas.
 3. VARIAÇÃO DE FORMATO: Alterne o modelo do enunciado (situação-problema, exegese técnica, análise comparativa, resolução de problemas científicos).`;
 
-    const prompt = `Você é um ELABORADOR SÊNIOR E IMPLACÁVEL da comissão examinadora CEV/FUNECE. Seu objetivo é criar questões de ALTO NÍVEL DE DIFICULDADE para o concurso da SEDUC-CE, projetadas para testar o limite da atenção e do conhecimento do candidato.
+    const prompt = `Você é um ELABORADOR SÊNIOR E IMPLACÁVEL da comissão examinadora CEV/FUNECE. Sua missão é gerar questões inéditas, altamente realistas, teórica e juridicamente precisas, de ALTO NÍVEL DE DIFICULDADE para o concurso da SEDUC-CE (Professor Efetivo de Ensino Médio).
 
-SUA PRIORIDADE ABSOLUTA É EVITAR QUESTÕES ÓBVIAS. AS ALTERNATIVAS DEVEM SER EXTREMAMENTE PARECIDAS ENTRE SI, GERANDO DÚVIDA REAL.
+SUA PRIORIDADE ABSOLUTA É EVITAR QUESTÕES ÓBVIAS OU ESTRUTURAS DISSOCIADAS DA REALIDADE DAS PROVAS. AS ALTERNATIVAS DEVEM SER EXTREMAMENTE PARECIDAS ENTRE SI (TÉCNICA DO ESPELHO), GERANDO DÚVIDA REAL NO CANDIDATO.
 
 ASSUNTOS SELECIONADOS DO EDITAL PARA ESTA PROVA:
 ${topicPaths}
@@ -606,20 +607,27 @@ ${previousBlock}
 
 ---
 
+### 🚫 PROIBIÇÕES SEVERAS (NÃO FAÇA EM HIPÓTESE ALGUMA):
+1. **NÃO REPITA O TÍTULO DO EDITAL NAS ALTERNATIVAS:** É terminantemente proibido colar a frase do tópico do edital (ex: "1.1 Teoria da Educação...", "2.3 Mecanismos da Mitose...") dentro das opções de resposta. As alternativas devem conter APLICAÇÕES PRÁTICAS, CONCEITOS REAIS, CITAÇÕES DE AUTORES, NORMAS DA LDB/BNCC ou REGRA GRAMATICAL/CIENTÍFICA DIRETA.
+2. **NÃO MISTURE ÁREAS:** Nunca utilize termos de ciências exatas/da natureza (como "físico-químicas", "térmicas", "equações", "fórmulas") em questões de Ciências Humanas, Pedagogia ou Língua Portuguesa. Cada disciplina deve usar a sua linguagem científica e doutrinária própria.
+3. **NÃO CRIE ESTRUTURAS GENÉRICAS E VAZIAS:** Evite frases ocas como "A caracterização do tópico X constitui fundamento para...", "O processo de Y ocorre de forma aleatória...". A questão DEVE citar autores reais (Libâneo, Saviani, Luckesi, Piaget, Vygotsky, Freire), leis reais com seus artigos/redações (LDB Lei 9.394/96, BNCC, PNE, DCRC) ou regras gramaticais/conceitos científicos concretos.
+
+---
+
 ### 🪤 REGRAS OBRIGATÓRIAS PARA A CRIAÇÃO DE DISTRATORES (ALTERNATIVAS)
 
 1. **TÉCNICA DO ESPELHO (Efeito Parecido):**
-   - Todas as 4 alternativas (A, B, C, D) DEVEM ter tamanho similar, estrutura sintática idêntica e usar o mesmo vocabulário técnico.
+   - Todas as 4 alternativas (A, B, C, D) DEVEM ter tamanho equivalente, estrutura sintática similar e usar o mesmo vocabulário técnico.
    - O candidato NÃO pode acertar por exclusão de palavras absurdas ou alternativas claramente estranhas.
 
 2. **DISTRATORES ALTAMENTE ATRATIVOS (Pegadinhas Reais):**
-   - **Distrator Quase Perfeito:** Pelo menos DUAS alternativas devem estar 90% corretas, mudando apenas um detalhe minúsculo no final (ex.: uma exceção, uma conjunção, um prazo ou um adjetivo).
+   - **Distrator Quase Perfeito:** Pelo menos DUAS alternativas devem estar 90% corretas, mudando apenas um detalhe minúsculo no final (ex.: uma exceção, uma conjunção, um prazo ou um adjetivo jurídico).
    - **O Erro do Senso Comum:** Uma das alternativas erradas DEVE ser uma afirmação que soa muito bonita, pedagógica ou juridicamente correta na vida real, mas que CONTRADIZ a literalidade do texto de lei ou do autor.
-   - **O Conceito Trocado:** Troque sutilmente conceitos de autores correlatos (ex.: colocar uma definição de Piaget atribuída a Vygotsky na opção errada, usando as palavras exatas de Vygotsky).
+   - **O Conceito Trocado:** Troque sutilmente conceitos de autores correlatos (ex.: colocar uma definição da Tendência Tecnicista atribuída à Libertadora, ou uma definição de Piaget atribuída a Vygotsky na opção errada, usando as palavras exatas de Vygotsky).
 
 3. **CONSTRUÇÃO DO ENUNCIADO:**
    - Evite enunciados facilitadores.
-   - Priorize enunciados no formato: "Assinale a alternativa INCORRETA", "Marque a opção que apresenta a exceção à regra", "Assinale a opção em que a afirmativa é CORRETA" ou com trechos de leis/textos com trocas imperceptíveis.
+   - Priorize enunciados bem elaborados no formato FUNECE: "Sobre a [matéria/autor/lei], assinale a alternativa correta", "Assinale a alternativa INCORRETA", "Marque a opção que apresenta a exceção à regra", ou com trechos de leis/textos motivadores com trocas imperceptíveis.
 
 ---
 
@@ -628,23 +636,42 @@ ${previousBlock}
 - **Língua Portuguesa:** Foque em exceções gramaticais refinadas. Exemplo: casos em que a crase é facultativa versus proibida em trechos complexos; regência de verbos com múltiplos sentidos; reescrita de frases onde uma simples vírgula altera a classificação de oração explicativa para restritiva.
 - **Legislação (LDB, BNCC, Estatuto, PNE):** Exija a LITERALIDADE ABSOLUTA. Mude apenas termos jurídicos/normativos (ex.: trocar "zelar" por "assegurar", "preferencialmente" por "obrigatoriamente", "órgãos normativos" por "órgãos executivos").
 - **Conhecimentos Pedagógicos:** Aborde pontos de divergência doutrinária entre autores (Libâneo, Luckesi, Saviani, Piaget, Vygotsky). As opções devem usar citações diretas ou parafraseadas com pequenas distorções conceituais.
-- **Disciplinas Específicas (Biologia, História, Matemática, Química, Física, Geografia, etc.):** Exija domínio de conceitos avançados, mecanismos de causa e efeito, modelos teóricos de nível superior e detalhamento técnico minucioso.
+- **Disciplinas Específicas (Biologia, História, Matemática, Química, Física, Geografia, etc.):** Exija domínio de conceitos avançados, mecanismos de causa e efeito, modelos teóricos de nível superior e detalhamento técnico minucioso da área.
 
 ---
 
-### 📤 FORMATO DE SAÍDA E ESTRUTURA DO GABARITO COMENTADO
+### 📝 EXEMPLO DE COMPORTAMENTO ESPERADO (FEW-SHOT):
+
+**[ENTRADA DO USUÁRIO]:** Gere uma questão sobre Tendências Pedagógicas.
+
+**[SUA SAÍDA ESPERADA]:**
+- **Enunciado:** Segundo José Carlos Libâneo, as tendências pedagógicas brasileiras são divididas em Liberais e Progressistas. Sobre a Tendência Liberal Tecnicista, assinale a alternativa correta:
+- **A:** Modela o comportamento humano por meio de técnicas específicas, subordinando a educação à sociedade e priorizando a formação de indivíduos para o mercado de trabalho.
+- **B:** Fundamenta-se na auto-organização dos alunos, priorizando a transformação da personalidade num sentido libertário e autogestionário.
+- **C:** Assume um compromisso com a transformação social a partir do desenvolvimento da consciência crítica e da problematização da realidade do educando.
+- **D:** Prioriza a transmissão dos conteúdos acumulados pela humanidade, centrando a relação pedagógica na autoridade do professor e na disciplina.
+- **Gabarito Comentado:**
+  * Justificativa da correta (A): Reflete com precisão a Tendência Tecnicista segundo Libâneo (foco no comportamentalismo, eficiência e mercado).
+  * A) CORRETA. Reflete com precisão a Tendência Tecnicista segundo Libâneo.
+  * B) INCORRETA. Descreve a Tendência Progressista Libertária (autogestão e personalidade).
+  * C) INCORRETA. Descreve a Tendência Progressista Libertadora (Paulo Freire / consciência crítica).
+  * D) INCORRETA. Descreve a Tendência Liberal Tradicional (conteúdos acumulados e autoridade).
+
+---
+
+### 📤 FORMATO DA SAÍDA E ESTRUTURA DO GABARITO COMENTADO
 
 No campo "explanation" de cada questão, você DEVE obrigatoriamente fornecer a análise detalhada no seguinte formato exato:
 
 Gabarito: [Letra Correta]
 
-Gabarito Comentado (Análise de Detalhes):
+Gabarito Comentado:
 - Justificativa da correta: [Por que a alternativa selecionada é a única correta de acordo com a norma/lei/autor].
-- Análise da Pegadinha de cada distrator:
-  * A) [Explique exatamente o detalhe minúsculo que torna esta opção errada ou confirme se é a correta]
-  * B) [Explique exatamente o detalhe minúsculo que torna esta opção errada ou confirme se é a correta]
-  * C) [Explique exatamente o detalhe minúsculo que torna esta opção errada ou confirme se é a correta]
-  * D) [Explique exatamente o detalhe minúsculo que torna esta opção errada ou confirme se é a correta]
+- Análise de cada alternativa:
+  * A) [Explique exatamente por que está correta ou qual é o erro conceitual/distrator]
+  * B) [Explique exatamente por que está correta ou qual é o erro conceitual/distrator]
+  * C) [Explique exatamente por que está correta ou qual é o erro conceitual/distrator]
+  * D) [Explique exatamente por que está correta ou qual é o erro conceitual/distrator]
 
 ---
 
@@ -661,7 +688,7 @@ Retorne um objeto JSON contendo a chave "questions" com um array de ${requestedC
         { "letter": "D", "text": "Alternativa D com alto grau de similaridade sintática e vocabulário técnico" }
       ],
       "correctAnswer": "A",
-      "explanation": "Gabarito: A\\n\\nGabarito Comentado (Análise de Detalhes):\\n- Justificativa da correta: ...\\n- Análise da Pegadinha de cada distrator:\\n  * A) ...\\n  * B) ...\\n  * C) ...\\n  * D) ...",
+      "explanation": "Gabarito: A\\n\\nGabarito Comentado:\\n- Justificativa da correta: ...\\n- Análise de cada alternativa:\\n  * A) ...\\n  * B) ...\\n  * C) ...\\n  * D) ...",
       "topic": "Nome do tópico exato",
       "subtopic": "Nome do subtópico exato",
       "difficulty": "Avançado",
@@ -679,9 +706,10 @@ Retorne um objeto JSON contendo a chave "questions" com um array de ${requestedC
         console.log(`[Simulado Motor] Gerando ${requestedCount} questões com Gemini para: "${discipline}" - ${selectedTopics.length} tópicos`);
         const response = await generateContentWithRetry(aiInstance, {
           contents: prompt,
-          defaultModel: "gemini-3.6-flash",
+          defaultModel: "gemini-2.5-flash",
           maxRetries: 2,
           config: {
+            temperature: 0.8,
             responseMimeType: "application/json",
             responseSchema: {
               type: Type.OBJECT,
@@ -806,7 +834,7 @@ Retorne EXCLUSIVAMENTE um objeto JSON válido com este formato exato:
       try {
         const response = await generateContentWithRetry(aiInstance, {
           contents: evaluationPrompt,
-          defaultModel: "gemini-3.6-flash",
+          defaultModel: "gemini-2.5-flash",
           maxRetries: 2,
           config: {
             responseMimeType: "application/json",
@@ -975,7 +1003,7 @@ Atenção: retorne estritamente um JSON limpo formatado de acordo com o esquema 
       try {
         console.log(`[Nutrition] Tentando Gemini com Google Search para: "${foodName}" (${g}g)`);
         const response = await aiInstance.models.generateContent({
-          model: "gemini-3.6-flash",
+          model: "gemini-2.5-flash",
           contents: prompt,
           config: {
             tools: [{ googleSearch: {} }],
@@ -1019,7 +1047,7 @@ Atenção: retorne estritamente um JSON limpo formatado de acordo com o esquema 
         console.log(`[Nutrition] Tentando Gemini normal (com retries) para: "${foodName}" (${g}g)`);
         const responseWithoutSearch = await generateContentWithRetry(aiInstance, {
           contents: prompt,
-          defaultModel: "gemini-3.6-flash",
+          defaultModel: "gemini-2.5-flash",
           maxRetries: 2,
           config: {
             responseMimeType: "application/json",
@@ -1181,7 +1209,7 @@ Atenção: retorne estritamente um JSON limpo formatado de acordo com o esquema 
         console.log(`[Aerobics] Tentando calcular calorias com Gemini (com retries) para: ${type}, ${min}min, intensidade: ${intensityText}`);
         const response = await generateContentWithRetry(aiInstance, {
           contents: gptPrompt,
-          defaultModel: "gemini-3.6-flash",
+          defaultModel: "gemini-2.5-flash",
           maxRetries: 2,
           config: {
             responseMimeType: "application/json",
@@ -1299,7 +1327,7 @@ Escreva a resposta estritamente em português brasileiro de forma profissional, 
         console.log(`[Exam Analysis] Analisando exame com Gemini (com retries) para: "${type}" (valor: ${value})`);
         const response = await generateContentWithRetry(aiInstance, {
           contents: prompt,
-          defaultModel: "gemini-3.6-flash",
+          defaultModel: "gemini-2.5-flash",
           maxRetries: 2,
           config: {
             responseMimeType: "application/json",
@@ -1497,7 +1525,7 @@ Use um tom de "coach" de alto nível, dinâmico e focado em resultados reais, se
         console.log(`[Motivation] Gerando mensagem motivacional com Gemini (com retries) para: "${name || 'Atleta'}"`);
         const response = await generateContentWithRetry(aiInstance, {
           contents: prompt,
-          defaultModel: "gemini-3.6-flash",
+          defaultModel: "gemini-2.5-flash",
           maxRetries: 2
         });
         if (response && response.text) {
@@ -1556,7 +1584,7 @@ Atenção: retorne estritamente um JSON limpo e válido formatado de acordo com 
         console.log(`[Workout Feedback] Gerando feedback com Gemini para treino: "${workoutType}" (volume: ${totalVolume}kg)`);
         const response = await generateContentWithRetry(aiInstance, {
           contents: prompt,
-          defaultModel: "gemini-3.6-flash",
+          defaultModel: "gemini-2.5-flash",
           maxRetries: 2,
           config: {
             responseMimeType: "application/json",
