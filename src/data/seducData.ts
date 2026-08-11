@@ -442,100 +442,324 @@ export function getFlattenedEditalTopics(userDegree?: string): EditalTopic[] {
 export const INITIAL_EDITAL_TOPICS: EditalTopic[] = getFlattenedEditalTopics();
 
 export const SEDUC_QUESTIONS: Question[] = [
-  // 1. Conhecimentos Específicos
-  {
-    id: 'q-esp-1',
-    category: 'Conhecimentos Específicos',
-    subject: 'Conhecimentos Específicos',
-    topic: 'Metodologias e Didática Específica',
-    banca: 'FUNECE',
-    questionText: 'A CEV/UECE exige que a componente curricular dialogue com os itinerários formativos do Ensino Médio. Em relação ao planejamento de ensino por competências e habilidades, assinale a opção correta:',
-    options: [
-      { letter: 'A', text: 'O ensino por competências elimina a necessidade de conteúdos conceituais na área de conhecimento.' },
-      { letter: 'B', text: 'A avaliação específica deve integrar saberes científicos com a resolução de problemas do cotidiano do estudante cearense.' },
-      { letter: 'C', text: 'O professor deve limitar a transmissão de conteúdos à memorização passiva das definições do livro didático.' },
-      { letter: 'D', text: 'A matriz de referência da FUNECE proíbe a utilização de práticas laboratoriais no ensino de ciências e linguagens.' }
-    ],
-    correctAnswer: 'B',
-    legalReference: 'Diretrizes Curriculares do Ceará (DCRC) e Matriz FUNECE',
-    explanation: 'Gabarito FUNECE: B. A FUNECE valoriza a aplicação contextualizada do conhecimento específico, unindo a fundamentação científica à capacidade de resolução de problemas e protagonismo no ensino médio de tempo integral.',
-    difficulty: 'médio'
-  },
-  // 2. Educação Brasileira e Temas Pedagógicos
+  // --- CONHECIMENTOS PEDAGÓGICOS E TEMAS EDUCACIONAIS ---
   {
     id: 'q-ped-1',
     category: 'Educação Brasileira: Temas Educacionais e Pedagógicos',
     subject: 'Educação Brasileira: Temas Educacionais e Pedagógicos',
-    topic: 'LDB nº 9.394/96',
-    banca: 'FUNECE',
-    questionText: 'Segundo o Artigo 13 da LDB nº 9.394/96, assinale a alternativa que NÃO constitui uma incumbência legal atribuída diretamente aos docentes:',
+    topic: 'História do Pensamento Pedagógico',
+    subtopic: 'Tendências Pedagógicas',
+    banca: 'FUNECE / CEV-UECE',
+    questionText: 'Segundo a classificação proposta por José Carlos Libâneo, as tendências pedagógicas brasileiras dividem-se em Liberais e Progressistas. Sobre a Tendência Liberal Tecnicista, assinale a opção correta:',
     options: [
-      { letter: 'A', text: 'Elaborar e cumprir plano de trabalho, segundo a proposta pedagógica do estabelecimento de ensino.' },
-      { letter: 'B', text: 'Zelar pela aprendizagem dos alunos e estabelecer estratégias de recuperação para os de menor rendimento.' },
-      { letter: 'C', text: 'Formular a proposta pedagógica da escola de forma individual e isolada, sem submissão ao conselho escolar.' },
-      { letter: 'D', text: 'Ministrar os dias letivos e horas-aula estabelecidos, além de participar integralmente dos períodos dedicados ao planejamento.' }
+      { letter: 'A', text: 'Modela o comportamento humano por meio de técnicas específicas, subordinando a educação à sociedade e priorizando a formação de indivíduos para o mercado de trabalho.' },
+      { letter: 'B', text: 'Fundamenta-se na auto-organização dos alunos, priorizando a transformação da personalidade num sentido libertário e autogestionário.' },
+      { letter: 'C', text: 'Assume um compromisso com a transformação social a partir do desenvolvimento da consciência crítica e da problematização da realidade do educando.' },
+      { letter: 'D', text: 'Prioriza a transmissão dos conteúdos acumulados pela humanidade, centrando a relação pedagógica na autoridade do professor e na disciplina.' }
     ],
-    correctAnswer: 'C',
-    legalReference: 'LDB nº 9.394/96, Art. 12 e Art. 13',
-    explanation: 'Gabarito FUNECE: Alternativa C. Na LDB, a proposta pedagógica é elaborada coletivamente pelo estabelecimento de ensino com a participação dos docentes, e nunca isoladamente.',
-    difficulty: 'fácil'
+    correctAnswer: 'A',
+    explanation: 'Gabarito FUNECE: A. A Tendência Liberal Tecnicista foca na eficiência, no comportamentalismo e no adestramento para o mercado de trabalho. A opção B refere-se à Progressista Libertária; a C, à Progressista Libertadora; e a D, à Liberal Tradicional.',
+    difficulty: 'médio',
+    skills: ['Classificação de Libâneo', 'Tendências Pedagógicas']
   },
-  // 3. Língua Portuguesa
+  {
+    id: 'q-ped-2',
+    category: 'Educação Brasileira: Temas Educacionais e Pedagógicos',
+    subject: 'Educação Brasileira: Temas Educacionais e Pedagógicos',
+    topic: 'Didática e Aprendizagem',
+    subtopic: 'Avaliação da Aprendizagem',
+    banca: 'FUNECE / CEV-UECE',
+    questionText: 'Na concepção de Cipriano Luckesi, a avaliação da aprendizagem escolar distingue-se essencialmente da verificação. Sob a ótica da avaliação formativa e diagnóstica, assinale a afirmativa correta:',
+    options: [
+      { letter: 'A', text: 'A avaliação possui caráter dinâmico e processual, funcionando como instrumento de diagnóstico e orientação do fluxo de aprendizagem para a tomada de decisões pedagógicas.' },
+      { letter: 'B', text: 'A avaliação limita-se à atribuição de notas e conceitos finais para fins de seleção, retenção e rotulagem dos estudantes.' },
+      { letter: 'C', text: 'A verificação estática do rendimento substitui a necessidade de intervenção contínua e recomposição de aprendizagem pelo docente.' },
+      { letter: 'D', text: 'A prática avaliativa deve ocorrer exclusivamente ao final do período letivo, vedada a utilização de instrumentos qualitativos diversificados.' }
+    ],
+    correctAnswer: 'A',
+    explanation: 'Gabarito FUNECE: A. Luckesi defende a avaliação como prática inclusiva e amorosa, orientada ao diagnóstico e à reorientação da aprendizagem, opondo-se à mera verificação punitiva e classificatória.',
+    difficulty: 'médio',
+    skills: ['Avaliação Diagnóstica e Formativa', 'Doutrina de Luckesi']
+  },
+  {
+    id: 'q-ped-3',
+    category: 'Educação Brasileira: Temas Educacionais e Pedagógicos',
+    subject: 'Educação Brasileira: Temas Educacionais e Pedagógicos',
+    topic: 'Psicologia do Desenvolvimento',
+    subtopic: 'Teoria Sociointeracionista',
+    banca: 'FUNECE / CEV-UECE',
+    questionText: 'Lev Vygotsky postula que o desenvolvimento das funções psicológicas superiores é mediado por instrumentos e signos na interação social. Acerca do conceito de Zona de Desenvolvimento Proximal (ZDP), assinale a opção correta:',
+    options: [
+      { letter: 'A', text: 'Representa a distância entre o nível de desenvolvimento real, determinado pela capacidade de resolver problemas independentemente, e o nível de desenvolvimento potencial, determinado pela resolução sob mediação.' },
+      { letter: 'B', text: 'Define o conjunto de estruturas biológicas maturacionais que limitam de forma irreversível a capacidade de aprendizagem do indivíduo em cada faixa etária.' },
+      { letter: 'C', text: 'Refere-se ao estágio final do desenvolvimento cognitivo em que o estudante não necessita de nenhuma influência do meio sociocultural.' },
+      { letter: 'D', text: 'Consiste na assimilação de esquemas mentais pré-existentes sem modificação das estruturas cognitivas do sujeito.' }
+    ],
+    correctAnswer: 'A',
+    explanation: 'Gabarito FUNECE: A. A ZDP em Vygotsky é a zona em que a intervenção pedagógica e a mediação do professor e dos pares provocam avanços no desenvolvimento do estudante.',
+    difficulty: 'avançado',
+    skills: ['Sociointeracionismo', 'Conceito de ZDP']
+  },
+  {
+    id: 'q-ped-4',
+    category: 'Educação Brasileira: Temas Educacionais e Pedagógicos',
+    subject: 'Educação Brasileira: Temas Educacionais e Pedagógicos',
+    topic: 'Gestão Escolar e PPP',
+    subtopic: 'Projeto Político-Pedagógico',
+    banca: 'FUNECE / CEV-UECE',
+    questionText: 'Segundo Ilma Passos Alencastro Veiga, o Projeto Político-Pedagógico (PPP) da escola pública expressa a própria identidade da instituição. Assinale a afirmativa que expressa a dimensão política e pedagógica do PPP:',
+    options: [
+      { letter: 'A', text: 'É político por comprometer-se com a formação do cidadão para um tipo de sociedade, e pedagógico por organizar intencionalmente as ações educativas da escola.' },
+      { letter: 'B', text: 'É político por subordinar-se às diretrizes partidárias do governo de ocasião, e pedagógico por padronizar as cartilhas de ensino.' },
+      { letter: 'C', text: 'Trata-se de um plano técnico-operacional elaborado isoladamente pelos gestores escolares para cumprimento de exigências burocráticas.' },
+      { letter: 'D', text: 'Constitui um regimento estático cujas metas não podem ser revisadas pela comunidade escolar ou pelos conselhos da escola.' }
+    ],
+    correctAnswer: 'A',
+    explanation: 'Gabarito FUNECE: A. Veiga articula o PPP nas dimensões indissociáveis do compromisso sociopolítico (formação cidadã) e do fazer pedagógico (intencionalidade docente).',
+    difficulty: 'médio',
+    skills: ['Projeto Político Pedagógico', 'Doutrina de Veiga']
+  },
+
+  // --- LEGISLAÇÃO E ADMINISTRAÇÃO PÚBLICA ---
+  {
+    id: 'q-leg-1',
+    category: 'Administração Pública',
+    subject: 'Administração Pública',
+    topic: 'LDB nº 9.394/96',
+    subtopic: 'Princípios da Educação Nacional',
+    banca: 'FUNECE / CEV-UECE',
+    questionText: 'O Artigo 3º da Lei nº 9.394/96 (LDB) estabelece os princípios que regem o ensino nacional. Com base nas recentes alterações legislativas, assinale a opção que apresenta CORRETAMENTE um desses princípios:',
+    options: [
+      { letter: 'A', text: 'Garantia do direito à educação e à aprendizagem ao longo da vida, aliada ao respeito à diversidade humana, linguística, cultural e identitária das pessoas surdas, surdocegas e com deficiência auditiva.' },
+      { letter: 'B', text: 'Uniformidade de critérios pedagógicos com vedação expressa do pluralismo de ideias e de concepções pedagógicas.' },
+      { letter: 'C', text: 'Obrigatoriedade de vinculação exclusiva entre a educação escolar e o mercado de trabalho corporativo, com exclusão de práticas sociais.' },
+      { letter: 'D', text: 'Centralização das decisões financeiras nos órgãos normativos estaduais com eliminação da autonomia das unidades escolares.' }
+    ],
+    correctAnswer: 'A',
+    explanation: 'Gabarito FUNECE: A. A LDB consagrou o direito à aprendizagem ao longo da vida (Inciso XIII) e a modalidade de Educação Bilíngue de Surdos (Inciso XIV).',
+    difficulty: 'médio',
+    skills: ['LDB Art. 3º', 'Princípios Constitucionais e Legais']
+  },
+  {
+    id: 'q-leg-2',
+    category: 'Administração Pública',
+    subject: 'Administração Pública',
+    topic: 'Estatuto do Magistério do CE',
+    subtopic: 'Direitos e Deveres do Servidor Estadual',
+    banca: 'FUNECE / CEV-UECE',
+    questionText: 'À luz do Estatuto dos Funcionários Públicos Civis do Estado do Ceará (Lei nº 9.826/1974) e da Lei nº 10.884/1984 (Estatuto do Magistério do CE), assinale a alternativa INCORRETA sobre as obrigações do docente:',
+    options: [
+      { letter: 'A', text: 'É dever do servidor público estadual exercer com zelo e dedicação as atribuições do seu cargo, bem como ser leal às instituições a que servir.' },
+      { letter: 'B', text: 'É facultado ao professor estadual recusar-se a prestar informações às autoridades competentes quando solicitado no interesse da Administração Pública.' },
+      { letter: 'C', text: 'Constitui infração disciplinar ausentar-se do serviço durante o expediente sem prévia autorização do chefe imediato.' },
+      { letter: 'D', text: 'O servidor responde civil, penal e administrativamente pelo exercício irregular de suas atribuições institucionais.' }
+    ],
+    correctAnswer: 'B',
+    explanation: 'Gabarito FUNECE: B (Incorreta). Prestar informações do interesse público é dever funcional do servidor e do professor estadual, não sendo uma faculdade.',
+    difficulty: 'médio',
+    skills: ['Lei nº 9.826/74', 'Estatuto do Magistério do Ceará']
+  },
+  {
+    id: 'q-leg-3',
+    category: 'Administração Pública',
+    subject: 'Administração Pública',
+    topic: 'Constituição Federal',
+    subtopic: 'Artigos 205 a 214 da CF/88',
+    banca: 'FUNECE / CEV-UECE',
+    questionText: 'A Constituição Federal de 1988 estabelece, no Artigo 206, os princípios do ensino público no Brasil. Sobre a valorização dos profissionais da educação escolar, assinale a afirmativa correta:',
+    options: [
+      { letter: 'A', text: 'A garantia de planos de carreira para os profissionais da educação escolar pública exige ingresso exclusivamente por concurso público de provas e títulos.' },
+      { letter: 'B', text: 'O ingresso na carreira do magistério público estadual pode dar-se por indicação política com dispensa de processo seletivo público.' },
+      { letter: 'C', text: 'A fixação do piso salarial nacional profissional do magistério público compete individualmente aos municípios sem amparo em lei federal.' },
+      { letter: 'D', text: 'A gestão democrática do ensino público aplica-se apenas às instituições de ensino privado de nível superior.' }
+    ],
+    correctAnswer: 'A',
+    explanation: 'Gabarito FUNECE: A. O Art. 206, V, da CF/88 estabelece planos de carreira para o magistério público, com ingresso exclusivo por concurso público de provas e títulos.',
+    difficulty: 'fácil',
+    skills: ['CF/88 Art. 206', 'Concurso Público e Magistério']
+  },
+
+  // --- LÍNGUA PORTUGUESA ---
   {
     id: 'q-lp-1',
     category: 'Língua Portuguesa',
     subject: 'Língua Portuguesa',
     topic: 'Sintaxe e Crase',
-    banca: 'FUNECE',
-    questionText: 'Examine: "A diretora da EEMTI dirigiu-se ___ comunidade para apresentar ___ diretrizes pedagógicas e dar suporte ___ famílias." Qual opção preenche corretamente as lacunas quanto à regência e ao uso do sinal indicativo de crase?',
+    subtopic: 'Regência e Emprego do Sinal Indicativo de Crase',
+    banca: 'FUNECE / CEV-UECE',
+    questionText: 'Considere a frase: "O professor de Língua Portuguesa referiu-se ___ exigências da FUNECE e dirigiu-se ___ alunas que solicitavam acesso ___ matriz curricular." Assinale a opção que preenche corretamente as lacunas:',
     options: [
-      { letter: 'A', text: 'à – as – às' },
-      { letter: 'B', text: 'a – às – as' },
-      { letter: 'C', text: 'à – às – as' },
-      { letter: 'D', text: 'a – as – às' }
+      { letter: 'A', text: 'às – às – à' },
+      { letter: 'B', text: 'as – as – a' },
+      { letter: 'C', text: 'às – as – à' },
+      { letter: 'D', text: 'as – às – a' }
     ],
     correctAnswer: 'A',
-    legalReference: 'Gramática Normativa - CEV/UECE',
-    explanation: '1) dirigiu-se "a" + "a comunidade" = "à comunidade". 2) apresentar é VTD, exige apenas artigo "as diretrizes". 3) dar suporte exige preposição "a" + artigo "as famílias" = "às famílias". Gabarito FUNECE: A.',
-    difficulty: 'médio'
+    explanation: 'Gabarito FUNECE: A. 1) referiu-se "a" + "as exigências" = "às exigências". 2) dirigiu-se "a" + "as alunas" = "às alunas". 3) acesso "a" + "a matriz" = "à matriz". Todas as lacunas exigem crase.',
+    difficulty: 'médio',
+    skills: ['Crase e Regência Verbal', 'Gramática FUNECE']
   },
-  // 4. Leitura e Interpretação de Dados e Indicadores Educacionais
+  {
+    id: 'q-lp-2',
+    category: 'Língua Portuguesa',
+    subject: 'Língua Portuguesa',
+    topic: 'Concordância Verbal',
+    subtopic: 'Casos Especiais de Concordância',
+    banca: 'FUNECE / CEV-UECE',
+    questionText: 'Analise a concordância verbal nas frases abaixo segundo a norma-padrão da Língua Portuguesa e assinale a opção inteiramente CORRETA:',
+    options: [
+      { letter: 'A', text: 'Fazem muitos anos que a rede estadual de ensino promove a Semana Universitária com palestras acadêmicas.' },
+      { letter: 'B', text: 'Haviam muitos candidatos inscritos no concurso de professor da SEDUC-CE na sede da banca examinadora.' },
+      { letter: 'C', text: 'Mais de um professor aprovado no certame assinou o termo de posse durante a solenidade oficial.' },
+      { letter: 'D', text: 'Tratam-se de questões de elevado nível técnico elaboradas para selecionar os docentes da rede pública.' }
+    ],
+    correctAnswer: 'C',
+    explanation: 'Gabarito FUNECE: C. "Mais de um" exige verbo no singular ("assinou"). Nas demais: A) "Faz muitos anos" (verbo fazer impessoal indicando tempo); B) "Havia muitos candidatos" (verbo haver impessoal no sentido de existir); D) "Trata-se de questões" (verbo seguido de preposição com índice de indeterminação do sujeito fica no singular).',
+    difficulty: 'avançado',
+    skills: ['Concordância Verbal', 'Verbos Impessoais']
+  },
+  {
+    id: 'q-lp-3',
+    category: 'Língua Portuguesa',
+    subject: 'Língua Portuguesa',
+    topic: 'Pontuação e Sintaxe',
+    subtopic: 'Orações Subordinadas Adjetivas',
+    banca: 'FUNECE / CEV-UECE',
+    questionText: 'Observe a diferença entre os períodos: I. "Os professores da rede estadual, que concluíram o mestrado, receberão gratificação." II. "Os professores da rede estadual que concluíram o mestrado receberão gratificação." Sob o aspecto sintático-semântico, assinale a análise correta:',
+    options: [
+      { letter: 'A', text: 'Em I, a oração é adjetiva explicativa, indicando que TODOS os professores da rede concluíram o mestrado; em II, a oração é adjetiva restritiva, restringindo a gratificação APENAS aos que têm mestrado.' },
+      { letter: 'B', text: 'Em I e II, o sentido do período é idêntico, sendo o uso das vírgulas meramente estético sem impacto no significado.' },
+      { letter: 'C', text: 'Em I, a oração isolada por vírgulas exerce função de adjunto adverbial de causa; em II, exerce função de complemento nominal.' },
+      { letter: 'D', text: 'A presença das vírgulas em I torna o período gramaticalmente incorreto segundo a norma culta.' }
+    ],
+    correctAnswer: 'A',
+    explanation: 'Gabarito FUNECE: A. A pontuação em orações adjetivas altera radicalmente o valor semântico: com vírgulas é explicativa (generalizante); sem vírgulas é restritiva (limitadora).',
+    difficulty: 'médio',
+    skills: ['Orações Adjetivas', 'Valor das Vírgulas']
+  },
+
+  // --- LEITURA E INTERPRETAÇÃO DE DADOS EDUCACIONAIS ---
   {
     id: 'q-dad-1',
-    category: 'Dados e Indicadores Educacionais',
+    category: 'Leitura e Interpretação de Dados e Indicadores Educacionais',
     subject: 'Leitura e Interpretação de Dados e Indicadores Educacionais',
-    topic: 'SPAECE e Indicadores da SEDUC',
-    banca: 'FUNECE',
-    questionText: 'Um relatório do SPAECE (Sistema de Avaliação da Educação Básica do Ceará) revela que 75% dos alunos de uma escola de Ensino Médio atingiram o nível "Adequado" em proficiência. Com base nesse dado estatístico, é correto inferir:',
+    topic: 'Indicadores do Ceará',
+    subtopic: 'SPAECE e IDEB',
+    banca: 'FUNECE / CEV-UECE',
+    questionText: 'O Índice de Desenvolvimento da Educação Básica (IDEB) combina dois indicadores fundamentais para mensurar a qualidade do ensino. Assinale a alternativa que indica CORRETAMENTE a composição do IDEB:',
     options: [
-      { letter: 'A', text: 'Todos os alunos da escola dominam 100% dos descritores da matriz de referência do SPAECE.' },
-      { letter: 'B', text: 'A maioria absoluta (três quartos) dos estudantes avaliados demonstrou as competências consolidadas esperadas para a etapa.' },
-      { letter: 'C', text: 'O indicador comprova que a escola não necessita de plano de recomposição de aprendizagem para os 25% restantes.' },
-      { letter: 'D', text: 'O resultado do SPAECE impede que a escola receba recursos do Fundo de Manutenção da Educação Básica.' }
+      { letter: 'A', text: 'O fluxo escolar (taxa de aprovação obtida no Censo Escolar) e as notas médias de proficiência nas avaliações em larga escala (Saeb/Spaece).' },
+      { letter: 'B', text: 'O orçamento anual repassado pelo FUNDEB e a taxa de investimento em infraestrutura predial das escolas.' },
+      { letter: 'C', text: 'A quantidade de alunos matriculados em tempo integral e a taxa de formação continuada dos docentes.' },
+      { letter: 'D', text: 'A porcentagem de aprovação nas universidades públicas e o índice de frequência diária dos estudantes.' }
     ],
-    correctAnswer: 'B',
-    legalReference: 'Manual de Indicadores Educacionais do Ceará / SPAECE SEDUC CE',
-    explanation: 'Gabarito FUNECE: B. 75% corresponde exatamente a três quartos (3/4) do total, indicando que a grande maioria dos estudantes atingiu o padrão de proficiência desejado.',
-    difficulty: 'médio'
+    correctAnswer: 'A',
+    explanation: 'Gabarito FUNECE: A. O IDEB é calculado pelo produto entre o indicador de rendimento escolar (aprovação) e a nota média de desempenho nas avaliações do Saeb/Spaece.',
+    difficulty: 'fácil',
+    skills: ['Composição do IDEB', 'Indicadores Educacionais']
   },
-  // 5. Administração Pública
+
+  // --- BIOLOGIA (CONHECIMENTOS ESPECÍFICOS) ---
   {
-    id: 'q-adm-1',
-    category: 'Administração Pública',
-    subject: 'Administração Pública',
-    topic: 'Estatuto do Magistério do CE',
-    banca: 'CEV/UECE',
-    questionText: 'Conforme a Lei Estadual nº 10.884/84 (Estatuto do Magistério do Ceará) e a CF/88, sobre o estágio probatório do professor estadual, assinale a opção correta:',
+    id: 'q-bio-1',
+    category: 'Conhecimentos Específicos',
+    subject: 'Biologia',
+    topic: 'Biologia Celular e Bioenergética',
+    subtopic: 'Respiração Celular e Fosforilação Oxidativa',
+    banca: 'FUNECE / CEV-UECE',
+    questionText: 'A respiração celular aeróbica compreende a glicólise, o ciclo de Krebs e a fosforilação oxidativa. Em relação à cadeia respiratória localizada na crista mitocondrial de eucariotos, assinale a opção correta:',
     options: [
-      { letter: 'A', text: 'O estágio probatório possui prazo de 2 (dois) anos, dispensando comissão de avaliação.' },
-      { letter: 'B', text: 'O estágio probatório cumpre-se em 3 (três) anos de efetivo exercício, condicionado à avaliação especial de desempenho.' },
-      { letter: 'C', text: 'A estabilidade no serviço público estadual ocorre automaticamente com 12 meses de contrato.' },
-      { letter: 'D', text: 'O servidor em estágio probatório fica proibido de solicitar licença para tratamento de saúde.' }
+      { letter: 'A', text: 'O fluxo de elétrons ao longo dos complexos proteicos gera um gradiente de prótons (H+) no espaço intermembranas, impulsionando a síntese de ATP pela ATP sintase quando os prótons retornam à matriz.' },
+      { letter: 'B', text: 'O oxigênio molecular atua como aceptor inicial de elétrons no complexo I, sendo reduzido a dióxido de carbono durante a glicólise.' },
+      { letter: 'C', text: 'A fosforilação oxidativa ocorre no hialoplasma celular sem dependência da integridade da membrana mitocondrial interna.' },
+      { letter: 'D', text: 'A quebra direta da glicose em duas moléculas de piruvato gera a maior fatia de ATP de todo o processo aeróbico.' }
     ],
-    correctAnswer: 'B',
-    legalReference: 'CF/88 Art. 41 e Lei Estadual do Ceará nº 10.884/84',
-    explanation: 'Gabarito FUNECE: B. Conforme a CF/88 e a Lei Estadual nº 10.884/84, a estabilidade ocorre após 3 anos de efetivo exercício com aprovação em avaliação especial de desempenho.',
-    difficulty: 'médio'
+    correctAnswer: 'A',
+    explanation: 'Gabarito FUNECE: A. A hipótese quimiosmótica de Peter Mitchell explica que a cadeia de elétrons bombeia H+ para o espaço intermembranas, criando a força próton-motriz que aciona a ATP sintase.',
+    difficulty: 'avançado',
+    skills: ['Fosforilação Oxidativa', 'Cadeia de Elétrons']
+  },
+  {
+    id: 'q-bio-2',
+    category: 'Conhecimentos Específicos',
+    subject: 'Biologia',
+    topic: 'Genética e Biologia Molecular',
+    subtopic: 'Síntese Proteica e Código Genético',
+    banca: 'FUNECE / CEV-UECE',
+    questionText: 'O código genético é considerado universal e degenerado. O termo "degenerado" (ou redundante) significa que:',
+    options: [
+      { letter: 'A', text: 'Diferentes códons (trincas de nucleotídeos no RNAm) podem codificar o mesmo aminoácido.' },
+      { letter: 'B', text: 'Um único códon é capaz de codificar múltiplos aminoácidos simultaneamente na mesma cadeia polipeptídica.' },
+      { letter: 'C', text: 'O código sofre degradação enzimática durante o processo de transcrição no núcleo celular.' },
+      { letter: 'D', text: 'As mutações de ponto alteram obrigatoriamente a estrutura primária da proteína produzida.' }
+    ],
+    correctAnswer: 'A',
+    explanation: 'Gabarito FUNECE: A. Degenerado significa que existem 64 códons para 20 aminoácidos, logo, um aminoácido pode ser especificado por mais de uma trinca.',
+    difficulty: 'médio',
+    skills: ['Código Genético Degenerado', 'Síntese Proteica']
+  },
+
+  // --- HISTÓRIA (CONHECIMENTOS ESPECÍFICOS) ---
+  {
+    id: 'q-his-1',
+    category: 'Conhecimentos Específicos',
+    subject: 'História',
+    topic: 'História do Ceará e do Brasil',
+    subtopic: 'Sedição de Juazeiro e Coronelismo',
+    banca: 'FUNECE / CEV-UECE',
+    questionText: 'A Sedição de Juazeiro (1914) constitui um episódio marcante da história política do Ceará durante a República Velha. Sobre as causas e desdobramentos desse conflito, assinale a afirmativa correta:',
+    options: [
+      { letter: 'A', text: 'A Sedição representou a reação das oligarquias cearenses, lideradas por Padre Cícero e Floro Bartolomeu, contra a Política das Salvações promovida pelo presidente Hermes da Fonseca.' },
+      { letter: 'B', text: 'Tratou-se de uma revolta operária de inspiração anarquista que visava à implantação de uma república socialista no interior do Ceará.' },
+      { letter: 'C', text: 'Foi um movimento de contestação militar liderado pela Coluna Prestes para derrubar o poder dos coronéis do Cariri.' },
+      { letter: 'D', text: 'O conflito resultou na consolidação definitiva do governo de Franco Rabelo e na erradicação do coronelismo na região do Cariri.' }
+    ],
+    correctAnswer: 'A',
+    explanation: 'Gabarito FUNECE: A. A Sedição de Juazeiro opôs os coronéis e camponeses do Cariri (sob a liderança de Padre Cícero) ao governador Franco Rabelo, nomeado na esteira das "Salvações".',
+    difficulty: 'avançado',
+    skills: ['Sedição de Juazeiro 1914', 'História do Ceará']
+  },
+
+  // --- MATEMÁTICA (CONHECIMENTOS ESPECÍFICOS) ---
+  {
+    id: 'q-mat-1',
+    category: 'Conhecimentos Específicos',
+    subject: 'Matemática',
+    topic: 'Funções e Álgebra',
+    subtopic: 'Funções Exponenciais e Logarítmicas',
+    banca: 'FUNECE / CEV-UECE',
+    questionText: 'Uma população de bactérias cresce segundo a função exponencial P(t) = P0 . 2^(k.t), onde t é o tempo em horas e P0 é a população inicial. Sabendo que a população triplica a cada 4 horas, o valor da constante k é igual a:',
+    options: [
+      { letter: 'A', text: 'log2(3) / 4' },
+      { letter: 'B', text: '4 . log3(2)' },
+      { letter: 'C', text: 'log3(4) / 2' },
+      { letter: 'D', text: 'log2(4) / 3' }
+    ],
+    correctAnswer: 'A',
+    explanation: 'Gabarito FUNECE: A. P(4) = 3.P0 => P0 . 2^(4k) = 3.P0 => 2^(4k) = 3 => 4k = log2(3) => k = log2(3) / 4.',
+    difficulty: 'avançado',
+    skills: ['Equações Logarítmicas', 'Função Exponencial']
+  },
+
+  // --- GEOGRAFIA (CONHECIMENTOS ESPECÍFICOS) ---
+  {
+    id: 'q-geo-1',
+    category: 'Conhecimentos Específicos',
+    subject: 'Geografia',
+    topic: 'Geografia do Brasil e do Ceará',
+    subtopic: 'Domínio da Caatinga e Semiaridez',
+    banca: 'FUNECE / CEV-UECE',
+    questionText: 'O domínio morfoclimático da Caatinga abrange grande parte do território cearense. Sobre as características geoecológicas desse domínio, assinale a opção correta:',
+    options: [
+      { letter: 'A', text: 'Apresenta vegetação xerófila caducifólia, solos rasos e pedregosos na depressão sertaneja, e regime pluviométrico marcado por irregularidade e secas periódicas.' },
+      { letter: 'B', text: 'Caracteriza-se por florestas latifoliadas ombrófilas e rios perenes de grande vazão ao longo de todo o sertão nordestino.' },
+      { letter: 'C', text: 'Ocorre em clima temperado úmido com baixa evapotranspiração e solos profundos e ricos em matéria orgânica.' },
+      { letter: 'D', text: 'Possui drenagem exorreica contínua sem a presença de rios temporários ou intermitentes.' }
+    ],
+    correctAnswer: 'A',
+    explanation: 'Gabarito FUNECE: A. A Caatinga é marcada pelo clima semiárido, adaptações xerófilas da vegetação e rios temporários/intermitentes na depressão sertaneja.',
+    difficulty: 'médio',
+    skills: ['Domínio da Caatinga', 'Geografia do Ceará']
   }
 ];
 

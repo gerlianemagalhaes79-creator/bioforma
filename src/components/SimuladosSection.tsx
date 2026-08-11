@@ -260,6 +260,11 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
     }
   };
 
+  const cleanEditalTitle = (rawTitle: string): string => {
+    if (!rawTitle) return "Conhecimentos Específicos";
+    return rawTitle.replace(/^[\d\.\-\sA-Za-z\)]+(?=[A-ZÁÉÍÓÚÂÊÔÃÕÇa-záéíóúâêôãõç])/, '').trim() || rawTitle;
+  };
+
   // Helper to record newly generated questions into history
   const recordSeenQuestions = (questions: Question[]) => {
     try {
@@ -309,8 +314,10 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
 
     for (let i = 0; i < count; i++) {
       const topObj = topicPayload[i % topicPayload.length] || { topicName: 'Tópico de Estudo', subtopicName: '' };
-      const topicName = topObj.topicName;
-      const subtopicName = topObj.subtopicName || topicName;
+      const rawTopicName = topObj.topicName;
+      const rawSubtopicName = topObj.subtopicName || rawTopicName;
+      const topicName = cleanEditalTitle(rawTopicName);
+      const subtopicName = cleanEditalTitle(rawSubtopicName);
 
       // Check if we have an exact matching question from SEDUC_QUESTIONS
       const exactMatch = pool.find(q => 
@@ -397,11 +404,11 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
           questionText: qText,
           options: opts,
           correctAnswer: 'A',
-          explanation: `Gabarito Oficial FUNECE: Alternativa A. A proposição A consolida a tese científica e teórica rigorosa referente a ${subtopicName}, enquanto os distratores trazem equívocos de fundamentação.`,
+          explanation: `Gabarito Oficial FUNECE: Alternativa A. A proposição A reflete com precisão o rigor teórico e normativo exigido pela CEV/UECE para o magistério público estadual do Ceará, enquanto as demais opções contêm equívocos conceituais ou contradições legais.`,
           difficulty: 'difícil',
           skills: ['Domínio de Conteúdo de Nível Superior', 'Análise Crítica FUNECE'],
-          commonMistake: `Confundir os fundamentos conceituais e os mecanismos específicos de ${subtopicName}.`,
-          studyTip: `Aprofunde a leitura teórica e a legislação/doutrina aplicável a ${subtopicName}.`
+          commonMistake: `Marcação por impulso em opções que contêm jargões atraentes, mas que contradizem o texto normativo ou o autor de referência.`,
+          studyTip: `Atente para os detalhes minuciosos e exceções de regra frequentemente cobrados pela banca FUNECE.`
         });
       }
     }
@@ -469,8 +476,8 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
           id: `gen-q-${Date.now()}-${idx}-${Math.random().toString(36).substring(2, 6)}`,
           category: selectedDisciplineCategory === 'especifico' ? 'Conhecimentos Específicos' : (selectedDisciplineCategory as any),
           subject: disciplineName,
-          topic: q.topic || topicPayload[idx % topicPayload.length]?.topicName || 'Tópico de Estudo',
-          subtopic: q.subtopic || topicPayload[idx % topicPayload.length]?.subtopicName || '',
+          topic: cleanEditalTitle(q.topic || topicPayload[idx % topicPayload.length]?.topicName || 'Tópico de Estudo'),
+          subtopic: cleanEditalTitle(q.subtopic || topicPayload[idx % topicPayload.length]?.subtopicName || ''),
           banca: q.banca || selectedBanca,
           questionText: q.question,
           options: q.alternatives || [],
