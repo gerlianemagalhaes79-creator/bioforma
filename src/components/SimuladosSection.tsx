@@ -228,29 +228,40 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
     return selectedCount;
   }, [selectedCount, totalSubtopicsInTree]);
 
-  // Helper to retrieve previously seen question texts to prevent repetition
+  // Helper to retrieve previously seen question texts across ALL local storage keys to prevent repetition
   const getPreviouslySeenQuestionTexts = (): string[] => {
     try {
-      const activeUid = user?.uid || profile?.uid || 'guest';
       const seenSet = new Set<string>();
 
-      const historyKey = `seduc_seen_questions_${activeUid}`;
-      const rawHistory = localStorage.getItem(historyKey);
-      if (rawHistory) {
-        const arr = JSON.parse(rawHistory);
-        if (Array.isArray(arr)) {
-          arr.forEach((txt: string) => { if (txt) seenSet.add(txt.trim()); });
-        }
-      }
+      // Scan all localStorage keys related to seen questions
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (!key) continue;
 
-      const logsKey = `questionLogs_${activeUid}`;
-      const rawLogs = localStorage.getItem(logsKey);
-      if (rawLogs) {
-        const logs = JSON.parse(rawLogs);
-        if (Array.isArray(logs)) {
-          logs.forEach((l: any) => {
-            if (l.questionText) seenSet.add(l.questionText.trim());
-          });
+        if (key.includes('seduc_seen_questions') || key.includes('questionLogs') || key.includes('simulado_history') || key.includes('user_simulados')) {
+          try {
+            const val = localStorage.getItem(key);
+            if (!val) continue;
+            const parsed = JSON.parse(val);
+            if (Array.isArray(parsed)) {
+              parsed.forEach((item: any) => {
+                if (typeof item === 'string' && item.trim()) {
+                  seenSet.add(item.trim());
+                } else if (item && typeof item === 'object') {
+                  if (item.questionText) seenSet.add(item.questionText.trim());
+                  if (item.question) seenSet.add(item.question.trim());
+                  if (Array.isArray(item.questions)) {
+                    item.questions.forEach((q: any) => {
+                      if (q.questionText) seenSet.add(q.questionText.trim());
+                      if (q.question) seenSet.add(q.question.trim());
+                    });
+                  }
+                }
+              });
+            }
+          } catch (e) {
+            // ignore JSON parse errors for non-JSON items
+          }
         }
       }
 
@@ -295,7 +306,7 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
     const selectedQuestions: Question[] = [];
     const seenTexts = getPreviouslySeenQuestionTexts();
 
-    // Filter bank questions that belong to this discipline or category
+    // Filter bank questions that belong to this discipline or category AND have not been seen
     const categoryMatch = SEDUC_QUESTIONS.filter(q => {
       const qSub = q.subject.toLowerCase();
       const qCat = q.category.toLowerCase();
@@ -308,9 +319,21 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
       return qCat.includes(cat) || qSub.includes(cat) || cat.includes(qCat);
     });
 
-    // Unseen static questions
-    const unseenCategoryMatch = categoryMatch.filter(q => !seenTexts.includes(q.questionText.trim()));
-    const pool = unseenCategoryMatch.length > 0 ? unseenCategoryMatch : categoryMatch;
+    // STRICTLY UNSEEN questions only
+    const unseenPool = categoryMatch.filter(q => !seenTexts.includes(q.questionText.trim()));
+
+    const cearaCities = ["Fortaleza", "Sobral", "Juazeiro do Norte", "Crateús", "Quixadá", "Iguatu", "Maracanaú", "Baturité", "Itapipoca", "Caucaia", "Russas", "Tianguá", "Camocim", "Tauá", "Limoeiro do Norte"];
+    const schoolTypes = ["em uma Escola de Ensino Médio em Tempo Integral (EEMTI)", "em uma Escola Estadual de Educação Profissional (EEEP)", "em uma turma de Educação de Jovens e Adultos (EJA)", "no Laboratório Multidisciplinar de Aprendizagem", "durante a reunião do Conselho de Classe"];
+    const teacherNames = ["Prof. Raimundo", "Profa. Francisca", "Prof. Carlos", "Profa. Camila", "Prof. Gilberto", "Profa. Claudiana", "Prof. Henrique", "Profa. Socorro", "Prof. Eudoro", "Profa. Rebeca", "Prof. Valdemar", "Profa. Elisângela", "Prof. Marcondes", "Profa. Tereza", "Prof. Vicente"];
+
+    const shuffle = <T,>(arr: T[]): T[] => {
+      const copy = [...arr];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    };
 
     for (let i = 0; i < count; i++) {
       const topObj = topicPayload[i % topicPayload.length] || { topicName: 'Tópico de Estudo', subtopicName: '' };
@@ -319,80 +342,69 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
       const topicName = cleanEditalTitle(rawTopicName);
       const subtopicName = cleanEditalTitle(rawSubtopicName);
 
-      // Check if we have an exact matching question from SEDUC_QUESTIONS
-      const exactMatch = pool.find(q => 
-        q.topic.toLowerCase().includes(topicName.toLowerCase()) || 
-        (subtopicName && q.subtopic.toLowerCase().includes(subtopicName.toLowerCase()))
+      // Check if we have an exact matching UNSEEN question from SEDUC_QUESTIONS
+      const exactMatchIdx = unseenPool.findIndex(q => 
+        (q.topic.toLowerCase().includes(topicName.toLowerCase()) || 
+        (subtopicName && q.subtopic.toLowerCase().includes(subtopicName.toLowerCase()))) &&
+        !selectedQuestions.some(sq => sq.questionText === q.questionText)
       );
 
-      if (exactMatch && !selectedQuestions.some(sq => sq.questionText === exactMatch.questionText)) {
+      if (exactMatchIdx !== -1) {
+        const matched = unseenPool.splice(exactMatchIdx, 1)[0];
         selectedQuestions.push({
-          ...exactMatch,
+          ...matched,
           id: `fallback-smart-${Date.now()}-${i}-${Math.random().toString(36).substring(2, 6)}`,
           subject: disciplineName,
-          options: exactMatch.options.slice(0, 4)
+          options: matched.options.slice(0, 4)
         });
-      } else if (pool.length > 0) {
-        const baseQ = pool[(i + Math.floor(Math.random() * pool.length)) % pool.length];
-        selectedQuestions.push({
-          ...baseQ,
-          id: `fallback-cat-${Date.now()}-${i}-${Math.random().toString(36).substring(2, 6)}`,
-          subject: disciplineName,
-          options: baseQ.options.slice(0, 4)
-        });
+      } else if (unseenPool.length > 0) {
+        const randomIdx = Math.floor(Math.random() * unseenPool.length);
+        const baseQ = unseenPool.splice(randomIdx, 1)[0];
+        if (!selectedQuestions.some(sq => sq.questionText === baseQ.questionText)) {
+          selectedQuestions.push({
+            ...baseQ,
+            id: `fallback-cat-${Date.now()}-${i}-${Math.random().toString(36).substring(2, 6)}`,
+            subject: disciplineName,
+            options: baseQ.options.slice(0, 4)
+          });
+        }
       } else {
-        // Build a realistic, high-rigor FUNECE style question dynamically based on subject and topic
+        // Build a 100% unique, scenario-based question
+        const city = cearaCities[(i + Math.floor(Math.random() * cearaCities.length)) % cearaCities.length];
+        const school = schoolTypes[(i + Math.floor(Math.random() * schoolTypes.length)) % schoolTypes.length];
+        const teacher = teacherNames[(i + Math.floor(Math.random() * teacherNames.length)) % teacherNames.length];
         const normDisc = disciplineName.toLowerCase();
-        let qText = `Com base na doutrina pedagógica e na legislação educacional vigente para o concurso de Professor da SEDUC-CE, assinale a alternativa inteiramente correta referente ao tema de estudo:`;
+
+        let qText = `Em ${city}, ${school}, ${teacher} liderou uma atividade prática referente ao tópico de "${subtopicName}" (${topicName}). No debate teórico sobre os fundamentos da área, assinale a opção inteiramente correta segundo a doutrina e a legislação oficial:`;
         
-        let opts: { letter: 'A' | 'B' | 'C' | 'D' | 'E'; text: string }[] = [
-          { letter: 'A', text: `As práticas educativas devem articular a dimensão cognitiva e sociocultural dos educandos, promovendo a autonomia intelectual e o domínio dos conteúdos científicos.` },
-          { letter: 'B', text: `A organização curricular deve focar exclusivamente na memorização passiva de dados, dispensando a contextualização crítica da realidade social.` },
-          { letter: 'C', text: `A avaliação da aprendizagem possui caráter estritamente punitivo e classificatório, sendo vedada a utilização de instrumentos formativos contínuos.` },
-          { letter: 'D', text: `A gestão democrática do ensino público limita-se às decisões administrativas dos órgãos centrais, sem a participação dos profissionais da educação.` }
+        let rawOpts = [
+          { isCorrect: true, text: `A abordagem consciente de ${subtopicName.toLowerCase()} articula a fundamentação conceitual rigorosa com a aplicação prática e crítica no contexto escolar.` },
+          { isCorrect: false, text: `A caracterização de ${subtopicName.toLowerCase()} limita-se à memorização mecânica de regras estáticas, desconsiderando a realidade dos estudantes.` },
+          { isCorrect: false, text: `A aplicação das diretrizes sobre ${subtopicName.toLowerCase()} veda o pluralismo de ideias e a autonomia pedagógica do docente regente.` },
+          { isCorrect: false, text: `O estudo sobre ${subtopicName.toLowerCase()} prescinde de planejamento intencional e acompanhamento avaliativo contínuo.` }
         ];
 
         if (normDisc.includes('português') || normDisc.includes('lingua')) {
-          qText = `No que tange às normas gramaticais e aos recursos sintático-semânticos da Língua Portuguesa, assinale a alternativa inteiramente correta segundo a norma-padrão:`;
-          opts = [
-            { letter: 'A', text: `A concordância verbal e nominal, a regência e a colocação pronominal devem obedecer ao rigor do registro formal nos documentos e textos científicos.` },
-            { letter: 'B', text: `O uso do sinal indicativo de crase é obrigatório antes de verbos e palavras masculinas quando houver sentido indeterminado.` },
-            { letter: 'C', text: `A substituição de uma oração subordinada adjetiva explicativa por uma restritiva não altera o sentido denotativo do período.` },
-            { letter: 'D', text: `Os conectivos de valor adversativo possuem a mesma função semântica e sintática das conjunções subordinativas causais.` }
-          ];
-        } else if (normDisc.includes('biologia') || normDisc.includes('ciência')) {
-          qText = `Considerando os princípios bioquímicos, celulares e ecológicos da Biologia moderna, assinale a afirmativa CORRETA:`;
-          opts = [
-            { letter: 'A', text: `Os processos de sinalização molecular e regulação metabólica asseguram a homeostase celular e a continuidade evolutiva das espécies.` },
-            { letter: 'B', text: `A síntese proteica independe do código genético e das organelas compartimentadas no citoplasma celular.` },
-            { letter: 'C', text: `As relações ecológicas entre populações caracterizam-se por trocas estáticas de energia sem interferência dos fatores abióticos.` },
-            { letter: 'D', text: `A replicação semiconservativa do DNA ocorre sem a ação de complexos enzimáticos específicos.` }
-          ];
-        } else if (normDisc.includes('matemática') || normDisc.includes('física') || normDisc.includes('química')) {
-          qText = `No contexto das ciências exatas e das modelos analíticos consolidados, assinale a proposição estritamente correta:`;
-          opts = [
-            { letter: 'A', text: `A modelagem matemática dos sistemas permite prever comportamentos invariantes através do equacionamento rigoroso das variáveis envolvidas.` },
-            { letter: 'B', text: `A variação de grandezas físicas e químicas prescinde de conservação de massa ou de energia no sistema isolado.` },
-            { letter: 'C', text: `A aplicação de postulados teóricos restringe-se a cenários abstratos sem validade para medições e experimentos reais.` },
-            { letter: 'D', text: `As funções lineares e quadráticas apresentam taxas de variação idênticas em qualquer intervalo de seu domínio.` }
-          ];
-        } else if (normDisc.includes('história') || normDisc.includes('geografia') || normDisc.includes('filosofia') || normDisc.includes('sociologia')) {
-          qText = `Na perspectiva da historiografia e das ciências humanas contemporâneas, assinale a opção que expressa a análise crítica correta:`;
-          opts = [
-            { letter: 'A', text: `A compreensão dos fenômenos sociais exige analisar as relações de poder, as contradições históricas e os condicionantes territoriais.` },
-            { letter: 'B', text: `As transformações culturais e políticas resultam de determinações estáticas e lineares, desprovidas de sujeitos históricos.` },
-            { letter: 'C', text: `A organização espacial do território ocorre de forma neutra, sem relação com as dinâmicas econômicas e sociais.` },
-            { letter: 'D', text: `A análise crítica das fontes historiográficas deve prescindir de contextualização temporal e teórica.` }
-          ];
-        } else if (normDisc.includes('pedagógic') || normDisc.includes('legislaç') || normDisc.includes('educaç')) {
-          qText = `Acerca dos fundamentos pedagógicos, das tendências educacionais e da legislação do ensino (LDB e BNCC), assinale a afirmativa correta:`;
-          opts = [
-            { letter: 'A', text: `A prática pedagógica emancipadora articula a mediação do professor com o desenvolvimento crítico e os conhecimentos historicamente acumulados.` },
-            { letter: 'B', text: `A Lei de Diretrizes e Bases da Educação Nacional (LDB 9.394/96) veda a oferta de ensino religioso nas escolas públicas da rede estadual.` },
-            { letter: 'C', text: `A Base Nacional Comum Curricular (BNCC) substitui integralmente a autonomia dos sistemas estaduais e dos projetos pedagógicos escolares.` },
-            { letter: 'D', text: `A Tendência Pedagógica Tecnicista coloca o educando como centro do processo de auto-organização libertária e comunitária.` }
+          qText = `Em ${city}, ${school}, ${teacher} analisou com a turma o emprego sintático e gramatical no contexto do assunto "${subtopicName}". Considerando a norma-padrão da Língua Portuguesa, assinale a afirmativa CORRETA:`;
+          rawOpts = [
+            { isCorrect: true, text: `A estruturação das orações e a regência atreladas ao estudo de ${subtopicName.toLowerCase()} devem obedecer rigorosamente ao registro formal da norma culta.` },
+            { isCorrect: false, text: `O emprego dos conectivos no estudo de ${subtopicName.toLowerCase()} altera o sentido semântico sem exigir concordância com o sujeito.` },
+            { isCorrect: false, text: `A crase e a pontuação nas regências associadas ao tema ${subtopicName.toLowerCase()} são de uso faculdade indiscriminado.` },
+            { isCorrect: false, text: `As relações de subordinação sintática no tópico ${subtopicName.toLowerCase()} dispensam a coesão textual.` }
           ];
         }
+
+        const shuffled = shuffle(rawOpts);
+        const letters: ('A' | 'B' | 'C' | 'D')[] = ['A', 'B', 'C', 'D'];
+        let correctLetter: 'A' | 'B' | 'C' | 'D' = 'A';
+
+        const finalOpts = shuffled.map((opt, idx) => {
+          const l = letters[idx];
+          if (opt.isCorrect) correctLetter = l;
+          return { letter: l, text: opt.text };
+        });
+
+        const correctObj = shuffled.find(o => o.isCorrect)!;
 
         selectedQuestions.push({
           id: `funece-high-${Date.now()}-${i}-${Math.random().toString(36).substring(2, 6)}`,
@@ -402,13 +414,13 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
           subtopic: subtopicName,
           banca: 'FUNECE / CEV-UECE',
           questionText: qText,
-          options: opts,
-          correctAnswer: 'A',
-          explanation: `Gabarito Oficial FUNECE: Alternativa A. A proposição A reflete com precisão o rigor teórico e normativo exigido pela CEV/UECE para o magistério público estadual do Ceará, enquanto as demais opções contêm equívocos conceituais ou contradições legais.`,
+          options: finalOpts,
+          correctAnswer: correctLetter,
+          explanation: `Gabarito Oficial FUNECE: Alternativa ${correctLetter}. ${correctObj.text} As demais opções contêm imprecisões conceituais ou contradições legais descartadas pela comissão examinadora.`,
           difficulty: 'difícil',
           skills: ['Domínio de Conteúdo de Nível Superior', 'Análise Crítica FUNECE'],
-          commonMistake: `Marcação por impulso em opções que contêm jargões atraentes, mas que contradizem o texto normativo ou o autor de referência.`,
-          studyTip: `Atente para os detalhes minuciosos e exceções de regra frequentemente cobrados pela banca FUNECE.`
+          commonMistake: `Marcação por impulso em opções com jargões atraentes, sem observar os detalhes normativos.`,
+          studyTip: `Atente para os detalhes e exceções de regra frequentemente cobrados pela banca FUNECE.`
         });
       }
     }
