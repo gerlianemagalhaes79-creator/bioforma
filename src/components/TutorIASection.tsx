@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import Markdown from 'react-markdown';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
 import { User, db, collection, addDoc, doc, getDoc } from '../firebase';
 import { UserProfile, TutorChatMessage } from '../types';
 import { ALL_DISCIPLINES_EDITAL } from '../data/disciplinesData';
@@ -661,6 +663,8 @@ ${secondaryTopics.length > 0 ? secondaryTopics.map(t => {
               }`}>
                 <div className="markdown-body">
                   <Markdown
+                    remarkPlugins={[remarkMath]}
+                    rehypePlugins={[rehypeKatex]}
                     components={{
                       p: ({ children }) => <p className="mb-1.5 last:mb-0 leading-relaxed whitespace-pre-wrap">{children}</p>,
                       strong: ({ children }) => <strong className={`font-black ${isUser ? 'text-amber-300' : 'text-zinc-950'}`}>{children}</strong>,

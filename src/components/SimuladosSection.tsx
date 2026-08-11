@@ -3,6 +3,7 @@ import { User, db, doc, setDoc, collection, addDoc } from '../firebase';
 import { UserProfile, Question, QuestionAnswerLog } from '../types';
 import { recordUserActivity } from '../utils/streak';
 import { SEDUC_QUESTIONS, OFFICIAL_EDITAL_TREE, getEspecificoTree, FUNECE_DEGREE_OPTIONS } from '../data/seducData';
+import { FormattedText } from './FormattedText';
 import { 
   FileText, CheckCircle2, XCircle, Sparkles, Filter, ChevronRight, ChevronDown, 
   RotateCcw, BrainCircuit, Award, BookOpen, Clock, Search, CheckSquare, Square, 
@@ -374,6 +375,7 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
         const school = schoolTypes[(i + Math.floor(Math.random() * schoolTypes.length)) % schoolTypes.length];
         const teacher = teacherNames[(i + Math.floor(Math.random() * teacherNames.length)) % teacherNames.length];
         const normDisc = disciplineName.toLowerCase();
+        const formatIdx = i % 3;
 
         let qText = `Em ${city}, ${school}, ${teacher} liderou uma atividade prática referente ao tópico de "${subtopicName}" (${topicName}). No debate teórico sobre os fundamentos da área, assinale a opção inteiramente correta segundo a doutrina e a legislação oficial:`;
         
@@ -384,14 +386,42 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
           { isCorrect: false, text: `O estudo sobre ${subtopicName.toLowerCase()} prescinde de planejamento intencional e acompanhamento avaliativo contínuo.` }
         ];
 
-        if (normDisc.includes('português') || normDisc.includes('lingua')) {
-          qText = `Em ${city}, ${school}, ${teacher} analisou com a turma o emprego sintático e gramatical no contexto do assunto "${subtopicName}". Considerando a norma-padrão da Língua Portuguesa, assinale a afirmativa CORRETA:`;
+        if (formatIdx === 1) {
+          qText = `Durante a elaboração do plano de ensino em ${city}, ${teacher} destacou a importância da reflexão analítica sobre "${subtopicName}" (${topicName}). Sob o ponto de vista da comissão examinadora CEV/FUNECE, assinale a afirmativa autêntica:`;
           rawOpts = [
-            { isCorrect: true, text: `A estruturação das orações e a regência atreladas ao estudo de ${subtopicName.toLowerCase()} devem obedecer rigorosamente ao registro formal da norma culta.` },
-            { isCorrect: false, text: `O emprego dos conectivos no estudo de ${subtopicName.toLowerCase()} altera o sentido semântico sem exigir concordância com o sujeito.` },
-            { isCorrect: false, text: `A crase e a pontuação nas regências associadas ao tema ${subtopicName.toLowerCase()} são de uso faculdade indiscriminado.` },
-            { isCorrect: false, text: `As relações de subordinação sintática no tópico ${subtopicName.toLowerCase()} dispensam a coesão textual.` }
+            { isCorrect: true, text: `A apreensão conceitual de ${subtopicName.toLowerCase()} exige a contextualização com as práticas sociais e os objetivos pedagógicos da rede estadual.` },
+            { isCorrect: false, text: `A abordagem do tema ${subtopicName.toLowerCase()} deve limitar-se à transmissão bancária sem escuta atenta aos educandos.` },
+            { isCorrect: false, text: `A verificação do aprendizado em ${subtopicName.toLowerCase()} tem finalidade puramente classificatória e punitiva.` },
+            { isCorrect: false, text: `As diretrizes legais referentes a ${subtopicName.toLowerCase()} proíbem a adequação curricular às especificidades locais.` }
           ];
+        } else if (formatIdx === 2) {
+          qText = `Em reunião pedagógica no município de ${city}, a equipe docente discutiu um estudo de caso envolvendo a aplicação de "${subtopicName}" (${topicName}). Assinale a opção que expressa o posicionamento teórico-normativo correto:`;
+          rawOpts = [
+            { isCorrect: true, text: `O desenvolvimento pedagógico atrelado a ${subtopicName.toLowerCase()} promove a autonomia reflexiva e a consolidação das competências da BNCC.` },
+            { isCorrect: false, text: `O estudo do assunto ${subtopicName.toLowerCase()} dispensa o alinhamento com o Projeto Político-Pedagógico da unidade escolar.` },
+            { isCorrect: false, text: `A interpretação dos conceitos de ${subtopicName.toLowerCase()} prescinde de embasamento científico e da norma culta.` },
+            { isCorrect: false, text: `A avaliação sobre ${subtopicName.toLowerCase()} deve ser estática, proibida a recomposição contínua de aprendizagens.` }
+          ];
+        }
+
+        if (normDisc.includes('português') || normDisc.includes('lingua')) {
+          if (formatIdx === 0) {
+            qText = `Em ${city}, ${school}, ${teacher} analisou com a turma o emprego sintático e gramatical no contexto do assunto "${subtopicName}". Considerando a norma-padrão da Língua Portuguesa, assinale a afirmativa CORRETA:`;
+            rawOpts = [
+              { isCorrect: true, text: `A estruturação das orações e a regência atreladas ao estudo de ${subtopicName.toLowerCase()} devem obedecer rigorosamente ao registro formal da norma culta.` },
+              { isCorrect: false, text: `O emprego dos conectivos no estudo de ${subtopicName.toLowerCase()} altera o sentido semântico sem exigir concordância com o sujeito.` },
+              { isCorrect: false, text: `A crase e a pontuação nas regências associadas ao tema ${subtopicName.toLowerCase()} são de uso facultativo e aleatório.` },
+              { isCorrect: false, text: `As relações de subordinação sintática no tópico ${subtopicName.toLowerCase()} dispensam a coesão textual.` }
+            ];
+          } else {
+            qText = `Durante a revisão gramatical em ${city}, ${teacher} apresentou um trecho focado no assunto "${subtopicName}". Quanto aos recursos de regência e coesão prescritos pela norma culta, assinale a opção correta:`;
+            rawOpts = [
+              { isCorrect: true, text: `A exatidão da regência e da regência verbal/nominal referente a ${subtopicName.toLowerCase()} garante a clareza e a precisão do texto em registro formal.` },
+              { isCorrect: false, text: `O sinal indicativo de crase em estruturas ligadas a ${subtopicName.toLowerCase()} deve ser empregado antes de verbos no infinitivo.` },
+              { isCorrect: false, text: `A substituição de conectivos de valor causativo por adversativos no estudo de ${subtopicName.toLowerCase()} preserva o sentido original.` },
+              { isCorrect: false, text: `A concordância entre o verbo regente e seu complemento no tópico de ${subtopicName.toLowerCase()} é dispensável na escrita oficial.` }
+            ];
+          }
         }
 
         const shuffled = shuffle(rawOpts);
@@ -1085,13 +1115,13 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
                 <div className="space-y-3">
                   {q.supportText && (
                     <div className="p-3.5 bg-zinc-50 rounded-2xl border border-zinc-100 text-xs text-zinc-600 italic leading-relaxed">
-                      "{q.supportText}"
+                      <FormattedText content={q.supportText} />
                     </div>
                   )}
 
-                  <p className="text-xs sm:text-sm font-extrabold text-zinc-800 leading-relaxed">
-                    {q.questionText}
-                  </p>
+                  <div className="text-xs sm:text-sm font-extrabold text-zinc-800 leading-relaxed">
+                    <FormattedText content={q.questionText} />
+                  </div>
                 </div>
 
                 {/* Options List */}
@@ -1132,9 +1162,9 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
                           <span className={`w-7 h-7 rounded-xl flex items-center justify-center font-black text-xs shrink-0 ${badgeStyle}`}>
                             {opt.letter}
                           </span>
-                          <span className={`text-xs sm:text-sm pt-0.5 leading-relaxed ${isEliminated ? 'line-through' : ''}`}>
-                            {opt.text}
-                          </span>
+                          <div className={`text-xs sm:text-sm pt-0.5 leading-relaxed ${isEliminated ? 'line-through' : ''}`}>
+                            <FormattedText content={opt.text} />
+                          </div>
                         </button>
 
                         {/* Eliminate / Cross-out option tool */}
@@ -1193,9 +1223,9 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
                     </div>
 
                     {/* Theoretical Explanation */}
-                    <p className="text-xs text-emerald-950 leading-relaxed font-medium whitespace-pre-line">
-                      {q.explanation}
-                    </p>
+                    <div className="text-xs text-emerald-950 leading-relaxed font-medium">
+                      <FormattedText content={q.explanation} />
+                    </div>
 
                     {/* Common Traps / Pegadinha da Banca */}
                     {q.commonMistake && (
@@ -1204,7 +1234,9 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
                           <AlertTriangle size={14} className="text-amber-700 shrink-0" />
                           Pegadinha Clássica da Banca:
                         </span>
-                        <p className="text-[11px] text-amber-900 leading-relaxed">{q.commonMistake}</p>
+                        <div className="text-[11px] text-amber-900 leading-relaxed">
+                          <FormattedText content={q.commonMistake} />
+                        </div>
                       </div>
                     )}
 
@@ -1215,7 +1247,9 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
                           <Lightbulb size={14} className="text-teal-700 shrink-0" />
                           Dica de Memorização & Aprendizagem Ativa:
                         </span>
-                        <p className="text-[11px] text-teal-900 leading-relaxed">{q.studyTip}</p>
+                        <div className="text-[11px] text-teal-900 leading-relaxed">
+                          <FormattedText content={q.studyTip} />
+                        </div>
                       </div>
                     )}
                   </motion.div>

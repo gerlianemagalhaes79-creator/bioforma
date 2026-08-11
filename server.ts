@@ -329,6 +329,18 @@ D) A aplicação prática exclui os postulados clássicos da literatura de refer
 // ===============================================================
 // PASSEISEDUC - ENDPOINTS DE INTELIGÊNCIA ARTIFICIAL PARA CONCURSO
 // ===============================================================
+
+const FORMULA_FORMATTING_DIRECTIVE = `
+## 📐 DIRETIVA DE FORMATAÇÃO DE FÓRMULAS E SÍMBOLOS
+Sempre que precisar incluir fórmulas matemáticas, físicas ou científicas, siga rigorosamente estas regras para evitar que o texto fique bagunçado:
+
+1. **Uso de Símbolos Diretos:** Prefira utilizar os símbolos reais sempre que possível (ex: $\\lambda$, $\\Delta$, $\\pi$, $\\cdot$, $\\approx$) em vez de escrever seus nomes por extenso ou usar códigos complexos soltos no texto.
+2. **Padrão de Exibição:** 
+   - Se for uma fórmula em destaque (linha própria), envolva-a sempre entre dois sinais de dólar ($$ fórmula $$).
+   - Se for uma variável ou fórmula curta dentro da frase, envolva-a com um único sinal de dólar ($ fórmula $).
+3. **Clareza Didática:** Nunca deixe códigos brutos de formatação visíveis para o aluno (como \\frac, \\lambda, \\mathbf sem o devido encapsulamento). O texto deve ser limpo, fluido e com formatação profissional.
+`;
+
   // Professor Mentor IA - Especialista em Aprovação SEDUC CE 2026 (FUNECE / CEV-UECE)
   app.post("/api/seduc/tutor", async (req, res) => {
     const { message, subject, profile, cronograma, stats, isProactive, mode } = req.body;
@@ -368,6 +380,8 @@ D) A aplicação prática exclui os postulados clássicos da literatura de refer
 IDENTIDADE E REGRAS IMPLACÁVEIS DE METODOLOGIA DIDÁTICA:
 Você é o "Professor Mentor IA", especialista na Banca FUNECE e mestre em preparação para a SEDUC CE.
 A aluna é a Profª. ${userName} (concorrendo na área de ${userSubject}).
+
+${FORMULA_FORMATTING_DIRECTIVE}
 
 🚨 SAUDAÇÕES E CONVERSA INICIAL (REGRA IMPLACÁVEL):
 - Se a mensagem da aluna for APENAS uma saudação, cumprimento ou pergunta amigável (ex: "oi", "olá", "tudo bem?", "boa tarde", "oi professor", "como vai?"):
@@ -529,6 +543,8 @@ Enunciado: "${questionText}"
 Gabarito Oficial: Alternativa ${correctAnswer}
 Resposta do Aluno: Alternativa ${userAnswer || 'N/A'}
 
+${FORMULA_FORMATTING_DIRECTIVE}
+
 Forneça um comentário explicativo completo no estilo FUNECE contendo:
 1. Fundamentação Legal ou Doutrinária (Artigo da lei, norma da BNCC ou teoria pedagógica aplicada).
 2. Por que a alternativa ${correctAnswer} é a correta segundo o gabarito oficial da FUNECE.
@@ -582,10 +598,10 @@ Forneça um comentário explicativo completo no estilo FUNECE contendo:
       return rawTitle.replace(/^[\d\.\-\sA-Za-z\)]+(?=[A-ZÁÉÍÓÚÂÊÔÃÕÇa-záéíóúâêôãõç])/, '').trim() || rawTitle;
     };
 
-    const topicPaths = selectedTopics.map(t => {
+    const topicPaths = selectedTopics.map((t, index) => {
       const cleanSub = cleanEditalTitle(t.subtopicName || t.topicName || '');
       const cleanTop = cleanEditalTitle(t.topicName || '');
-      return `• Disciplina: ${discipline || 'Conhecimentos do Edital'} | Assunto Científico: ${cleanSub} (${cleanTop})`;
+      return `• [Questão ${index + 1}] -> Disciplina: ${discipline || 'Conhecimentos do Edital'} | Assunto Científico: ${cleanSub} (${cleanTop})`;
     }).join("\n");
 
     const previousBlock = Array.isArray(previousQuestions) && previousQuestions.length > 0
@@ -607,6 +623,20 @@ NUNCA repita modelos, fórmulas prontas ou frases idênticas.`;
     const prompt = `[SEED DE VARIABILIDADE OBRIGATÓRIA DA SESSÃO: ${randomSeed}]
 Você é um ELABORADOR SÊNIOR E IMPLACÁVEL da comissão examinadora CEV/FUNECE para o concurso da SEDUC-CE (Professor do Estado do Ceará).
 Sua missão é gerar questões 100% INÉDITAS, ALTAMENTE REALISTAS, TEÓRICA E JURIDICAMENTE PRECISAS, SEM NENHUM TIPO DE MOCK OU TEMPLATE REPETITIVO.
+
+${FORMULA_FORMATTING_DIRECTIVE}
+
+---
+
+### 🎯 OBRIGATORIEDADE DE DISTRIBUIÇÃO E DIVERSIFICAÇÃO DOS SUBTÓPICOS:
+Foram selecionados ${selectedTopics.length} assuntos do edital para gerar ${requestedCount} questões.
+Você DEVE obrigatoriamente criar UMA QUESTÃO DIFERENTE PARA CADA SUBTÓPICO LISTADO ABAIXO:
+${topicPaths}
+
+Regras Fundamentais de Diversificação:
+1. Questão 1 DEVE focar no Assunto 1; Questão 2 DEVE focar no Assunto 2 (e assim por diante).
+2. CADA QUESTÃO DEVE TER UM FORMATO DE ENUNCIADO TOTALMENTE DIFERENTE (ex: Questão 1 = estudo de caso de sala de aula; Questão 2 = análise de excerto ou trecho de documento; Questão 3 = deliberação de conselho escolar/planejamento; Questão 4 = análise de experimento/situação prática de laboratório ou regência gramatical).
+3. NUNCA reaproveite os mesmos nomes de professores, as mesmas cidades ou frases idênticas entre as questões da mesma prova.
 
 ---
 
@@ -795,24 +825,70 @@ Retorne um objeto JSON contendo a chave "questions" com um array de ${requestedC
       let questionText = "";
       let rawAlternatives: { text: string; isCorrect: boolean; reason: string }[] = [];
 
+      const formatIndex = idx % 4;
+
       if (normDisc.includes('português') || normDisc.includes('língua') || normDisc.includes('gramát')) {
-        questionText = `Em ${city}, ${school}, ${teacher} apresentou aos estudantes a frase: "O parecer pedagógico encaminhado ___ Coordenadoria de Ensino referia-se ___ diretrizes da FUNECE e visava ___ melhoria da aprendizagem escolar." Considerando as normas de regência e o emprego do sinal indicativo de crase, assinale a opção que preenche corretamente as lacunas, justificando a análise sintática de acordo com a norma-padrão:`;
-        rawAlternatives = [
-          { text: "à – às – à", isCorrect: true, reason: "Houve a fusão da preposição 'a' com os artigos definidos 'a', 'as' e 'a'." },
-          { text: "a – as – a", isCorrect: false, reason: "Omitiu erroneamente a crase obrigatória exigida pelos regentes 'encaminhado', 'referia-se' e 'visava'." },
-          { text: "às – a – à", isCorrect: false, reason: "Trocou a concordância de número do artigo definido no primeiro e segundo termos." },
-          { text: "a – às – a", isCorrect: false, reason: "Apresenta inconsistência na regência do complemento verbal da primeira e terceira lacunas." }
-        ];
+        if (formatIndex === 0) {
+          questionText = `Em ${city}, ${school}, ${teacher} analisou com a turma a construção linguística no tópico de "${cleanSub}" (${cleanTop}). Considerando as normas de regência e coesão textual de acordo com a norma-padrão da Língua Portuguesa, assinale a opção correta:`;
+          rawAlternatives = [
+            { text: `A articulação sintática inerente a ${cleanSub.toLowerCase()} exige rigor na concordância e na escolha dos conectivos para preservação da coerência e da clareza.`, isCorrect: true, reason: "A norma-padrão exige harmonia entre os termos regentes e regidos." },
+            { text: `O emprego dos conectivos em ${cleanSub.toLowerCase()} altera o sentido semântico sem necessidade de concordância entre verbo e sujeito.`, isCorrect: false, reason: "A concordância e a regência são preceitos obrigatórios da norma culta." },
+            { text: `A pontuação e as relações de regência atreladas a ${cleanSub.toLowerCase()} constituem uso facultativo e aleatório na norma formal.`, isCorrect: false, reason: "A regência e a pontuação obedecem a regras gramaticais estritas." },
+            { text: `As orações subordinadas que estruturam o estudo de ${cleanSub.toLowerCase()} dispensam elementos de coesão textual.`, isCorrect: false, reason: "A coesão textual é indispensável para o encadeamento de orações." }
+          ];
+        } else if (formatIndex === 1) {
+          questionText = `Durante a correção de um texto argumentativo em ${city}, ${teacher} destacou a relevância do estudo sobre "${cleanSub}" (${cleanTop}). Quanto aos recursos sintático-semânticos e à regência prescrita pela norma culta, assinale a afirmativa CORRETA:`;
+          rawAlternatives = [
+            { text: `As normas de regência e colocação referentes ao tema de ${cleanSub.toLowerCase()} garantem a precisão denotativa necessária à comunicação científica e oficial.`, isCorrect: true, reason: "Regência e colocação pronominal sustentam a denotação no registro formal." },
+            { text: `O sinal indicativo de crase em estruturas ligadas a ${cleanSub.toLowerCase()} é obrigatório antes de verbos e palavras no masculino.`, isCorrect: false, reason: "É vedado o uso da crase antes de verbos ou palavras masculinas." },
+            { text: `A substituição de conectivos adversativos por causais nas frases sobre ${cleanSub.toLowerCase()} mantém o sentido denotativo original.`, isCorrect: false, reason: "Conectivos adversativos e causais possuem papéis semânticos opostos." },
+            { text: `A variação linguística no estudo de ${cleanSub.toLowerCase()} anula a obrigatoriedade da norma-padrão em documentos formais da escola.`, isCorrect: false, reason: "Documentos formais exigem o uso estrito do registro culto." }
+          ];
+        } else if (formatIndex === 2) {
+          questionText = `No âmbito do exame gramatical realizado em ${city}, ${school}, abordou-se a aplicação prática do assunto "${cleanSub}" (${cleanTop}). Assinale a alternativa que apresenta a análise morfossintática e semântica adequada:`;
+          rawAlternatives = [
+            { text: `A correta identificação dos papéis sintáticos e da estrutura de ${cleanSub.toLowerCase()} possibilita evitar ambiguidades e vícios de linguagem na escrita.`, isCorrect: true, reason: "Análise morfossintática precisa elimina ambiguidades no texto." },
+            { text: `A indeterminação do sujeito nas orações sobre ${cleanSub.toLowerCase()} ocorre pelo uso indiferente de qualquer pronome oblíquo.`, isCorrect: false, reason: "A indeterminação do sujeito obedece a regras específicas (verbo na 3ª pessoa do plural ou 3ª do singular + se)." },
+            { text: `A concordância nominal no campo de ${cleanSub.toLowerCase()} prescinde de harmonia de gênero e número com o substantivo.`, isCorrect: false, reason: "A concordância nominal exige adequação de gênero e número." },
+            { text: `A paráfrase das estruturas relativas a ${cleanSub.toLowerCase()} independe da manutenção do valor temporal dos verbos.`, isCorrect: false, reason: "A paráfrase deve respeitar o aspecto e tempo verbal do texto fonte." }
+          ];
+        } else {
+          questionText = `Em um seminário de linguística na FUNECE em ${city}, ${teacher} apresentou um excerto focado em "${cleanSub}" (${cleanTop}). Com base no domínio das competências leitoras e gramaticais exigidas pela banca CEV/FUNECE, assinale a proposição irrepreensível:`;
+          rawAlternatives = [
+            { text: `O domínio conceitual e prático do tópico de ${cleanSub.toLowerCase()} amplia a capacidade crítica do candidato na interpretação textual e na análise formal da linguagem.`, isCorrect: true, reason: "A banca FUNECE exige a articulação entre análise linguística e interpretação textual." },
+            { text: `As figuras de linguagem associadas ao tema ${cleanSub.toLowerCase()} sobrepõem-se rigorosamente às regras de coesão referencial e sequencial.`, isCorrect: false, reason: "Figuras de linguagem não anulam os requisitos de coesão e coerência." },
+            { text: `O uso dos pronomes relativos nas frases sobre ${cleanSub.toLowerCase()} prescinde de preposição, mesmo quando o regente a exigir.`, isCorrect: false, reason: "Se o termo regente exigir preposição, esta deve anteceder o pronome relativo." },
+            { text: `A pontuação nas orações subordinadas adjetivas explicativas ligadas a ${cleanSub.toLowerCase()} é opcional sem alteração do sentido.`, isCorrect: false, reason: "O uso das vírgulas altera fundamentalmente o sentido de explicativa para restritiva." }
+          ];
+        }
       } else if (normDisc.includes('legislaç') || normDisc.includes('direito') || normDisc.includes('administraç')) {
-        questionText = `Em ${city}, ${school}, durante a revisão do Projeto Político-Pedagógico (PPP), ${teacher} debateu o cumprimento do Artigo 3º da LDB (Lei nº 9.394/96). O grupo de trabalho necessitava registrar a regra referente à autonomia e gestão escolar. Considerando a legislação educacional vigente e a jurisprudência, assinale a proposição correta quanto ao tema "${cleanSub}":`;
-        rawAlternatives = [
-          { text: "A gestão democrática do ensino público e a garantia do direito à educação e à aprendizagem ao longo da vida constituem princípios constitutivos obrigatórios das escolas públicas.", isCorrect: true, reason: "Respeita integralmente os incisos VIII e XIII do Artigo 3º da LDB." },
-          { text: "A autonomia das unidades escolares públicas veda o pluralismo de ideias e de concepções pedagógicas para padronização curricular estadual.", isCorrect: false, reason: "A LDB garante expressamente o pluralismo de ideias e concepções no Art. 3º, inciso III." },
-          { text: "O ensino público deve desvincular-se das práticas sociais e da experiência extraclasse para focar exclusivamente no adestramento para o vestibular.", isCorrect: false, reason: "A LDB prevê a vinculação entre educação escolar, trabalho e práticas sociais (Art. 3º, XI)." },
-          { text: "A deliberação dos conselhos escolares fica submetida à decisão individual e discricionária do órgão inspetor estadual.", isCorrect: false, reason: "A gestão democrática assegura a participação da comunidade escolar nas decisões." }
-        ];
+        if (formatIndex === 0) {
+          questionText = `Em ${city}, ${school}, durante a revisão do Projeto Político-Pedagógico (PPP), ${teacher} debateu o cumprimento do Artigo 3º da LDB (Lei nº 9.394/96) quanto ao tema "${cleanSub}" (${cleanTop}). Considerando a legislação educacional vigente e a jurisprudência, assinale a proposição correta:`;
+          rawAlternatives = [
+            { text: `A garantia do direito à educação e à aprendizagem ao longo da vida e a gestão democrática constituem princípios obrigatórios nas normas do ensino.`, isCorrect: true, reason: "Respeita integralmente os incisos VIII e XIII do Artigo 3º da LDB." },
+            { text: `A aplicação das diretrizes sobre ${cleanSub.toLowerCase()} veda o pluralismo de ideias e de concepções pedagógicas no ambiente escolar público.`, isCorrect: false, reason: "A LDB garante expressamente o pluralismo de ideias e concepções no Art. 3º, III." },
+            { text: `O ensino público referente a ${cleanSub.toLowerCase()} deve desvincular-se das práticas sociais e da experiência extraclasse dos alunos.`, isCorrect: false, reason: "A LDB prevê a vinculação entre educação escolar, trabalho e práticas sociais (Art. 3º, XI)." },
+            { text: `A deliberação dos conselhos escolares sobre ${cleanSub.toLowerCase()} fica submetida à decisão individual e discricionária do órgão inspetor estadual.`, isCorrect: false, reason: "A gestão democrática assegura a participação da comunidade escolar nas decisões." }
+          ];
+        } else if (formatIndex === 1) {
+          questionText = `No âmbito do Conselho de Classe em ${city}, ${teacher} trouxe para o debate os preceitos normativos da BNCC e da LDB afetos a "${cleanSub}" (${cleanTop}). Sob a ótica da organização curricular do Estado do Ceará, assinale a alternativa inteiramente alinhada às normas vigentes:`;
+          rawAlternatives = [
+            { text: `As diretrizes relativas a ${cleanSub.toLowerCase()} devem orientar o plano de curso garantindo os direitos de aprendizagem e as competências gerais dos educandos.`, isCorrect: true, reason: "A BNCC estabelece os direitos de aprendizagem que norteiam os currículos estaduais." },
+            { text: `A implementação dos objetivos de ${cleanSub.toLowerCase()} anula a autonomia dos projetos pedagógicos das escolas da rede estadual.`, isCorrect: false, reason: "A BNCC é referência nacional, devendo ser contextualizada pela autonomia escolar." },
+            { text: `A oferta dos conteúdos relativos a ${cleanSub.toLowerCase()} fica restrita a exames punitivos ao final de cada etapa.`, isCorrect: false, reason: "A legislação educacional preconiza a avaliação contínua e formativa." },
+            { text: `A inclusão do tema ${cleanSub.toLowerCase()} prescinde de formação continuada para os profissionais da educação regentes.`, isCorrect: false, reason: "A LDB assegura o direito à formação continuada dos profissionais da educação." }
+          ];
+        } else {
+          questionText = `Em um fórum de gestão educacional em ${city}, discutiu-se o amparo jurídico e doutrinário pertinente ao tópico "${cleanSub}" (${cleanTop}). Assinale a opção que apresenta o fundamento normativo autêntico:`;
+          rawAlternatives = [
+            { text: `A consolidação do tema de ${cleanSub.toLowerCase()} deve valorizar a experiência extraescolar e a igualdade de condições para o acesso e permanência na escola.`, isCorrect: true, reason: "Fundamentação expressa no Art. 3º da LDB e nos marcos constitucionais." },
+            { text: `A gestão dos processos ligados a ${cleanSub.toLowerCase()} deve ser centralizada, dispensando a participação dos profissionais da educação na elaboração do PPP.`, isCorrect: false, reason: "A LDB (Art. 14, I) prevê a participação dos profissionais da educação na elaboração do PPP." },
+            { text: `A legislação proíbe a gestão compartilhada e a participação da comunidade escolar e local nos conselhos escolares.`, isCorrect: false, reason: "A LDB (Art. 14, II) determina a participação das comunidades escolar e local em conselhos." },
+            { text: `O financiamento das ações de ${cleanSub.toLowerCase()} vincula-se exclusivamente a recursos privados sem controle social público.`, isCorrect: false, reason: "Os recursos da educação pública têm controle social via CACS-FUNDEB e órgãos de controle." }
+          ];
+        }
       } else if (normDisc.includes('biologia') || normDisc.includes('ciência')) {
-        questionText = `No laboratório em ${city}, ${school}, ${teacher} orientou um estudo sobre o tópico de "${cleanSub}" (${cleanTop}). Durante a investigação empírica, os discentes analisaram o comportamento das estruturas biológicas sob estímulo controlado. Assinale a afirmativa cientificamente correta segundo a literatura consolidada:`;
+        questionText = `No laboratório em ${city}, ${school}, ${teacher} orientou um estudo prático sobre o tópico de "${cleanSub}" (${cleanTop}). Durante a investigação empírica, os discentes analisaram o comportamento das estruturas biológicas sob estímulo controlado. Assinale a afirmativa cientificamente correta segundo a literatura consolidada:`;
         rawAlternatives = [
           { text: `Os mecanismos celulares e moleculares envolvidos em ${cleanSub.toLowerCase()} operam em dinamismo homeostático, assegurando a regulação metabólica e a integridade funcional do organismo.`, isCorrect: true, reason: "Definição biológica precisa da regulação e homeostase celular." },
           { text: `As reações metabólicas inerentes a ${cleanSub.toLowerCase()} ocorrem sem intervenção de catalisadores enzimáticos ou sinalização celular.`, isCorrect: false, reason: "Negar a mediação enzimática e molecular contraria os princípios da bioquímica." },
@@ -820,7 +896,7 @@ Retorne um objeto JSON contendo a chave "questions" com um array de ${requestedC
           { text: `As estruturas citoplasmáticas e membranares desempenham papel passivo e independente de gradientes de concentração.`, isCorrect: false, reason: "O transporte e a atividade celular dependem ativamente do potencial de membrana e ATP." }
         ];
       } else if (normDisc.includes('história') || normDisc.includes('geografia') || normDisc.includes('filosofia') || normDisc.includes('sociologia')) {
-        questionText = `Em um seminário temático em ${city}, ${school}, ${teacher} problematizou a abordar histórica e social do assunto "${cleanSub}" (${cleanTop}). Ao analisar as transformações conjunturais e os conflitos sociais envolvidos, assinale a opção que expressa a interpretação historiográfica e sociológica precisa:`;
+        questionText = `Em um seminário temático em ${city}, ${school}, ${teacher} problematizou a abordagem histórica e social do assunto "${cleanSub}" (${cleanTop}). Ao analisar as transformações conjunturais e os conflitos sociais envolvidos, assinale a opção que expressa a interpretação historiográfica e sociológica precisa:`;
         rawAlternatives = [
           { text: `A análise rigorosa de ${cleanSub.toLowerCase()} exige compreender a dinâmica das relações de poder, as contradições socioeconômicas e os agentes históricos em seu espaço-tempo.`, isCorrect: true, reason: "Fundamentação historiográfica e sociológica sólida sobre sujeitos e processos." },
           { text: `O processo histórico e territorial de ${cleanSub.toLowerCase()} resultou de determinações estáticas e lineares, desprovidas de conflito social ou mediação cultural.`, isCorrect: false, reason: "Visão mecanicista e ultrapassada que ignora a dialética e a contradição social." },
@@ -837,13 +913,31 @@ Retorne um objeto JSON contendo a chave "questions" com um array de ${requestedC
         ];
       } else {
         // Didática e Pedagogia Geral
-        questionText = `Em ${city}, ${school}, ${teacher} liderou uma oficina de formação docente centrada no tópico de "${cleanSub}" (${cleanTop}). No debate sobre a condução da prática pedagógica e a relação ensino-aprendizagem, assinale a alternativa inteiramente correta segundo a doutrina educacional contemporânea:`;
-        rawAlternatives = [
-          { text: `A prática pedagógica consciente acerca de ${cleanSub.toLowerCase()} articula o rigor conceitual com a mediação dialógica, promovendo a autonomia reflexiva e a emancipação do educando.`, isCorrect: true, reason: "Reflete a visão pedagógica crítica e mediadora (Freire, Saviani, Libâneo)." },
-          { text: `A abordagem de ${cleanSub.toLowerCase()} deve limitar-se à transmissão mecânica e expositiva de conteúdos, proibida a participação ativa dos discentes.`, isCorrect: false, reason: "Descreve a tendência tradicional ultrapassada e bancária repudiada pelos teóricos." },
-          { text: `A avaliação do conteúdo referente a ${cleanSub.toLowerCase()} possui finalidade estritamente punitiva, sendo vedada a recomposição de aprendizagem.`, isCorrect: false, reason: "A avaliação deve ser formativa e diagnóstica (Luckesi), reorientando a rota de ensino." },
-          { text: `A organização do trabalho pedagógico prescinde de planejamento sistemático, dependendo exclusivamente do improviso do regente.`, isCorrect: false, reason: "O planejamento de ensino é requisito essencial para a intencionalidade pedagógica." }
-        ];
+        if (formatIndex === 0) {
+          questionText = `Em ${city}, ${school}, ${teacher} liderou uma oficina pedagógica focada no tópico de "${cleanSub}" (${cleanTop}). No debate sobre a condução do ensino e a mediação docente, assinale a alternativa inteiramente correta segundo a doutrina educacional contemporânea:`;
+          rawAlternatives = [
+            { text: `A prática pedagógica consciente acerca de ${cleanSub.toLowerCase()} articula o rigor conceitual com a mediação dialógica, promovendo a autonomia reflexiva e a emancipação do educando.`, isCorrect: true, reason: "Reflete a visão pedagógica crítica e mediadora (Freire, Saviani, Libâneo)." },
+            { text: `A abordagem de ${cleanSub.toLowerCase()} deve limitar-se à transmissão mecânica e expositiva de conteúdos, proibida a participação ativa dos discentes.`, isCorrect: false, reason: "Descreve a tendência tradicional ultrapassada e bancária repudiada pelos teóricos." },
+            { text: `A avaliação do conteúdo referente a ${cleanSub.toLowerCase()} possui finalidade estritamente punitiva, sendo vedada a recomposição de aprendizagem.`, isCorrect: false, reason: "A avaliação deve ser formativa e diagnóstica (Luckesi), reorientando a rota de ensino." },
+            { text: `A organização do trabalho pedagógico prescinde de planejamento sistemático, dependendo exclusivamente do improviso do regente.`, isCorrect: false, reason: "O planejamento de ensino é requisito essencial para a intencionalidade pedagógica." }
+          ];
+        } else if (formatIndex === 1) {
+          questionText = `Durante a elaboração da sequência didática em ${city}, ${teacher} analisou a aplicação dos conceitos de "${cleanSub}" (${cleanTop}) em uma turma do Ensino Médio. Sob o ponto de vista da Pedagogia Histórico-Crítica e da Didática Geral, assinale a afirmativa CORRETA:`;
+          rawAlternatives = [
+            { text: `A problematização inicial do conteúdo de ${cleanSub.toLowerCase()} conecta a prática social dos alunos aos saberes científicos sistematizados.`, isCorrect: true, reason: "Pedagogia Histórico-Crítica (Saviani) exige mediação entre prática social e saberes." },
+            { text: `A apreensão teórica sobre ${cleanSub.toLowerCase()} prescinde da mediação docente, bastando a auto-organização espontânea dos alunos.`, isCorrect: false, reason: "O professor cumpre papel de mediador intencional e insubstituível." },
+            { text: `O processo de ensino de ${cleanSub.toLowerCase()} deve banir a articulação entre teoria e prática para foco exclusivo em resumos mecânicos.`, isCorrect: false, reason: "Praxis pedagógica é a união indissociável entre teoria e prática." },
+            { text: `A avaliação diagnóstica no estudo de ${cleanSub.toLowerCase()} serve unicamente para atribuir notas fiscais e notas de corte em diário.`, isCorrect: false, reason: "A avaliação diagnóstica visa identificar lacunas para reorientação pedagógica." }
+          ];
+        } else {
+          questionText = `Em ${city}, durante o encontro do Conselho de Classe da EEMTI local, ${teacher} apresentou uma reflexão teórica fundamentada no assunto "${cleanSub}" (${cleanTop}). Assinale a opção que sintetiza a postura docente adequada de acordo com a legislação e os autores de referência da FUNECE:`;
+          rawAlternatives = [
+            { text: `O tratamento didático de ${cleanSub.toLowerCase()} deve considerar a heterogeneidade da turma e os princípios do Projeto Político-Pedagógico emancipador.`, isCorrect: true, reason: "Atende à equidade e à gestão pedagógica democrática da escola pública." },
+            { text: `A gestão de sala de aula no tema ${cleanSub.toLowerCase()} deve pautar-se pela coerção autoritária sem escuta atenta aos educandos.`, isCorrect: false, reason: "A gestão democrática repudia condutas autoritárias e excludentes." },
+            { text: `A utilização dos recursos tecnológicos no ensino de ${cleanSub.toLowerCase()} substitui integralmente a intencionalidade pedagógica do professor.`, isCorrect: false, reason: "Tecnologias são ferramentas de apoio e não substituem o trabalho docente." },
+            { text: `O planejamento curricular sobre ${cleanSub.toLowerCase()} é um documento burocrático estático que não pode sofrer adaptações ao longo do ano.`, isCorrect: false, reason: "O planejamento pedagógico é flexível, dinâmico e sujeito a revisões." }
+          ];
+        }
       }
 
       // Shuffle the 4 alternatives so the correct letter is randomly A, B, C, or D
