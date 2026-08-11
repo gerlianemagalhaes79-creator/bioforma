@@ -274,7 +274,10 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
 
   const cleanEditalTitle = (rawTitle: string): string => {
     if (!rawTitle) return "Conhecimentos Específicos";
-    return rawTitle.replace(/^[\d\.\-\sA-Za-z\)]+(?=[A-ZÁÉÍÓÚÂÊÔÃÕÇa-záéíóúâêôãõç])/, '').trim() || rawTitle;
+    return rawTitle
+      .replace(/^[\d\.\-\s\)\(]+/, '')
+      .replace(/^(Módulo|Modulo|Tópico|Topico|Unidade|Item)\s*\d+[\.\:\-]*\s*/i, '')
+      .trim() || rawTitle;
   };
 
   // Helper to record newly generated questions into history

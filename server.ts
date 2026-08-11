@@ -595,7 +595,10 @@ Forneça um comentário explicativo completo no estilo FUNECE contendo:
     // Function to strip topic codes like "1.1", "2.3", "a)" from topic titles
     const cleanEditalTitle = (rawTitle: string): string => {
       if (!rawTitle) return "Conhecimentos Específicos";
-      return rawTitle.replace(/^[\d\.\-\sA-Za-z\)]+(?=[A-ZÁÉÍÓÚÂÊÔÃÕÇa-záéíóúâêôãõç])/, '').trim() || rawTitle;
+      return rawTitle
+        .replace(/^[\d\.\-\s\)\(]+/, '')
+        .replace(/^(Módulo|Modulo|Tópico|Topico|Unidade|Item)\s*\d+[\.\:\-]*\s*/i, '')
+        .trim() || rawTitle;
     };
 
     const topicPaths = selectedTopics.map((t, index) => {
@@ -661,10 +664,14 @@ Regras Fundamentais de Diversificação:
 1. **NUNCA COPIE OU CITE O TÍTULO DO EDITAL OU O NÚMERO DO TÓPICO NAS ALTERNATIVAS OU ENUNCIADO:**
    É TERMINANTEMENTE PROIBIDO colar a frase do tópico do edital ou o número do subitem (ex: "1.1", "2.3", "Teoria da Educação...") dentro das opções de resposta A, B, C, D. As alternativas DEVEM conter proposições conceituais completas, com autores reais, leis com seus artigos, conceitos científicos ou regras gramaticais concretas.
 
-2. **NUNCA USE ENUNCIADOS REPETITIVOS OU ESTRUTURAS COPIADAS:**
+2. **NUNCA CRIE DISTRATORES CARICATOS OU FÁCEIS DEMAIS (REGRA DE OURO):**
+   É PROIBIDO usar palavras óbvias como "punitiva", "memorização mecânica", "adestramento", "sem escuta" ou "sem planejamento" nas alternativas incorretas. NENHUM candidato de concurso erra uma alternativa caricata.
+   Todas as 4 alternativas DEVEM parecer perfeitamente plausíveis, cultas e acadêmicas. O erro de cada distrator DEVE ser conceitual, doutrinário ou normativo (ex: trocar o autor da tese, atribuir características da Renovada à Libertadora, inverter um artigo da LDB ou usar uma exceção gramatical errada).
+
+3. **NUNCA USE ENUNCIADOS REPETITIVOS OU ESTRUTURAS COPIADAS:**
    É PROIBIDO usar introduções genéricas como "No que concerne ao tema...", "Com base nos aspectos teóricos de...". Toda questão DEVE iniciar imediatamente com o texto motivador da situação-problema prática.
 
-3. **VARIE O FORMATO ENTRE AS QUESTÕES GERADAS:**
+4. **VARIE O FORMATO ENTRE AS QUESTÕES GERADAS:**
    Se você gerar 5 questões, cada uma DEVE ter um cenário e um formato de enunciado DIFERENTE das outras.
 
 ---
@@ -895,47 +902,31 @@ Retorne um objeto JSON contendo a chave "questions" com um array de ${requestedC
           { text: `A variação nas taxas fisiológicas do sistema prescinde de controle genético ou de troca de energia com o meio.`, isCorrect: false, reason: "Sistemas biológicos são abertos e estritamente regulados pelo material genético." },
           { text: `As estruturas citoplasmáticas e membranares desempenham papel passivo e independente de gradientes de concentração.`, isCorrect: false, reason: "O transporte e a atividade celular dependem ativamente do potencial de membrana e ATP." }
         ];
-      } else if (normDisc.includes('história') || normDisc.includes('geografia') || normDisc.includes('filosofia') || normDisc.includes('sociologia')) {
-        questionText = `Em um seminário temático em ${city}, ${school}, ${teacher} problematizou a abordagem histórica e social do assunto "${cleanSub}" (${cleanTop}). Ao analisar as transformações conjunturais e os conflitos sociais envolvidos, assinale a opção que expressa a interpretação historiográfica e sociológica precisa:`;
-        rawAlternatives = [
-          { text: `A análise rigorosa de ${cleanSub.toLowerCase()} exige compreender a dinâmica das relações de poder, as contradições socioeconômicas e os agentes históricos em seu espaço-tempo.`, isCorrect: true, reason: "Fundamentação historiográfica e sociológica sólida sobre sujeitos e processos." },
-          { text: `O processo histórico e territorial de ${cleanSub.toLowerCase()} resultou de determinações estáticas e lineares, desprovidas de conflito social ou mediação cultural.`, isCorrect: false, reason: "Visão mecanicista e ultrapassada que ignora a dialética e a contradição social." },
-          { text: `A constituição das estruturas sociais opera de forma neutra e isolada dos condicionantes econômicos e políticos locais.`, isCorrect: false, reason: "A sociologia e a geografia demonstram o condicionamento mútuo entre poder e território." },
-          { text: `As fontes de pesquisa referentes a ${cleanSub.toLowerCase()} dispensam crítica documental ou contextualização temporal.`, isCorrect: false, reason: "O método científico exige o exame crítico rigoroso das fontes e evidências." }
-        ];
-      } else if (normDisc.includes('matemática') || normDisc.includes('física') || normDisc.includes('química')) {
-        questionText = `No curso de exatas em ${city}, ${school}, ${teacher} propôs um desafio prático referente ao tema "${cleanSub}" (${cleanTop}). Os alunos precisavam aplicar o equacionamento analítico para modelar um fenômeno real. Assinale a proposição estritamente correta:`;
-        rawAlternatives = [
-          { text: `A modelagem matemática e física de ${cleanSub.toLowerCase()} estabelece relações funcionais rigorosas entre as variáveis, permitindo prever a evolução do sistema com precisão teórica.`, isCorrect: true, reason: "Abordagem correta da modelagem analítica das ciências exatas." },
-          { text: `As equações representativas de ${cleanSub.toLowerCase()} descumprem as leis fundamentais de conservação e simetria do sistema.`, isCorrect: false, reason: "Modelos analíticos de exatas obedecem estritamente aos princípios de conservação." },
-          { text: `A taxa de variação instantânea do fenômeno independe das condições de contorno e do domínio da função.`, isCorrect: false, reason: "Condições de contorno e domínio são determinantes no cálculo das taxas." },
-          { text: `A representação gráfica de ${cleanSub.toLowerCase()} apresenta inclinação constante em qualquer intervalo de comportamento não linear.`, isCorrect: false, reason: "Sistemas não lineares possuem derivadas variáveis ao longo de sua trajetória." }
-        ];
       } else {
         // Didática e Pedagogia Geral
         if (formatIndex === 0) {
-          questionText = `Em ${city}, ${school}, ${teacher} liderou uma oficina pedagógica focada no tópico de "${cleanSub}" (${cleanTop}). No debate sobre a condução do ensino e a mediação docente, assinale a alternativa inteiramente correta segundo a doutrina educacional contemporânea:`;
+          questionText = `No contexto das discussões sobre o desenvolvimento do trabalho pedagógico na escola pública de ${city}, ${teacher} destacou o estudo do tema "${cleanSub}" (${cleanTop}). Sob a perspectiva da taxonomia das tendências pedagógicas (José Carlos Libâneo / Dermeval Saviani) e das diretrizes oficiais, assinale a proposição correta:`;
           rawAlternatives = [
-            { text: `A prática pedagógica consciente acerca de ${cleanSub.toLowerCase()} articula o rigor conceitual com a mediação dialógica, promovendo a autonomia reflexiva e a emancipação do educando.`, isCorrect: true, reason: "Reflete a visão pedagógica crítica e mediadora (Freire, Saviani, Libâneo)." },
-            { text: `A abordagem de ${cleanSub.toLowerCase()} deve limitar-se à transmissão mecânica e expositiva de conteúdos, proibida a participação ativa dos discentes.`, isCorrect: false, reason: "Descreve a tendência tradicional ultrapassada e bancária repudiada pelos teóricos." },
-            { text: `A avaliação do conteúdo referente a ${cleanSub.toLowerCase()} possui finalidade estritamente punitiva, sendo vedada a recomposição de aprendizagem.`, isCorrect: false, reason: "A avaliação deve ser formativa e diagnóstica (Luckesi), reorientando a rota de ensino." },
-            { text: `A organização do trabalho pedagógico prescinde de planejamento sistemático, dependendo exclusivamente do improviso do regente.`, isCorrect: false, reason: "O planejamento de ensino é requisito essencial para a intencionalidade pedagógica." }
+            { text: `A articulação teórico-prática na abordagem de ${cleanSub.toLowerCase()} compreende os conteúdos científicos em sua dimensão histórica e social, visando à formação crítica do educando.`, isCorrect: true, reason: "Fundamentação da Pedagogia Histórico-Crítica e Crítico-Social dos Conteúdos." },
+            { text: `A concepção de ${cleanSub.toLowerCase()} na visão liberal renovada progressivista foca primordialmente na transmissão de conteúdos acumulados, sendo o método de ensino secundário.`, isCorrect: false, reason: "A Renovada Progressivista prioriza os métodos ativos ('aprender a aprender') e não a transmissão passiva." },
+            { text: `A tendência liberal não-diretiva concebe o estudo de ${cleanSub.toLowerCase()} como ato político direto de conscientização e transformação das estruturas sociais de classe.`, isCorrect: false, reason: "A conscientização e transformação de classe são preceitos da Tendência Progressista Libertadora, não da Não-Diretiva (que foca no desenvolvimento interpessoal e psicoterapêutico)." },
+            { text: `A tendência progressista libertadora atribui centralidade à instrumentalização técnica para o mercado de trabalho, em detrimento dos temas geradores.`, isCorrect: false, reason: "A instrumentalização para o mercado caracteriza o Tecnicismo; a Libertadora foca nos temas geradores e no diálogo." }
           ];
         } else if (formatIndex === 1) {
-          questionText = `Durante a elaboração da sequência didática em ${city}, ${teacher} analisou a aplicação dos conceitos de "${cleanSub}" (${cleanTop}) em uma turma do Ensino Médio. Sob o ponto de vista da Pedagogia Histórico-Crítica e da Didática Geral, assinale a afirmativa CORRETA:`;
+          questionText = `Durante a elaboração do Projeto Político-Pedagógico em ${city}, ${school}, abordou-se a fundamentação teórica de "${cleanSub}" (${cleanTop}). Considerando a matriz conceitual da Pedagogia Histórico-Crítica (Saviani) e os princípios da LDB (Lei nº 9.394/96), assinale a opção com a análise doutrinária IRREPREENSÍVEL:`;
           rawAlternatives = [
-            { text: `A problematização inicial do conteúdo de ${cleanSub.toLowerCase()} conecta a prática social dos alunos aos saberes científicos sistematizados.`, isCorrect: true, reason: "Pedagogia Histórico-Crítica (Saviani) exige mediação entre prática social e saberes." },
-            { text: `A apreensão teórica sobre ${cleanSub.toLowerCase()} prescinde da mediação docente, bastando a auto-organização espontânea dos alunos.`, isCorrect: false, reason: "O professor cumpre papel de mediador intencional e insubstituível." },
-            { text: `O processo de ensino de ${cleanSub.toLowerCase()} deve banir a articulação entre teoria e prática para foco exclusivo em resumos mecânicos.`, isCorrect: false, reason: "Praxis pedagógica é a união indissociável entre teoria e prática." },
-            { text: `A avaliação diagnóstica no estudo de ${cleanSub.toLowerCase()} serve unicamente para atribuir notas fiscais e notas de corte em diário.`, isCorrect: false, reason: "A avaliação diagnóstica visa identificar lacunas para reorientação pedagógica." }
+            { text: `A apropriação dos conhecimentos científicos relacionados a ${cleanSub.toLowerCase()} constitui instrumento indispensável para que a classe trabalhadora compreenda e transforme sua realidade social.`, isCorrect: true, reason: "Eixo central da Pedagogia Histórico-Crítica (Saviani): acesso ao saber erudito como ferramenta de emancipação." },
+            { text: `O momento da 'Catarse' na Pedagogia Histórico-Crítica refere-se ao levantamento inicial dos conhecimentos prévios e à sondagem empírica do educando.`, isCorrect: false, reason: "O levantamento inicial é a 'Prática Social Inicial' ou 'Problematização'; a Catarse é a síntese nova da prática social e a incorporação do saber." },
+            { text: `A Pedagogia Libertadora defende a organização curricular em centros de interesse individualizados como norma universal para todos os níveis de ensino.`, isCorrect: false, reason: "Centros de interesse pertencem à Pedagogia Renovada/Escola Nova; a Libertadora organiza-se por temas geradores coletivos." },
+            { text: `A gestão democrática do ensino público prevista na LDB veda a participação das comunidades escolar e local em conselhos de escola.`, isCorrect: false, reason: "O Artigo 14 da LDB determina obrigatoriamente a participação das comunidades escolar e local nos conselhos." }
           ];
         } else {
-          questionText = `Em ${city}, durante o encontro do Conselho de Classe da EEMTI local, ${teacher} apresentou uma reflexão teórica fundamentada no assunto "${cleanSub}" (${cleanTop}). Assinale a opção que sintetiza a postura docente adequada de acordo com a legislação e os autores de referência da FUNECE:`;
+          questionText = `Em ${city}, durante encontro de formação continuada do corpo docente, analisou-se o tratamento didático relativo a "${cleanSub}" (${cleanTop}). Com base no domínio das correntes pedagógicas brasileiras e da Didática Geral, assinale a opção estritamente precisa:`;
           rawAlternatives = [
-            { text: `O tratamento didático de ${cleanSub.toLowerCase()} deve considerar a heterogeneidade da turma e os princípios do Projeto Político-Pedagógico emancipador.`, isCorrect: true, reason: "Atende à equidade e à gestão pedagógica democrática da escola pública." },
-            { text: `A gestão de sala de aula no tema ${cleanSub.toLowerCase()} deve pautar-se pela coerção autoritária sem escuta atenta aos educandos.`, isCorrect: false, reason: "A gestão democrática repudia condutas autoritárias e excludentes." },
-            { text: `A utilização dos recursos tecnológicos no ensino de ${cleanSub.toLowerCase()} substitui integralmente a intencionalidade pedagógica do professor.`, isCorrect: false, reason: "Tecnologias são ferramentas de apoio e não substituem o trabalho docente." },
-            { text: `O planejamento curricular sobre ${cleanSub.toLowerCase()} é um documento burocrático estático que não pode sofrer adaptações ao longo do ano.`, isCorrect: false, reason: "O planejamento pedagógico é flexível, dinâmico e sujeito a revisões." }
+            { text: `O planejamento didático centrado em ${cleanSub.toLowerCase()} deve mediar a relação entre o saber cotidiano dos estudantes e o saber elaborado, garantindo a intencionalidade pedagógica.`, isCorrect: true, reason: "Atende à visão mediadora e dialética do processo de ensino-aprendizagem (Libâneo e Vasconcellos)." },
+            { text: `A corrente tecnicista orienta o trabalho em ${cleanSub.toLowerCase()} a partir do diálogo horizontal e da problematização das relações de opressão em sala.`, isCorrect: false, reason: "O diálogo e a problematização da opressão são próprios da Pedagogia Libertadora de Paulo Freire, não do Tecnicismo." },
+            { text: `A tendência liberal tradicional fundamenta o estudo de ${cleanSub.toLowerCase()} na autoavaliação contínua e no desenvolvimento das atitudes interpessoais.`, isCorrect: false, reason: "Autoavaliação e atitudes interpessoais são marcas da Tendência Renovada Não-Diretiva (Rogers)." },
+            { text: `A Pedagogia Crítico-Social dos Conteúdos restringe a avaliação do aprendizado ao controle do comportamento operante do aluno por meio de estímulos externos.`, isCorrect: false, reason: "O controle de comportamento operante e estímulos externos pertencem ao Behaviorismo/Tecnicismo." }
           ];
         }
       }
