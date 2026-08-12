@@ -389,8 +389,8 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
           rawOpts = [
             { isCorrect: true, text: `A articulação sintática dos enunciados exige observância às regras de concordância e à seleção adequada dos conectivos para a garantia da coesão e da clareza.` },
             { isCorrect: false, text: `O emprego dos conectivos subordinativos prescinde de concordância entre verbo e sujeito no registro culto.` },
-            { text: `A pontuação em orações subordinadas adjetivas restritivas deve incluir obrigatoriamente vírgulas isolando o termo.` },
-            { text: `As relações de regência verbal admitem a omissão de preposição antes de pronomes relativos mesmo quando exigida pelo termo regente.` }
+            { isCorrect: false, text: `A pontuação em orações subordinadas adjetivas restritivas deve incluir obrigatoriamente vírgulas isolando o termo.` },
+            { isCorrect: false, text: `As relações de regência verbal admitem a omissão de preposição antes de pronomes relativos mesmo quando exigida pelo termo regente.` }
           ];
         } else if (normDisc.includes('biologia') || normDisc.includes('ciência')) {
           if (subtopicName.toLowerCase().includes('célula') || subtopicName.toLowerCase().includes('membrana') || subtopicName.toLowerCase().includes('estrutur') || subtopicName.toLowerCase().includes('físic')) {
