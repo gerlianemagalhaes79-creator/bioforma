@@ -624,121 +624,71 @@ NUNCA repita modelos, fórmulas prontas ou frases idênticas.`;
     const randomSeed = `${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
 
     const prompt = `[SEED DE VARIABILIDADE OBRIGATÓRIA DA SESSÃO: ${randomSeed}]
-Você é um ELABORADOR SÊNIOR E IMPLACÁVEL da comissão examinadora CEV/FUNECE para o concurso da SEDUC-CE (Professor do Estado do Ceará).
-Sua missão é gerar questões 100% INÉDITAS, ALTAMENTE REALISTAS, TEÓRICA E JURIDICAMENTE PRECISAS, SEM NENHUM TIPO DE MOCK OU TEMPLATE REPETITIVO.
+Você é um ELABORADOR SÊNIOR DA BANCA FUNECE/CEV-UECE para o concurso de Professor do Estado do Ceará (SEDUC-CE).
+
+Sua missão é gerar ${requestedCount} questões objetivas inéditas, tecnicamente rigorosas e de nível compatível com prova de concurso para professor de Ensino Médio, pautadas EXCLUSIVAMENTE nos assuntos selecionados do edital:
+
+${topicPaths}
 
 ${FORMULA_FORMATTING_DIRECTIVE}
 
 ---
 
-### 🎯 OBRIGATORIEDADE DE DISTRIBUIÇÃO E DIVERSIFICAÇÃO DOS SUBTÓPICOS:
-Foram selecionados ${selectedTopics.length} assuntos do edital para gerar ${requestedCount} questões.
-Você DEVE obrigatoriamente criar UMA QUESTÃO DIFERENTE PARA CADA SUBTÓPICO LISTADO ABAIXO:
-${topicPaths}
+### 🚨 REGRA MESTRA INEGOCIÁVEL (CUMPRIR COM MÁXIMA RIGIDEZ)
 
-Regras Fundamentais de Diversificação:
-1. Questão 1 DEVE focar no Assunto 1; Questão 2 DEVE focar no Assunto 2 (e assim por diante).
-2. CADA QUESTÃO DEVE TER UM FORMATO DE ENUNCIADO TOTALMENTE DIFERENTE (ex: Questão 1 = estudo de caso de sala de aula; Questão 2 = análise de excerto ou trecho de documento; Questão 3 = deliberação de conselho escolar/planejamento; Questão 4 = análise de experimento/situação prática de laboratório ou regência gramatical).
-3. NUNCA reaproveite os mesmos nomes de professores, as mesmas cidades ou frases idênticas entre as questões da mesma prova.
+1. **FUNECE DEFINE O ESTILO DA QUESTÃO:**
+   - Estilo de cobrança: questões objetivas, claras, de alta densidade acadêmica e rigor técnico, que exijam do candidato compreensão, aplicação, comparação, interpretação de relações e domínio conceitual do assunto.
+   - Alternativas plausíveis, escritas com o mesmo vocabulário culto e do mesmo universo conceitual da questão.
+   - NUNCA crie alternativas absurdas, fáceis, caricatas ou que possam ser eliminadas por pistas linguísticas.
+   - **NUNCA FAÇA DA BANCA OU DO EDITAL O OBJETO DA QUESTÃO!** NUNCA inclua no enunciado, nas alternativas ou na explicação frases como: "considerando a matriz de referência do edital", "para fins de avaliação na banca", "de acordo com as diretrizes conceituais do edital", "sob o ponto de vista da comissão examinadora CEV/FUNECE", "segundo a FUNECE" ou semelhantes. A FUNECE é o ESTILO, não o assunto.
 
----
+2. **O EDITAL DEFINE O CONTEÚDO E O SUBTÓPICO SELECIONADO É A FRONTEIRA/LIMITE EXCLUSIVA DA QUESTÃO:**
+   - A questão DEVE avaliar efetivamente o conhecimento do candidato sobre o CONTEÚDO ESPECÍFICO do subtópico selecionado.
+   - **NUNCA escape do assunto selecionado!** A questão NUNCA deve migrar para legislação educacional, competências pedagógicas ou Didática se esses assuntos não forem o conteúdo especificamente escolhido pelo usuário.
+   - Se o usuário selecionou, por exemplo, "Biologia → Identidade dos seres vivos → 1.1 Aspectos físicos, químicos e estruturais da célula", a questão DEVE cobrar BIOLOGIA DE VERDADE: estrutura e composição química da célula, membrana plasmática, organelas, propriedades físico-químicas, organização molecular e relações funcionais do subtópico.
+   - **NUNCA invente cenários artificiais de salas de aula ou professores para disciplinas específicas (como Biologia, Química, Física, Matemática, História, Geografia, Língua Portuguesa, etc.)!** Perguntas dessas disciplinas devem ser sobre a própria ciência/conteúdo (ex: análise de reações, mecanismos de transporte, orações, eventos históricos, teoremas, modelos moleculares).
 
-### 🌟 REGRA DE GOLDEN STANDARD: ORIGINALIDADE PROFUNDA (CENÁRIOS DE APLICAÇÃO PRÁTICA)
+3. **O CONHECIMENTO CIENTÍFICO DEFINE A RESPOSTA CORRETA:**
+   - A alternativa correta decorre diretamente da verdade científica, linguística, histórica, matemática ou doutrinária consolidada da área.
+   - Não invente conceitos, autores fictícios, leis inexistentes ou conteúdos que não tenham relação direta com o subtópico.
 
-1. **NÃO UTILIZE DEFINIÇÕES ENCICLOPÉDICAS PADRÃO OU QUESTÕES COPIADAS DE BANCOS CONHECIDOS:**
-   É terminantemente proibido fazer perguntas conceituais diretas (ex: "O que é a Tendência Tecnicista?", "Qual a definição de ZDP?").
+4. **DISTRIBUIÇÃO E FORMATOS DE ENUNCIADO VARIADOS:**
+   - Assunto 1 = Questão 1; Assunto 2 = Questão 2 (e assim por diante).
+   - Alterne o formato entre as questões: conceituais diretas de alta densidade, aplicadas, comparativas, de análise de processos/relações ou interpretação de fenômenos/textos.
+   - Distribua a alternativa correta ALEATORIAMENTE entre as letras A, B, C e D.
 
-2. **CRIE OBRIGATORIAMENTE UM "CENÁRIO DE APLICAÇÃO PRÁTICA" (ESTUDO DE CASO / SITUAÇÃO-PROBLEMA):**
-   Para cada pergunta, você DEVE criar uma cena ou situação hipotética onde a prática pedagógica, científica, jurídica ou linguística está ocorrendo na vida real.
-   - **Em Pedagogia/Educação:** Descreva a conduta de um professor (varie os nomes: Prof. Raimundo, Profa. Camila, Prof. Carlos, Profa. Francisca, Prof. Gilberto) dentro de uma sala de aula de EEMTI, EEEP, EJA, conselho de classe ou planejamento no Ceará (Fortaleza, Sobral, Juazeiro do Norte, Crateús, Quixadá, Iguatu, etc.). Peça ao candidato para identificar qual tendência, teoria ou autor fundamenta aquela cena ou qual erro de prática foi cometido.
-   - **Em Legislação:** Descreva uma situação prática de gestão escolar, deliberação de conselho escolar, elaboração do PPP ou situação de estágio probatório.
-   - **Em Disciplina Específica (Biologia, Português, História, Matemática, Geografia, etc.):** Descreva uma situação de laboratório, análise de experimento, interpretação de excerto/documento histórico, problema contextualizado de engenharia/natureza ou análise sintática de texto real.
-
-3. **DISTRIBUIÇÃO DA RESPOSTA CORRETA (EXTREMAMENTE IMPORTANTE):**
-   Distribua a alternativa correta ALEATORIAMENTE entre as letras A, B, C e D. NUNCA coloque sempre a alternativa A como correta!
-
----
-
-### 🚫 PROIBIÇÕES ABSOLUTAS E FATAIS (REGRAS CRÍTICAS):
-
-1. **NUNCA COPIE OU CITE O TÍTULO DO EDITAL OU O NÚMERO DO TÓPICO NAS ALTERNATIVAS OU ENUNCIADO:**
-   É TERMINANTEMENTE PROIBIDO colar a frase do tópico do edital ou o número do subitem (ex: "1.1", "2.3", "Teoria da Educação...") dentro das opções de resposta A, B, C, D. As alternativas DEVEM conter proposições conceituais completas, com autores reais, leis com seus artigos, conceitos científicos ou regras gramaticais concretas.
-
-2. **NUNCA CRIE DISTRATORES CARICATOS OU FÁCEIS DEMAIS (REGRA DE OURO):**
-   É PROIBIDO usar palavras óbvias como "punitiva", "memorização mecânica", "adestramento", "sem escuta" ou "sem planejamento" nas alternativas incorretas. NENHUM candidato de concurso erra uma alternativa caricata.
-   Todas as 4 alternativas DEVEM parecer perfeitamente plausíveis, cultas e acadêmicas. O erro de cada distrator DEVE ser conceitual, doutrinário ou normativo (ex: trocar o autor da tese, atribuir características da Renovada à Libertadora, inverter um artigo da LDB ou usar uma exceção gramatical errada).
-
-3. **NUNCA USE ENUNCIADOS REPETITIVOS OU ESTRUTURAS COPIADAS:**
-   É PROIBIDO usar introduções genéricas como "No que concerne ao tema...", "Com base nos aspectos teóricos de...". Toda questão DEVE iniciar imediatamente com o texto motivador da situação-problema prática.
-
-4. **VARIE O FORMATO ENTRE AS QUESTÕES GERADAS:**
-   Se você gerar 5 questões, cada uma DEVE ter um cenário e um formato de enunciado DIFERENTE das outras.
+5. **EXPLICAÇÃO EDUCATIVA QUE ENSINA O CONTEÚDO:**
+   - No campo "explanation", ENSINE O CONTEÚDO COBRADO!
+   - Explique por que a alternativa correta está correta sob a ótica científica/acadêmica e por que cada uma das demais está errada do ponto de vista da matéria.
+   - É PROIBIDO fazer meta-comentários sobre a FUNECE, sobre o edital ou sobre o concurso dentro da explicação. O candidato deve terminar a resolução sabendo mais sobre a matéria do que antes.
 
 ---
 
-ASSUNTOS DO EDITAL A SEREM AVALIADOS NESTA PROVA:
-${topicPaths}
 ${previousBlock}
 
 ---
 
-### 🪤 TÉCNICA DE DISTRATORES FUNECE (ALTERNATIVAS A, B, C, D)
-- As 4 alternativas DEVEM ter tamanho e densidade acadêmica equivalente.
-- Use a **Técnica do Espelho**: Troque conceitos de autores correlatos (atribuir a Vygotsky a definição de Piaget, ou atribuir à Tendência Tecnicista uma característica da Libertadora na cena descrita), ou mude um detalhe normativo no final de uma frase jurídica impecável.
+### 📤 FORMATO DA SAÍDA E ESTRUTURA DO GABARITO COMENTADO (JSON):
 
----
+Sua resposta DEVE ser estritamente um objeto JSON com a chave "questions":
 
-### 📝 EXEMPLO DE EXCELÊNCIA FUNECE (CENÁRIO PRÁTICO):
-
-**Enunciado:**
-Em uma Escola Estadual de Educação Profissional (EEEP) no interior do Ceará, durante a semana de planejamento, o professor de Biologia propõe que a avaliação do semestre não seja feita por provas escritas ao final do ciclo, mas por portfólios reflexivos contínuos e relatórios de campo, reorientando a aprendizagem à medida que as dúvidas dos estudantes surgem. À luz da doutrina pedagógica sobre avaliação escolar (Luckesi, 2011), a postura do docente caracteriza uma prática avaliativa:
-
-A) Diagnóstica e formativa, pois acolhe o estudante em seu processo de aprendizagem e utiliza os resultados como subsídio para a reorientação da intervenção pedagógica.
-B) Classificatória e somativa, pois prioriza a atribuição de notas padronizadas com a finalidade exclusiva de retenção e seleção ao final do ciclo letivo.
-C) Burocrática e normativa, cujo objetivo central é cumprir exigências administrativas do Censo Escolar sem impacto no desenvolvimento cognitivo.
-D) Tecnicista e comportamentalista, fundamentada no adestramento mecânico por meio de testes de múltipla escolha estroncados.
-
-Gabarito: A
-
----
-
-### 📤 FORMATO DA SAÍDA E ESTRUTURA DO GABARITO COMENTADO
-
-No campo "explanation" de cada questão, você DEVE obrigatoriamente fornecer a análise detalhada no seguinte formato exato:
-
-Gabarito: [Letra Correta]
-
-Gabarito Comentado:
-- Justificativa da correta: [Por que a alternativa selecionada é a única correta de acordo com a norma/lei/autor].
-- Análise de cada alternativa:
-  * A) [Explique exatamente por que está correta ou qual é o erro conceitual/distrator]
-  * B) [Explique exatamente por que está correta ou qual é o erro conceitual/distrator]
-  * C) [Explique exatamente por que está correta ou qual é o erro conceitual/distrator]
-  * D) [Explique exatamente por que está correta ou qual é o erro conceitual/distrator]
-
----
-
-## ESTRUTURA OBRIGATÓRIA DO JSON:
-Retorne um objeto JSON contendo a chave "questions" com um array de ${requestedCount} questões:
 {
   "questions": [
     {
-      "question": "Enunciado no padrão FUNECE avançado, desafiador e focado no assunto específico",
+      "question": "Enunciado objetivo, claro e de alto rigor técnico no assunto específico do subtópico",
       "alternatives": [
-        { "letter": "A", "text": "Alternativa A densa, completa e refinada" },
-        { "letter": "B", "text": "Alternativa B densa, completa e refinada" },
-        { "letter": "C", "text": "Alternativa C densa, completa e refinada" },
-        { "letter": "D", "text": "Alternativa D densa, completa e refinada" }
+        { "letter": "A", "text": "Opção A densa, bem escrita e plausível" },
+        { "letter": "B", "text": "Opção B densa, bem escrita e plausível" },
+        { "letter": "C", "text": "Opção C densa, bem escrita e plausível" },
+        { "letter": "D", "text": "Opção D densa, bem escrita e plausível" }
       ],
-      "correctAnswer": "B",
-      "explanation": "Gabarito: B\\n\\nGabarito Comentado:\\n- Justificativa da correta: ...\\n- Análise de cada alternativa:\\n  * A) ...\\n  * B) ...\\n  * C) ...\\n  * D) ...",
-      "topic": "Nome do tópico do edital sem números",
-      "subtopic": "Nome do subtópico do edital sem números",
+      "correctAnswer": "C",
+      "explanation": "Gabarito: C\\n\\nGabarito Comentado:\\n- Análise da Alternativa C (Correta): [Explicação científica/conceitual clara e aprofundada da matéria]\\n- Análise dos Distratores:\\n  * A) [Explique o erro do ponto de vista do conteúdo da matéria]\\n  * B) [Explique o erro do ponto de vista do conteúdo da matéria]\\n  * D) [Explique o erro do ponto de vista do conteúdo da matéria]",
+      "topic": "Nome do tópico sem códigos",
+      "subtopic": "Nome do subtópico sem códigos",
       "difficulty": "Avançado",
-      "banca": "FUNECE - SEDUC-CE - Nível Avançado",
-      "skills": ["Análise Crítica FUNECE", "Domínio de Distratores Avançados"],
-      "commonMistake": "Explique a pegadinha e o erro do senso comum em que a maioria dos candidatos cai nesta questão.",
-      "studyTip": "Gatilho mental para não cair na pegadinha da FUNECE sobre este tema."
+      "banca": "FUNECE / CEV-UECE",
+      "skills": ["Domínio Científico do Conteúdo", "Rigor Técnico FUNECE"]
     }
   ]
 }`;
@@ -807,12 +757,6 @@ Retorne um objeto JSON contendo a chave "questions" com um array de ${requestedC
     }
 
     // High quality dynamic fallback generator guaranteeing unique questions per topic
-    const normDisc = (discipline || '').toLowerCase();
-
-    const cearaCities = ["Fortaleza", "Sobral", "Juazeiro do Norte", "Crateús", "Quixadá", "Iguatu", "Maracanaú", "Baturité", "Itapipoca", "Caucaia", "Russas", "Tianguá", "Camocim", "Tauá", "Limoeiro do Norte"];
-    const schoolTypes = ["em uma Escola de Ensino Médio em Tempo Integral (EEMTI)", "em uma Escola Estadual de Educação Profissional (EEEP)", "em uma turma de Educação de Jovens e Adultos (EJA)", "no Laboratório Multidisciplinar de Aprendizagem", "durante a reunião de Conselho de Classe e Planejamento"];
-    const teacherNames = ["Prof. Raimundo", "Profa. Francisca", "Prof. Carlos", "Profa. Camila", "Prof. Gilberto", "Profa. Claudiana", "Prof. Henrique", "Profa. Socorro", "Prof. Eudoro", "Profa. Rebeca", "Prof. Valdemar", "Profa. Elisângela", "Prof. Marcondes", "Profa. Tereza", "Prof. Vicente"];
-
     const shuffleArray = <T,>(arr: T[]): T[] => {
       const copy = [...arr];
       for (let i = copy.length - 1; i > 0; i--) {
@@ -822,12 +766,11 @@ Retorne um objeto JSON contendo a chave "questions" com um array de ${requestedC
       return copy;
     };
 
+    const normDisc = (discipline || '').toLowerCase();
+
     const fallbackQuestions = selectedTopics.slice(0, requestedCount).map((item, idx) => {
       const cleanSub = cleanEditalTitle(item.subtopicName || item.topicName || '');
       const cleanTop = cleanEditalTitle(item.topicName || '');
-      const city = cearaCities[(idx + Math.floor(Math.random() * cearaCities.length)) % cearaCities.length];
-      const school = schoolTypes[(idx + Math.floor(Math.random() * schoolTypes.length)) % schoolTypes.length];
-      const teacher = teacherNames[(idx + Math.floor(Math.random() * teacherNames.length)) % teacherNames.length];
 
       let questionText = "";
       let rawAlternatives: { text: string; isCorrect: boolean; reason: string }[] = [];
@@ -836,99 +779,65 @@ Retorne um objeto JSON contendo a chave "questions" com um array de ${requestedC
 
       if (normDisc.includes('português') || normDisc.includes('língua') || normDisc.includes('gramát')) {
         if (formatIndex === 0) {
-          questionText = `Em ${city}, ${school}, ${teacher} analisou com a turma a construção linguística no tópico de "${cleanSub}" (${cleanTop}). Considerando as normas de regência e coesão textual de acordo com a norma-padrão da Língua Portuguesa, assinale a opção correta:`;
+          questionText = `No que se refere aos aspectos de sintaxe, coesão e regência associados ao tema de "${cleanSub}", assinale a alternativa que atende rigorosamente à norma-padrão da Língua Portuguesa:`;
           rawAlternatives = [
-            { text: `A articulação sintática inerente a ${cleanSub.toLowerCase()} exige rigor na concordância e na escolha dos conectivos para preservação da coerência e da clareza.`, isCorrect: true, reason: "A norma-padrão exige harmonia entre os termos regentes e regidos." },
-            { text: `O emprego dos conectivos em ${cleanSub.toLowerCase()} altera o sentido semântico sem necessidade de concordância entre verbo e sujeito.`, isCorrect: false, reason: "A concordância e a regência são preceitos obrigatórios da norma culta." },
-            { text: `A pontuação e as relações de regência atreladas a ${cleanSub.toLowerCase()} constituem uso facultativo e aleatório na norma formal.`, isCorrect: false, reason: "A regência e a pontuação obedecem a regras gramaticais estritas." },
-            { text: `As orações subordinadas que estruturam o estudo de ${cleanSub.toLowerCase()} dispensam elementos de coesão textual.`, isCorrect: false, reason: "A coesão textual é indispensável para o encadeamento de orações." }
-          ];
-        } else if (formatIndex === 1) {
-          questionText = `Durante a correção de um texto argumentativo em ${city}, ${teacher} destacou a relevância do estudo sobre "${cleanSub}" (${cleanTop}). Quanto aos recursos sintático-semânticos e à regência prescrita pela norma culta, assinale a afirmativa CORRETA:`;
-          rawAlternatives = [
-            { text: `As normas de regência e colocação referentes ao tema de ${cleanSub.toLowerCase()} garantem a precisão denotativa necessária à comunicação científica e oficial.`, isCorrect: true, reason: "Regência e colocação pronominal sustentam a denotação no registro formal." },
-            { text: `O sinal indicativo de crase em estruturas ligadas a ${cleanSub.toLowerCase()} é obrigatório antes de verbos e palavras no masculino.`, isCorrect: false, reason: "É vedado o uso da crase antes de verbos ou palavras masculinas." },
-            { text: `A substituição de conectivos adversativos por causais nas frases sobre ${cleanSub.toLowerCase()} mantém o sentido denotativo original.`, isCorrect: false, reason: "Conectivos adversativos e causais possuem papéis semânticos opostos." },
-            { text: `A variação linguística no estudo de ${cleanSub.toLowerCase()} anula a obrigatoriedade da norma-padrão em documentos formais da escola.`, isCorrect: false, reason: "Documentos formais exigem o uso estrito do registro culto." }
-          ];
-        } else if (formatIndex === 2) {
-          questionText = `No âmbito do exame gramatical realizado em ${city}, ${school}, abordou-se a aplicação prática do assunto "${cleanSub}" (${cleanTop}). Assinale a alternativa que apresenta a análise morfossintática e semântica adequada:`;
-          rawAlternatives = [
-            { text: `A correta identificação dos papéis sintáticos e da estrutura de ${cleanSub.toLowerCase()} possibilita evitar ambiguidades e vícios de linguagem na escrita.`, isCorrect: true, reason: "Análise morfossintática precisa elimina ambiguidades no texto." },
-            { text: `A indeterminação do sujeito nas orações sobre ${cleanSub.toLowerCase()} ocorre pelo uso indiferente de qualquer pronome oblíquo.`, isCorrect: false, reason: "A indeterminação do sujeito obedece a regras específicas (verbo na 3ª pessoa do plural ou 3ª do singular + se)." },
-            { text: `A concordância nominal no campo de ${cleanSub.toLowerCase()} prescinde de harmonia de gênero e número com o substantivo.`, isCorrect: false, reason: "A concordância nominal exige adequação de gênero e número." },
-            { text: `A paráfrase das estruturas relativas a ${cleanSub.toLowerCase()} independe da manutenção do valor temporal dos verbos.`, isCorrect: false, reason: "A paráfrase deve respeitar o aspecto e tempo verbal do texto fonte." }
+            { text: `A articulação sintática dos enunciados exige observância estrita às regras de concordância e à seleção adequada dos conectivos para a garantia da coesão e da clareza.`, isCorrect: true, reason: "A norma-padrão exige perfeita harmonia sintática entre os termos regentes e regidos, além do uso coerente dos elementos de coesão." },
+            { text: `O emprego dos conectivos subordinativos prescinde de concordância entre verbo e sujeito, operando de modo isolado no texto.`, isCorrect: false, reason: "A concordância verbal é um requisito independente e obrigatório na norma culta." },
+            { text: `A pontuação em orações subordinadas adjetivas restritivas deve obrigatoriamente incluir vírgulas isolando o termo.`, isCorrect: false, reason: "As vírgulas são empregadas nas orações adjetivas explicativas; as restritivas não são isoladas por vírgulas." },
+            { text: `As relações de regência verbal admitem a omissão de preposição antes de pronomes relativos mesmo quando exigida pelo verbo regente.`, isCorrect: false, reason: "Se o verbo regente exige preposição, esta deve ser obrigatoriamente colocada antes do pronome relativo." }
           ];
         } else {
-          questionText = `Em um seminário de linguística na FUNECE em ${city}, ${teacher} apresentou um excerto focado em "${cleanSub}" (${cleanTop}). Com base no domínio das competências leitoras e gramaticais exigidas pela banca CEV/FUNECE, assinale a proposição irrepreensível:`;
+          questionText = `Análise a construção sintático-semântica e os recursos de coesão referente ao tópico de "${cleanSub}". Assinale a opção correta quanto à norma culta:`;
           rawAlternatives = [
-            { text: `O domínio conceitual e prático do tópico de ${cleanSub.toLowerCase()} amplia a capacidade crítica do candidato na interpretação textual e na análise formal da linguagem.`, isCorrect: true, reason: "A banca FUNECE exige a articulação entre análise linguística e interpretação textual." },
-            { text: `As figuras de linguagem associadas ao tema ${cleanSub.toLowerCase()} sobrepõem-se rigorosamente às regras de coesão referencial e sequencial.`, isCorrect: false, reason: "Figuras de linguagem não anulam os requisitos de coesão e coerência." },
-            { text: `O uso dos pronomes relativos nas frases sobre ${cleanSub.toLowerCase()} prescinde de preposição, mesmo quando o regente a exigir.`, isCorrect: false, reason: "Se o termo regente exigir preposição, esta deve anteceder o pronome relativo." },
-            { text: `A pontuação nas orações subordinadas adjetivas explicativas ligadas a ${cleanSub.toLowerCase()} é opcional sem alteração do sentido.`, isCorrect: false, reason: "O uso das vírgulas altera fundamentalmente o sentido de explicativa para restritiva." }
-          ];
-        }
-      } else if (normDisc.includes('legislaç') || normDisc.includes('direito') || normDisc.includes('administraç')) {
-        if (formatIndex === 0) {
-          questionText = `Em ${city}, ${school}, durante a revisão do Projeto Político-Pedagógico (PPP), ${teacher} debateu o cumprimento do Artigo 3º da LDB (Lei nº 9.394/96) quanto ao tema "${cleanSub}" (${cleanTop}). Considerando a legislação educacional vigente e a jurisprudência, assinale a proposição correta:`;
-          rawAlternatives = [
-            { text: `A garantia do direito à educação e à aprendizagem ao longo da vida e a gestão democrática constituem princípios obrigatórios nas normas do ensino.`, isCorrect: true, reason: "Respeita integralmente os incisos VIII e XIII do Artigo 3º da LDB." },
-            { text: `A aplicação das diretrizes sobre ${cleanSub.toLowerCase()} veda o pluralismo de ideias e de concepções pedagógicas no ambiente escolar público.`, isCorrect: false, reason: "A LDB garante expressamente o pluralismo de ideias e concepções no Art. 3º, III." },
-            { text: `O ensino público referente a ${cleanSub.toLowerCase()} deve desvincular-se das práticas sociais e da experiência extraclasse dos alunos.`, isCorrect: false, reason: "A LDB prevê a vinculação entre educação escolar, trabalho e práticas sociais (Art. 3º, XI)." },
-            { text: `A deliberação dos conselhos escolares sobre ${cleanSub.toLowerCase()} fica submetida à decisão individual e discricionária do órgão inspetor estadual.`, isCorrect: false, reason: "A gestão democrática assegura a participação da comunidade escolar nas decisões." }
-          ];
-        } else if (formatIndex === 1) {
-          questionText = `No âmbito do Conselho de Classe em ${city}, ${teacher} trouxe para o debate os preceitos normativos da BNCC e da LDB afetos a "${cleanSub}" (${cleanTop}). Sob a ótica da organização curricular do Estado do Ceará, assinale a alternativa inteiramente alinhada às normas vigentes:`;
-          rawAlternatives = [
-            { text: `As diretrizes relativas a ${cleanSub.toLowerCase()} devem orientar o plano de curso garantindo os direitos de aprendizagem e as competências gerais dos educandos.`, isCorrect: true, reason: "A BNCC estabelece os direitos de aprendizagem que norteiam os currículos estaduais." },
-            { text: `A implementação dos objetivos de ${cleanSub.toLowerCase()} anula a autonomia dos projetos pedagógicos das escolas da rede estadual.`, isCorrect: false, reason: "A BNCC é referência nacional, devendo ser contextualizada pela autonomia escolar." },
-            { text: `A oferta dos conteúdos relativos a ${cleanSub.toLowerCase()} fica restrita a exames punitivos ao final de cada etapa.`, isCorrect: false, reason: "A legislação educacional preconiza a avaliação contínua e formativa." },
-            { text: `A inclusão do tema ${cleanSub.toLowerCase()} prescinde de formação continuada para os profissionais da educação regentes.`, isCorrect: false, reason: "A LDB assegura o direito à formação continuada dos profissionais da educação." }
-          ];
-        } else {
-          questionText = `Em um fórum de gestão educacional em ${city}, discutiu-se o amparo jurídico e doutrinário pertinente ao tópico "${cleanSub}" (${cleanTop}). Assinale a opção que apresenta o fundamento normativo autêntico:`;
-          rawAlternatives = [
-            { text: `A consolidação do tema de ${cleanSub.toLowerCase()} deve valorizar a experiência extraescolar e a igualdade de condições para o acesso e permanência na escola.`, isCorrect: true, reason: "Fundamentação expressa no Art. 3º da LDB e nos marcos constitucionais." },
-            { text: `A gestão dos processos ligados a ${cleanSub.toLowerCase()} deve ser centralizada, dispensando a participação dos profissionais da educação na elaboração do PPP.`, isCorrect: false, reason: "A LDB (Art. 14, I) prevê a participação dos profissionais da educação na elaboração do PPP." },
-            { text: `A legislação proíbe a gestão compartilhada e a participação da comunidade escolar e local nos conselhos escolares.`, isCorrect: false, reason: "A LDB (Art. 14, II) determina a participação das comunidades escolar e local em conselhos." },
-            { text: `O financiamento das ações de ${cleanSub.toLowerCase()} vincula-se exclusivamente a recursos privados sem controle social público.`, isCorrect: false, reason: "Os recursos da educação pública têm controle social via CACS-FUNDEB e órgãos de controle." }
+            { text: `A exatidão no emprego da regência e da colocação pronominal assegura a precisão denotativa e a clareza no registro formal.`, isCorrect: true, reason: "Regência e colocação pronominal sustentam a denotação e a concisão no registro culto." },
+            { text: `O sinal indicativo de crase é obrigatório antes de verbos no infinitivo e de termos masculinos.`, isCorrect: false, reason: "É vedado o uso do sinal indicativo de crase antes de verbos e palavras masculinas." },
+            { text: `A substituição de conectivos adversativos por conjunções causais mantém inalterado o sentido original do período.`, isCorrect: false, reason: "Conectivos adversativos (oposição) e causais (motivo) possuem valores semânticos completamente distintos." },
+            { text: `A concordância nominal entre o adjetivo e múltiplos substantivos prescinde de alinhamento de gênero e número.`, isCorrect: false, reason: "A concordância nominal exige adequação estrita de gênero e número segundo as regras gramaticais." }
           ];
         }
       } else if (normDisc.includes('biologia') || normDisc.includes('ciência')) {
-        questionText = `No laboratório em ${city}, ${school}, ${teacher} orientou um estudo prático sobre o tópico de "${cleanSub}" (${cleanTop}). Durante a investigação empírica, os discentes analisaram o comportamento das estruturas biológicas sob estímulo controlado. Assinale a afirmativa cientificamente correta segundo a literatura consolidada:`;
+        questionText = `No âmbito da Biologia, acerca das propriedades estruturais, físico-químicas e funcionais atreladas a "${cleanSub}", assinale a afirmativa cientificamente CORRETA:`;
         rawAlternatives = [
-          { text: `Os mecanismos celulares e moleculares envolvidos em ${cleanSub.toLowerCase()} operam em dinamismo homeostático, assegurando a regulação metabólica e a integridade funcional do organismo.`, isCorrect: true, reason: "Definição biológica precisa da regulação e homeostase celular." },
-          { text: `As reações metabólicas inerentes a ${cleanSub.toLowerCase()} ocorrem sem intervenção de catalisadores enzimáticos ou sinalização celular.`, isCorrect: false, reason: "Negar a mediação enzimática e molecular contraria os princípios da bioquímica." },
-          { text: `A variação nas taxas fisiológicas do sistema prescinde de controle genético ou de troca de energia com o meio.`, isCorrect: false, reason: "Sistemas biológicos são abertos e estritamente regulados pelo material genético." },
-          { text: `As estruturas citoplasmáticas e membranares desempenham papel passivo e independente de gradientes de concentração.`, isCorrect: false, reason: "O transporte e a atividade celular dependem ativamente do potencial de membrana e ATP." }
+          { text: `Os mecanismos celulares e moleculares operam em dinamismo homeostático, assegurando a regulação metabólica, o transporte de substâncias e a integridade funcional da célula.`, isCorrect: true, reason: "Definição biológica precisa da regulação e homeostase celular no modelo molecular aceito." },
+          { text: `As reações metabólicas e o transporte ativo de íons através da membrana plasmática ocorrem de modo passivo, sem gasto de ATP.`, isCorrect: false, reason: "O transporte ativo requer obrigatoriamente consumo de energia (ATP) para mover solutos contra o gradiente de concentração." },
+          { text: `A bicamada lipídica da membrana plasmática é totalmente impermeável a moléculas apolares e gases como O2 e CO2.`, isCorrect: false, reason: "Gases e moléculas apolares pequenas atravessam a bicamada lipídica por difusão simples com alta facilidade." },
+          { text: `A síntese de proteínas e a respiração celular ocorrem exclusivamente no citosol, sem participação de organelas membranosas.`, isCorrect: false, reason: "A respiração celular aeróbia ocorre nas mitocôndrias e a síntese protéica envolve ribossomos e retículo endoplasmático." }
         ];
-      } else {
-        // Didática e Pedagogia Geral
+      } else if (normDisc.includes('legislaç') || normDisc.includes('direito') || normDisc.includes('administraç')) {
+        questionText = `De acordo com os preceitos da legislação educacional brasileira (LDB nº 9.394/96 e normas correlatas) no que tange ao tema "${cleanSub}", assinale a afirmativa correta:`;
+        rawAlternatives = [
+          { text: `A garantia do direito à educação, a igualdade de condições para acesso e permanência e a gestão democrática do ensino público constituem princípios do ensino nacional.`, isCorrect: true, reason: "Fundamentação expressa no Artigo 3º da LDB nº 9.394/96." },
+          { text: `A aplicação das diretrizes curriculares nacionais anula a autonomia pedagógica das unidades escolares na elaboração de seus Projetos Político-Pedagógicos.`, isCorrect: false, reason: "A LDB garante a autonomia das estabelecimentos de ensino na elaboração e execução de sua proposta pedagógica (Art. 12)." },
+          { text: `O ensino público pode restringir a liberdade de aprender, ensinar, pesquisar e divulgar o pensamento em função de orientações doutrinárias específicas.`, isCorrect: false, reason: "A LDB assegura explicitamente a liberdade de aprender, ensinar, pesquisar e divulgar o pensamento, a arte e o saber." },
+          { text: `A gestão democrática do ensino público veda a participação dos profissionais da educação e da comunidade local em conselhos escolares.`, isCorrect: false, reason: "A LDB (Art. 14) determina expressamente a participação dos profissionais da educação e da comunidade escolar/local nos conselhos." }
+        ];
+      } else if (normDisc.includes('pedagogi') || normDisc.includes('didátic') || normDisc.includes('educaç')) {
         if (formatIndex === 0) {
-          questionText = `No contexto das discussões sobre o desenvolvimento do trabalho pedagógico na escola pública de ${city}, ${teacher} destacou o estudo do tema "${cleanSub}" (${cleanTop}). Sob a perspectiva da taxonomia das tendências pedagógicas (José Carlos Libâneo / Dermeval Saviani) e das diretrizes oficiais, assinale a proposição correta:`;
+          questionText = `Na Didática Geral e no estudo das Tendências Pedagógicas no Brasil, quanto ao desenvolvimento do trabalho pedagógico e ao tema "${cleanSub}", assinale a opção correta:`;
           rawAlternatives = [
-            { text: `A articulação teórico-prática na abordagem de ${cleanSub.toLowerCase()} compreende os conteúdos científicos em sua dimensão histórica e social, visando à formação crítica do educando.`, isCorrect: true, reason: "Fundamentação da Pedagogia Histórico-Crítica e Crítico-Social dos Conteúdos." },
-            { text: `A concepção de ${cleanSub.toLowerCase()} na visão liberal renovada progressivista foca primordialmente na transmissão de conteúdos acumulados, sendo o método de ensino secundário.`, isCorrect: false, reason: "A Renovada Progressivista prioriza os métodos ativos ('aprender a aprender') e não a transmissão passiva." },
-            { text: `A tendência liberal não-diretiva concebe o estudo de ${cleanSub.toLowerCase()} como ato político direto de conscientização e transformação das estruturas sociais de classe.`, isCorrect: false, reason: "A conscientização e transformação de classe são preceitos da Tendência Progressista Libertadora, não da Não-Diretiva (que foca no desenvolvimento interpessoal e psicoterapêutico)." },
-            { text: `A tendência progressista libertadora atribui centralidade à instrumentalização técnica para o mercado de trabalho, em detrimento dos temas geradores.`, isCorrect: false, reason: "A instrumentalização para o mercado caracteriza o Tecnicismo; a Libertadora foca nos temas geradores e no diálogo." }
-          ];
-        } else if (formatIndex === 1) {
-          questionText = `Durante a elaboração do Projeto Político-Pedagógico em ${city}, ${school}, abordou-se a fundamentação teórica de "${cleanSub}" (${cleanTop}). Considerando a matriz conceitual da Pedagogia Histórico-Crítica (Saviani) e os princípios da LDB (Lei nº 9.394/96), assinale a opção com a análise doutrinária IRREPREENSÍVEL:`;
-          rawAlternatives = [
-            { text: `A apropriação dos conhecimentos científicos relacionados a ${cleanSub.toLowerCase()} constitui instrumento indispensável para que a classe trabalhadora compreenda e transforme sua realidade social.`, isCorrect: true, reason: "Eixo central da Pedagogia Histórico-Crítica (Saviani): acesso ao saber erudito como ferramenta de emancipação." },
-            { text: `O momento da 'Catarse' na Pedagogia Histórico-Crítica refere-se ao levantamento inicial dos conhecimentos prévios e à sondagem empírica do educando.`, isCorrect: false, reason: "O levantamento inicial é a 'Prática Social Inicial' ou 'Problematização'; a Catarse é a síntese nova da prática social e a incorporação do saber." },
-            { text: `A Pedagogia Libertadora defende a organização curricular em centros de interesse individualizados como norma universal para todos os níveis de ensino.`, isCorrect: false, reason: "Centros de interesse pertencem à Pedagogia Renovada/Escola Nova; a Libertadora organiza-se por temas geradores coletivos." },
-            { text: `A gestão democrática do ensino público prevista na LDB veda a participação das comunidades escolar e local em conselhos de escola.`, isCorrect: false, reason: "O Artigo 14 da LDB determina obrigatoriamente a participação das comunidades escolar e local nos conselhos." }
+            { text: `A articulação entre os saberes científicos e a realidade social dos estudantes caracteriza a Pedagogia Histórico-Crítica, visando à democratização do conhecimento e à emancipação do educando.`, isCorrect: true, reason: "Fundamento central da Pedagogia Histórico-Crítica (Dermeval Saviani)." },
+            { text: `A Tendência Liberal Tecnicista prioriza o diálogo sobre temas geradores e a conscientização política em detrimento do treinamento operacional.`, isCorrect: false, reason: "Temas geradores pertencem à Pedagogia Libertadora de Paulo Freire; o Tecnicismo foca na eficiência e neutralidade técnica." },
+            { text: `A Tendência Liberal Renovada Progressivista fundamenta-se na transmissão expositiva de conteúdos acumulados, sendo o aluno um receptor passivo.`, isCorrect: false, reason: "A Renovada Progressivista centra-se na atividade do aluno ('aprender a aprender') e em métodos ativos." },
+            { text: `A Tendência Progressista Libertadora concebe a avaliação do aprendizado como um instrumento puramente somativo e punitivo.`, isCorrect: false, reason: "A Pedagogia Libertadora recusa exames punitivos, defendendo uma práxis autoavaliativa e libertadora." }
           ];
         } else {
-          questionText = `Em ${city}, durante encontro de formação continuada do corpo docente, analisou-se o tratamento didático relativo a "${cleanSub}" (${cleanTop}). Com base no domínio das correntes pedagógicas brasileiras e da Didática Geral, assinale a opção estritamente precisa:`;
+          questionText = `Acerca do planejamento didático, da organização curricular e do tema de "${cleanSub}", assinale a alternativa cientificamente correta:`;
           rawAlternatives = [
-            { text: `O planejamento didático centrado em ${cleanSub.toLowerCase()} deve mediar a relação entre o saber cotidiano dos estudantes e o saber elaborado, garantindo a intencionalidade pedagógica.`, isCorrect: true, reason: "Atende à visão mediadora e dialética do processo de ensino-aprendizagem (Libâneo e Vasconcellos)." },
-            { text: `A corrente tecnicista orienta o trabalho em ${cleanSub.toLowerCase()} a partir do diálogo horizontal e da problematização das relações de opressão em sala.`, isCorrect: false, reason: "O diálogo e a problematização da opressão são próprios da Pedagogia Libertadora de Paulo Freire, não do Tecnicismo." },
-            { text: `A tendência liberal tradicional fundamenta o estudo de ${cleanSub.toLowerCase()} na autoavaliação contínua e no desenvolvimento das atitudes interpessoais.`, isCorrect: false, reason: "Autoavaliação e atitudes interpessoais são marcas da Tendência Renovada Não-Diretiva (Rogers)." },
-            { text: `A Pedagogia Crítico-Social dos Conteúdos restringe a avaliação do aprendizado ao controle do comportamento operante do aluno por meio de estímulos externos.`, isCorrect: false, reason: "O controle de comportamento operante e estímulos externos pertencem ao Behaviorismo/Tecnicismo." }
+            { text: `O planejamento didático intencional medeia a relação entre o conhecimento prévio do estudante e o conhecimento científico elaborado, promovendo a aprendizagem significativa.`, isCorrect: true, reason: "Conceito essencial da mediação pedagógica dialética." },
+            { text: `A avaliação formativa e contínua busca unicamente a classificação numérica final dos discentes para fins de seleção e exclusão.`, isCorrect: false, reason: "A avaliação formativa busca diagnosticar e reorientar o processo de ensino-aprendizagem, não classificar para excluir." },
+            { text: `A organização do trabalho pedagógico prescinde de coerência entre os objetivos de aprendizagem, as metodologias e os instrumentos de avaliação.`, isCorrect: false, reason: "O planejamento didático exige obrigatoriamente alinhamento entre objetivos, conteúdos, métodos e avaliação." },
+            { text: `A gestão do ensino público centraliza as decisões pedagógicas na equipe diretiva, dispensando a elaboração coletiva do Projeto Político-Pedagógico.`, isCorrect: false, reason: "O PPP deve ser elaborado coletivamente com a participação dos professores e da comunidade escolar." }
           ];
         }
+      } else {
+        // Outras disciplinas específicas (História, Geografia, Matemática, Física, Química, etc.)
+        questionText = `No âmbito do estudo acadêmico de ${discipline || 'Conhecimentos Específicos'}, referente ao tópico de "${cleanSub}", assinale a proposição conceitualmente CORRETA:`;
+        rawAlternatives = [
+          { text: `O domínio dos fundamentos teóricos e conceituais inerentes a ${cleanSub.toLowerCase()} permite a compreensão precisa dos fenômenos, estruturas e processos da área de conhecimento.`, isCorrect: true, reason: "Análise conceitual e científica rigorosa do conteúdo específico selecionado." },
+          { text: `A caracterização de ${cleanSub.toLowerCase()} fundamenta-se em princípios estáticos sem relação com os modelos explicativos consolidados da área.`, isCorrect: false, reason: "Os conhecimentos da área baseiam-se em teorias e modelos científicos amplamente fundamentados." },
+          { text: `As propriedades e relações inerentes a ${cleanSub.toLowerCase()} dispensam fundamentação empírica ou dedução lógica rigorosa.`, isCorrect: false, reason: "O conhecimento específico exige rigor metódico, empírico ou dedutivo." },
+          { text: `A interpretação dos fenômenos atrelados a ${cleanSub.toLowerCase()} prescinde de análise sistemática dos seus elementos constituintes.`, isCorrect: false, reason: "A análise sistemática dos componentes é essencial para a compreensão conceitual da matéria." }
+        ];
       }
 
       // Shuffle the 4 alternatives so the correct letter is randomly A, B, C, or D
@@ -951,14 +860,12 @@ Retorne um objeto JSON contendo a chave "questions" com um array de ${requestedC
         question: questionText,
         alternatives: finalAlternatives,
         correctAnswer: correctLetter,
-        explanation: `Gabarito: ${correctLetter}\n\nGabarito Comentado:\n- Justificativa da correta (Alternativa ${correctLetter}): ${correctObj.reason}\n- Análise das demais alternativas: As demais opções contêm imprecisões conceituais, erros de regência ou visões desatualizadas descartadas pela banca CEV/FUNECE.`,
+        explanation: `Gabarito: ${correctLetter}\n\nGabarito Comentado:\n- Análise da Alternativa ${correctLetter} (Correta): ${correctObj.reason}\n- Análise dos Distratores: As demais alternativas apresentam incorreções conceituais, inversões de propriedades ou dados equivocados a respeito da matéria.`,
         topic: cleanTop,
         subtopic: cleanSub,
         difficulty: difficulty || "Avançado",
         banca: banca || "FUNECE / CEV-UECE",
-        skills: ["Análise Crítica FUNECE", "Resolução de Casos Práticos"],
-        commonMistake: "Atenção ao enunciado contextualizado e às pegadinhas conceituais sobre exceções.",
-        studyTip: "Leia atentamente cada opção comparando os verbos de regência e os autores de referência."
+        skills: ["Domínio Científico do Conteúdo", "Análise Conceitual"]
       };
     });
 

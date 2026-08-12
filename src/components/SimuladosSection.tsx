@@ -373,58 +373,49 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
           });
         }
       } else {
-        // Build a 100% unique, scenario-based question
-        const city = cearaCities[(i + Math.floor(Math.random() * cearaCities.length)) % cearaCities.length];
-        const school = schoolTypes[(i + Math.floor(Math.random() * schoolTypes.length)) % schoolTypes.length];
-        const teacher = teacherNames[(i + Math.floor(Math.random() * teacherNames.length)) % teacherNames.length];
+        // Build a 100% unique question tailored to the exact discipline
         const normDisc = disciplineName.toLowerCase();
-        const formatIdx = i % 3;
 
-        let qText = `Em ${city}, ${school}, ${teacher} liderou uma atividade prática referente ao tópico de "${subtopicName}" (${topicName}). No debate teórico sobre os fundamentos da área, assinale a opção inteiramente correta segundo a doutrina e a legislação oficial:`;
-        
+        let qText = `Acerca do tópico "${subtopicName}" (${topicName}), assinale a alternativa inteiramente CORRETA do ponto de vista conceitual e científico:`;
         let rawOpts = [
-          { isCorrect: true, text: `A abordagem consciente de ${subtopicName.toLowerCase()} articula a fundamentação conceitual rigorosa com a aplicação prática e crítica no contexto escolar.` },
-          { isCorrect: false, text: `A caracterização de ${subtopicName.toLowerCase()} limita-se à memorização mecânica de regras estáticas, desconsiderando a realidade dos estudantes.` },
-          { isCorrect: false, text: `A aplicação das diretrizes sobre ${subtopicName.toLowerCase()} veda o pluralismo de ideias e a autonomia pedagógica do docente regente.` },
-          { isCorrect: false, text: `O estudo sobre ${subtopicName.toLowerCase()} prescinde de planejamento intencional e acompanhamento avaliativo contínuo.` }
+          { isCorrect: true, text: `O domínio dos fundamentos teóricos e práticos inerentes a ${subtopicName.toLowerCase()} permite a compreensão precisa dos fenômenos, estruturas e processos da área.` },
+          { isCorrect: false, text: `A caracterização de ${subtopicName.toLowerCase()} fundamenta-se em definições estáticas sem relação com os princípios consolidados da disciplina.` },
+          { isCorrect: false, text: `As relações e propriedades associadas a ${subtopicName.toLowerCase()} dispensam sustentação empírica ou dedução lógica rigorosa.` },
+          { isCorrect: false, text: `A análise dos elementos constituintes de ${subtopicName.toLowerCase()} prescinde de embasamento sistemático.` }
         ];
 
-        if (formatIdx === 1) {
-          qText = `Durante a elaboração do plano de ensino em ${city}, ${teacher} destacou a importância da reflexão analítica sobre "${subtopicName}" (${topicName}). Sob o ponto de vista da comissão examinadora CEV/FUNECE, assinale a afirmativa autêntica:`;
+        if (normDisc.includes('português') || normDisc.includes('lingua') || normDisc.includes('gramát')) {
+          qText = `No que se refere aos recursos de regência, sintaxe e coesão referentes ao tema de "${subtopicName}", assinale a alternativa que atende à norma-padrão da Língua Portuguesa:`;
           rawOpts = [
-            { isCorrect: true, text: `A apreensão conceitual de ${subtopicName.toLowerCase()} exige a contextualização com as práticas sociais e os objetivos pedagógicos da rede estadual.` },
-            { isCorrect: false, text: `A abordagem do tema ${subtopicName.toLowerCase()} deve limitar-se à transmissão bancária sem escuta atenta aos educandos.` },
-            { isCorrect: false, text: `A verificação do aprendizado em ${subtopicName.toLowerCase()} tem finalidade puramente classificatória e punitiva.` },
-            { isCorrect: false, text: `As diretrizes legais referentes a ${subtopicName.toLowerCase()} proíbem a adequação curricular às especificidades locais.` }
+            { isCorrect: true, text: `A articulação sintática dos enunciados exige observância às regras de concordância e à seleção adequada dos conectivos para a garantia da coesão e da clareza.` },
+            { isCorrect: false, text: `O emprego dos conectivos subordinativos prescinde de concordância entre verbo e sujeito no registro culto.` },
+            { text: `A pontuação em orações subordinadas adjetivas restritivas deve incluir obrigatoriamente vírgulas isolando o termo.` },
+            { text: `As relações de regência verbal admitem a omissão de preposição antes de pronomes relativos mesmo quando exigida pelo termo regente.` }
           ];
-        } else if (formatIdx === 2) {
-          qText = `Em reunião pedagógica no município de ${city}, a equipe docente discutiu um estudo de caso envolvendo a aplicação de "${subtopicName}" (${topicName}). Assinale a opção que expressa o posicionamento teórico-normativo correto:`;
+        } else if (normDisc.includes('biologia') || normDisc.includes('ciência')) {
+          qText = `No âmbito da Biologia, acerca das propriedades estruturais, físico-químicas e funcionais atreladas a "${subtopicName}", assinale a afirmativa cientificamente CORRETA:`;
           rawOpts = [
-            { isCorrect: true, text: `O desenvolvimento pedagógico atrelado a ${subtopicName.toLowerCase()} promove a autonomia reflexiva e a consolidação das competências da BNCC.` },
-            { isCorrect: false, text: `O estudo do assunto ${subtopicName.toLowerCase()} dispensa o alinhamento com o Projeto Político-Pedagógico da unidade escolar.` },
-            { isCorrect: false, text: `A interpretação dos conceitos de ${subtopicName.toLowerCase()} prescinde de embasamento científico e da norma culta.` },
-            { isCorrect: false, text: `A avaliação sobre ${subtopicName.toLowerCase()} deve ser estática, proibida a recomposição contínua de aprendizagens.` }
+            { isCorrect: true, text: `Os mecanismos celulares e moleculares operam em dinamismo homeostático, assegurando a regulação metabólica, o transporte de substâncias e a integridade funcional da célula.` },
+            { isCorrect: false, text: `As reações metabólicas e o transporte ativo de íons através da membrana plasmática ocorrem de modo passivo, sem gasto de ATP.` },
+            { isCorrect: false, text: `A bicamada lipídica da membrana plasmática é totalmente impermeável a moléculas apolares e gases como O2 e CO2.` },
+            { isCorrect: false, text: `A síntese de proteínas e a respiração celular ocorrem exclusivamente no citosol, sem participação de organelas membranosas.` }
           ];
-        }
-
-        if (normDisc.includes('português') || normDisc.includes('lingua')) {
-          if (formatIdx === 0) {
-            qText = `Em ${city}, ${school}, ${teacher} analisou com a turma o emprego sintático e gramatical no contexto do assunto "${subtopicName}". Considerando a norma-padrão da Língua Portuguesa, assinale a afirmativa CORRETA:`;
-            rawOpts = [
-              { isCorrect: true, text: `A estruturação das orações e a regência atreladas ao estudo de ${subtopicName.toLowerCase()} devem obedecer rigorosamente ao registro formal da norma culta.` },
-              { isCorrect: false, text: `O emprego dos conectivos no estudo de ${subtopicName.toLowerCase()} altera o sentido semântico sem exigir concordância com o sujeito.` },
-              { isCorrect: false, text: `A crase e a pontuação nas regências associadas ao tema ${subtopicName.toLowerCase()} são de uso facultativo e aleatório.` },
-              { isCorrect: false, text: `As relações de subordinação sintática no tópico ${subtopicName.toLowerCase()} dispensam a coesão textual.` }
-            ];
-          } else {
-            qText = `Durante a revisão gramatical em ${city}, ${teacher} apresentou um trecho focado no assunto "${subtopicName}". Quanto aos recursos de regência e coesão prescritos pela norma culta, assinale a opção correta:`;
-            rawOpts = [
-              { isCorrect: true, text: `A exatidão da regência e da regência verbal/nominal referente a ${subtopicName.toLowerCase()} garante a clareza e a precisão do texto em registro formal.` },
-              { isCorrect: false, text: `O sinal indicativo de crase em estruturas ligadas a ${subtopicName.toLowerCase()} deve ser empregado antes de verbos no infinitivo.` },
-              { isCorrect: false, text: `A substituição de conectivos de valor causativo por adversativos no estudo de ${subtopicName.toLowerCase()} preserva o sentido original.` },
-              { isCorrect: false, text: `A concordância entre o verbo regente e seu complemento no tópico de ${subtopicName.toLowerCase()} é dispensável na escrita oficial.` }
-            ];
-          }
+        } else if (normDisc.includes('legislaç') || normDisc.includes('direito')) {
+          qText = `De acordo com a legislação educacional brasileira referente ao tema "${subtopicName}", assinale a afirmativa correta:`;
+          rawOpts = [
+            { isCorrect: true, text: `A garantia do direito à educação, a igualdade de condições para acesso e permanência e a gestão democrática do ensino público constituem princípios do ensino nacional.` },
+            { isCorrect: false, text: `A aplicação das diretrizes curriculares nacionais anula a autonomia pedagógica das unidades escolares na elaboração do Projeto Político-Pedagógico.` },
+            { isCorrect: false, text: `O ensino público pode restringir a liberdade de aprender, ensinar e pesquisar em função de orientações doutrinárias específicas.` },
+            { isCorrect: false, text: `A gestão democrática do ensino público veda a participação dos profissionais da educação e da comunidade local em conselhos escolares.` }
+          ];
+        } else if (normDisc.includes('pedagogi') || normDisc.includes('didátic') || normDisc.includes('educaç')) {
+          qText = `Na Didática Geral e no estudo das Tendências Pedagógicas, no que se refere ao tema "${subtopicName}", assinale a opção correta:`;
+          rawOpts = [
+            { isCorrect: true, text: `A articulação entre os saberes científicos e a realidade social dos estudantes visa à democratização do conhecimento e à emancipação crítica do educando.` },
+            { isCorrect: false, text: `A Tendência Liberal Tecnicista prioriza o diálogo sobre temas geradores e a conscientização política em detrimento do treinamento operacional.` },
+            { isCorrect: false, text: `A Tendência Liberal Renovada Progressivista fundamenta-se na transmissão expositiva de conteúdos acumulados, sendo o aluno um receptor passivo.` },
+            { isCorrect: false, text: `A avaliação formativa e contínua busca unicamente a classificação numérica final dos discentes para fins de seleção e exclusão.` }
+          ];
         }
 
         const shuffled = shuffle(rawOpts);
@@ -449,11 +440,11 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
           questionText: qText,
           options: finalOpts,
           correctAnswer: correctLetter,
-          explanation: `Gabarito Oficial FUNECE: Alternativa ${correctLetter}. ${correctObj.text} As demais opções contêm imprecisões conceituais ou contradições legais descartadas pela comissão examinadora.`,
+          explanation: `Gabarito Comentado:\n- Alternativa ${correctLetter} (Correta): ${correctObj.text}\n- Análise das demais alternativas: As demais opções contêm imprecisões conceituais ou contradições com o conhecimento consolidado da matéria.`,
           difficulty: 'difícil',
-          skills: ['Domínio de Conteúdo de Nível Superior', 'Análise Crítica FUNECE'],
-          commonMistake: `Marcação por impulso em opções com jargões atraentes, sem observar os detalhes normativos.`,
-          studyTip: `Atente para os detalhes e exceções de regra frequentemente cobrados pela banca FUNECE.`
+          skills: ['Domínio Científico do Conteúdo', 'Análise Conceitual'],
+          commonMistake: `Atenção à precisão dos conceitos científicos e aos detalhes das opções.`,
+          studyTip: `Revise a fundamentação teórica e as definições essenciais deste subtópico.`
         });
       }
     }
