@@ -393,13 +393,23 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
             { text: `As relações de regência verbal admitem a omissão de preposição antes de pronomes relativos mesmo quando exigida pelo termo regente.` }
           ];
         } else if (normDisc.includes('biologia') || normDisc.includes('ciência')) {
-          qText = `No âmbito da Biologia, acerca das propriedades estruturais, físico-químicas e funcionais atreladas a "${subtopicName}", assinale a afirmativa cientificamente CORRETA:`;
-          rawOpts = [
-            { isCorrect: true, text: `Os mecanismos celulares e moleculares operam em dinamismo homeostático, assegurando a regulação metabólica, o transporte de substâncias e a integridade funcional da célula.` },
-            { isCorrect: false, text: `As reações metabólicas e o transporte ativo de íons através da membrana plasmática ocorrem de modo passivo, sem gasto de ATP.` },
-            { isCorrect: false, text: `A bicamada lipídica da membrana plasmática é totalmente impermeável a moléculas apolares e gases como O2 e CO2.` },
-            { isCorrect: false, text: `A síntese de proteínas e a respiração celular ocorrem exclusivamente no citosol, sem participação de organelas membranosas.` }
-          ];
+          if (subtopicName.toLowerCase().includes('célula') || subtopicName.toLowerCase().includes('membrana') || subtopicName.toLowerCase().includes('estrutur') || subtopicName.toLowerCase().includes('físic')) {
+            qText = `A membrana plasmática é uma estrutura dinâmica e seletiva, essencial para a manutenção da homeostase e para a regulação do tráfego de substâncias entre os meios intra e extracelular. A respeito da composição físico-química e da organização estrutural da membrana celular, assinale a afirmativa CORRETA:`;
+            rawOpts = [
+              { isCorrect: true, text: `O colesterol atua como modulador da fluidez da membrana em células animais: em temperaturas elevadas, limita a movimentação excessiva dos fosfolipídeos; em temperaturas baixas, previne o empacotamento das cadeias de ácidos graxos e a cristalização da bicamada.` },
+              { isCorrect: false, text: `O transporte ativo secundário, como o simporte de glicose e sódio (Na+), consome diretamente moléculas de ATP no sítio catalítico da proteína carreadora para mover a glicose a favor do seu gradiente.` },
+              { isCorrect: false, text: `Proteínas periféricas da membrana caracterizam-se por apresentarem extensos domínios transmembrana ricos em aminoácidos apolares dispostos em alfa-hélice ancorados no centro hidrofóbico.` },
+              { isCorrect: false, text: `A osmose é caracterizada como um transporte ativo especializado, no qual moléculas de água são bombeadas contra o gradiente de concentração com gasto direto de ATP pela célula.` }
+            ];
+          } else {
+            qText = `Acerca da bioquímica celular, da cinético-química enzimática e da regulação do metabolismo energético, assinale a alternativa CORRETA:`;
+            rawOpts = [
+              { isCorrect: true, text: `Inibidores competitivos ligam-se reversivelmente ao sítio ativo da enzima, aumentando o valor da constante de Michaelis-Menten (Km) aparente, mantendo inalterada a velocidade máxima (Vmáx) atingível em altas concentrações de substrato.` },
+              { isCorrect: false, text: `A glicólise ocorre no interior da matriz mitocôndrial e necessita obrigatoriamente de oxigênio molecular (O2) como aceptor final de elétrons para ocorrer.` },
+              { isCorrect: false, text: `A fotossíntese nas plantas C3 realiza a fixação inicial do CO2 pela enzima RuBisCO no interior dos peroxissomos, gerando malato de quatro carbonos.` },
+              { isCorrect: false, text: `O ATP atua na célula como reservatório térmico devido às suas ligações fosfodiéster estáveis que impedem a liberação de energia livre.` }
+            ];
+          }
         } else if (normDisc.includes('legislaç') || normDisc.includes('direito')) {
           qText = `De acordo com a legislação educacional brasileira referente ao tema "${subtopicName}", assinale a afirmativa correta:`;
           rawOpts = [

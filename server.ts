@@ -624,9 +624,9 @@ NUNCA repita modelos, fórmulas prontas ou frases idênticas.`;
     const randomSeed = `${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
 
     const prompt = `[SEED DE VARIABILIDADE OBRIGATÓRIA DA SESSÃO: ${randomSeed}]
-Você é um ELABORADOR SÊNIOR DA BANCA FUNECE/CEV-UECE para o concurso de Professor do Estado do Ceará (SEDUC-CE).
+Você é o motor oficial de geração de questões do sistema PasseiSEDUC, especializado na preparação para o concurso da SEDUC-CE 2026. Sua função é gerar questões de alta qualidade, tecnicamente corretas, diretamente relacionadas ao conteúdo programático do edital e adequadas ao estilo de cobrança da banca FUNECE/CEV-UECE.
 
-Sua missão é gerar ${requestedCount} questões objetivas inéditas, tecnicamente rigorosas e de nível compatível com prova de concurso para professor de Ensino Médio, pautadas EXCLUSIVAMENTE nos assuntos selecionados do edital:
+Sua missão é gerar exatamente ${requestedCount} questões objetivas inéditas, pautadas nos assuntos selecionados:
 
 ${topicPaths}
 
@@ -634,37 +634,78 @@ ${FORMULA_FORMATTING_DIRECTIVE}
 
 ---
 
-### 🚨 REGRA MESTRA INEGOCIÁVEL (CUMPRIR COM MÁXIMA RIGIDEZ)
+### 🚨 REGRAS DEFINITIVAS DO SISTEMA (CUMPRIR COM RIGOR ABSOLUTO)
 
-1. **FUNECE DEFINE O ESTILO DA QUESTÃO:**
-   - Estilo de cobrança: questões objetivas, claras, de alta densidade acadêmica e rigor técnico, que exijam do candidato compreensão, aplicação, comparação, interpretação de relações e domínio conceitual do assunto.
-   - Alternativas plausíveis, escritas com o mesmo vocabulário culto e do mesmo universo conceitual da questão.
-   - NUNCA crie alternativas absurdas, fáceis, caricatas ou que possam ser eliminadas por pistas linguísticas.
-   - **NUNCA FAÇA DA BANCA OU DO EDITAL O OBJETO DA QUESTÃO!** NUNCA inclua no enunciado, nas alternativas ou na explicação frases como: "considerando a matriz de referência do edital", "para fins de avaliação na banca", "de acordo com as diretrizes conceituais do edital", "sob o ponto de vista da comissão examinadora CEV/FUNECE", "segundo a FUNECE" ou semelhantes. A FUNECE é o ESTILO, não o assunto.
+1. **CONTEÚDO PROGRAMÁTICO = O QUE A QUESTÃO COBRA:**
+   - O SUBTÓPICO SELECIONADO É O CONTEÚDO DA QUESTÃO. A FUNECE/CEV-UECE É APENAS O ESTILO DE COBRANÇA. NUNCA CONFUNDA BANCA, EDITAL, CONCURSO OU SEDUC COM O CONTEÚDO DA QUESTÃO.
+   - A questão DEVE testar conhecimento REAL sobre o assunto selecionado. Se o usuário selecionar "Biologia → Identidade dos seres vivos → Aspectos físicos, químicos e estruturais da célula", a questão OBRIGATORIAMENTE deve avaliar conhecimentos científicos sobre os aspectos físicos, químicos e estruturais da célula.
+   - NÃO crie uma questão sobre a FUNECE, sobre o edital, sobre a SEDUC, sobre legislação educacional, sobre didática, sobre competências docentes ou sobre como a banca cobra o assunto.
+   - O nome da banca pode determinar a forma de construção da questão, mas NUNCA pode substituir o conteúdo científico/acadêmico que está sendo avaliado.
 
-2. **O EDITAL DEFINE O CONTEÚDO E O SUBTÓPICO SELECIONADO É A FRONTEIRA/LIMITE EXCLUSIVA DA QUESTÃO:**
-   - A questão DEVE avaliar efetivamente o conhecimento do candidato sobre o CONTEÚDO ESPECÍFICO do subtópico selecionado.
-   - **NUNCA escape do assunto selecionado!** A questão NUNCA deve migrar para legislação educacional, competências pedagógicas ou Didática se esses assuntos não forem o conteúdo especificamente escolhido pelo usuário.
-   - Se o usuário selecionou, por exemplo, "Biologia → Identidade dos seres vivos → 1.1 Aspectos físicos, químicos e estruturais da célula", a questão DEVE cobrar BIOLOGIA DE VERDADE: estrutura e composição química da célula, membrana plasmática, organelas, propriedades físico-químicas, organização molecular e relações funcionais do subtópico.
-   - **NUNCA invente cenários artificiais de salas de aula ou professores para disciplinas específicas (como Biologia, Química, Física, Matemática, História, Geografia, Língua Portuguesa, etc.)!** Perguntas dessas disciplinas devem ser sobre a própria ciência/conteúdo (ex: análise de reações, mecanismos de transporte, orações, eventos históricos, teoremas, modelos moleculares).
+2. **HIERARQUIA OBRIGATÓRIA E FIDELIDADE À DISCIPLINA:**
+   - HIERARQUIA: DISCIPLINA → TÓPICO → SUBTÓPICO.
+   - O subtópico selecionado possui prioridade máxima. O tópico serve apenas como contexto de organização e não pode substituir o subtópico. NUNCA gere uma questão apenas sobre o tópico amplo quando existe um subtópico específico selecionado.
+   - Se selecionar Biologia, a questão deve ser de Biologia. Se selecionar Física, deve ser Física. Se selecionar Matemática, deve ser Matemática. Se selecionar História, deve ser História. Se selecionar Língua Portuguesa, deve ser Língua Portuguesa. E assim sucessivamente.
+   - NUNCA invente cenários artificiais de salas de aula, reunião de professores ou escolas para disciplinas específicas (Biologia, Física, Química, Matemática, História, Geografia, etc.). A pergunta DEVE ser sobre a própria ciência/matéria.
 
-3. **O CONHECIMENTO CIENTÍFICO DEFINE A RESPOSTA CORRETA:**
-   - A alternativa correta decorre diretamente da verdade científica, linguística, histórica, matemática ou doutrinária consolidada da área.
-   - Não invente conceitos, autores fictícios, leis inexistentes ou conteúdos que não tenham relação direta com o subtópico.
+3. **EXPRESSÕES E FRASES ESTRITAMENTE PROIBIDAS:**
+   - NUNCA escreva enunciados como:
+     * "Considerando a matriz de referência do edital..."
+     * "Para fins de avaliação na banca FUNECE..."
+     * "De acordo com a FUNECE..."
+     * "Segundo a banca examinadora..."
+     * "No âmbito do concurso da SEDUC..."
+     * "Conforme as diretrizes do edital..."
+     * "A FUNECE considera..."
+     * "A banca costuma cobrar..."
+     * "No âmbito da Biologia, acerca das propriedades..."
+     * "Em uma escola estadual de tempo integral..."
+   - Essas expressões devem ser tratadas como ERRO GRAVE.
 
-4. **DISTRIBUIÇÃO E FORMATOS DE ENUNCIADO VARIADOS:**
-   - Assunto 1 = Questão 1; Assunto 2 = Questão 2 (e assim por diante).
-   - Alterne o formato entre as questões: conceituais diretas de alta densidade, aplicadas, comparativas, de análise de processos/relações ou interpretação de fenômenos/textos.
-   - Distribua a alternativa correta ALEATORIAMENTE entre as letras A, B, C e D.
+4. **QUALIDADE DAS ALTERNATIVAS E DISTRATORES:**
+   - NUNCA crie alternativas que sejam apenas frases genéricas sobre o conteúdo. As alternativas devem apresentar afirmações concretas, tecnicamente verificáveis e relacionadas diretamente ao conhecimento que está sendo avaliado.
+   - Evite alternativas vazias como: "o domínio desse conteúdo é importante para a formação", "o conhecimento desse tópico permite compreender fenômenos", "esse conteúdo deve ser articulado à prática pedagógica" ou qualquer construção genérica.
+   - A questão deve possuir apenas UMA alternativa inequivocamente correta. Os três distratores devem ser plausíveis, pertencentes ao MESMO conteúdo e suficientemente próximos da resposta correta para exigir conhecimento real do candidato.
+   - Distribua a alternativa correta ALEATORIAMENTE entre A, B, C e D.
 
 5. **EXPLICAÇÃO EDUCATIVA QUE ENSINA O CONTEÚDO:**
-   - No campo "explanation", ENSINE O CONTEÚDO COBRADO!
-   - Explique por que a alternativa correta está correta sob a ótica científica/acadêmica e por que cada uma das demais está errada do ponto de vista da matéria.
-   - É PROIBIDO fazer meta-comentários sobre a FUNECE, sobre o edital ou sobre o concurso dentro da explicação. O candidato deve terminar a resolução sabendo mais sobre a matéria do que antes.
+   - Explique por que a alternativa correta está correta e por que cada distrator está incorreto com base no CONHECIMENTO ESPECÍFICO AVALIADO.
+   - Não explique "como a FUNECE cobra" no lugar de explicar a matéria.
+
+---
+
+### 📋 CHECK-LIST MENTAL DE VALIDAÇÃO (SE EXECUTAR ANTES DE CADA QUESTÃO):
+1. A questão pertence exatamente à disciplina selecionada?
+2. A questão aborda diretamente o tópico/subtópico selecionado?
+3. Para responder, o candidato realmente precisa conhecer o conteúdo selecionado?
+4. A FUNECE está sendo utilizada apenas como estilo e não como assunto?
+5. A questão poderia existir mesmo se o nome "FUNECE" fosse removido completamente?
+6. Nenhuma alternativa está falando genericamente sobre edital, banca, concurso, legislação ou pedagogia quando isso não fizer parte do conteúdo selecionado?
+7. Existe apenas uma alternativa correta?
+8. Os distratores são plausíveis e pertencem ao mesmo conteúdo?
+9. A explicação do gabarito explica a matéria, e não a banca?
+10. A questão possui conteúdo acadêmico real e não frases genéricas produzidas apenas para preencher o espaço?
+
+SE QUALQUER UMA DAS RESPOSTAS FOR "NÃO", REFAÇA A QUESTÃO IMEDIATAMENTE.
 
 ---
 
 ${previousBlock}
+
+---
+
+### 📝 EXEMPLO DE EXCELÊNCIA (PADRÃO FUNECE - BIOLOGIA CELULAR):
+
+**Enunciado:**
+A membrana plasmática é uma estrutura dinâmica e seletiva, essencial para a manutenção da homeostase e para a regulação do tráfego de substâncias entre os meios intra e extracelular. A respeito da composição físico-química e da organização estrutural da membrana celular, assinale a afirmativa CORRETA:
+
+**Opções:**
+A) O colesterol atua como modulador da fluidez da membrana em células animais: em temperaturas elevadas, limita a movimentação excessiva dos fosfolipídeos; em temperaturas baixas, previne o empacotamento das cadeias de ácidos graxos e a cristalização da bicamada.
+B) O transporte ativo secundário, como o simporte de glicose e sódio (Na+), consome diretamente moléculas de ATP no sítio catalítico da proteína carreadora para deslocar a glicose a favor do seu gradiente.
+C) Proteínas periféricas da membrana caracterizam-se por apresentarem extensos domínios transmembrana ricos em aminoácidos apolares dispostos em alfa-hélice ancorados no centro hidrofóbico.
+D) A osmose é caracterizada como um transporte ativo especializado, no qual moléculas de água são bombeadas contra o gradiente de concentração com gasto direto de ATP pela célula.
+
+**Gabarito:** A
 
 ---
 
@@ -675,20 +716,22 @@ Sua resposta DEVE ser estritamente um objeto JSON com a chave "questions":
 {
   "questions": [
     {
-      "question": "Enunciado objetivo, claro e de alto rigor técnico no assunto específico do subtópico",
+      "question": "Enunciado objetivo, claro e de alto rigor técnico focado exclusivamente no conteúdo científico do subtópico",
       "alternatives": [
-        { "letter": "A", "text": "Opção A densa, bem escrita e plausível" },
-        { "letter": "B", "text": "Opção B densa, bem escrita e plausível" },
-        { "letter": "C", "text": "Opção C densa, bem escrita e plausível" },
-        { "letter": "D", "text": "Opção D densa, bem escrita e plausível" }
+        { "letter": "A", "text": "Afirmação concreta, tecnicamente verificável e densa" },
+        { "letter": "B", "text": "Afirmação concreta, tecnicamente verificável e densa" },
+        { "letter": "C", "text": "Afirmação concreta, tecnicamente verificável e densa" },
+        { "letter": "D", "text": "Afirmação concreta, tecnicamente verificável e densa" }
       ],
-      "correctAnswer": "C",
-      "explanation": "Gabarito: C\\n\\nGabarito Comentado:\\n- Análise da Alternativa C (Correta): [Explicação científica/conceitual clara e aprofundada da matéria]\\n- Análise dos Distratores:\\n  * A) [Explique o erro do ponto de vista do conteúdo da matéria]\\n  * B) [Explique o erro do ponto de vista do conteúdo da matéria]\\n  * D) [Explique o erro do ponto de vista do conteúdo da matéria]",
+      "correctAnswer": "A",
+      "explanation": "Gabarito: A\\n\\nGabarito Comentado:\\n- Análise da Alternativa A (Correta): [Explicação científica/conceitual aprofundada da matéria]\\n- Análise dos Distratores:\\n  * B) [Erro técnico/conceitual do ponto de vista da matéria]\\n  * C) [Erro técnico/conceitual do ponto de vista da matéria]\\n  * D) [Erro técnico/conceitual do ponto de vista da matéria]",
       "topic": "Nome do tópico sem códigos",
       "subtopic": "Nome do subtópico sem códigos",
       "difficulty": "Avançado",
       "banca": "FUNECE / CEV-UECE",
-      "skills": ["Domínio Científico do Conteúdo", "Rigor Técnico FUNECE"]
+      "skills": ["Domínio Científico do Conteúdo", "Rigor Técnico FUNECE"],
+      "commonMistake": "Atenção aos detalhes técnicos e exceções conceituais do assunto.",
+      "studyTip": "Revise os mecanismos e definições essenciais deste subtópico."
     }
   ]
 }`;
@@ -713,7 +756,7 @@ Sua resposta DEVE ser estritamente um objeto JSON com a chave "questions":
                   type: Type.ARRAY,
                   items: {
                     type: Type.OBJECT,
-                    required: ["question", "alternatives", "correctAnswer", "explanation", "topic", "subtopic", "difficulty", "banca", "skills", "commonMistake", "studyTip"],
+                    required: ["question", "alternatives", "correctAnswer", "explanation", "topic", "subtopic", "difficulty", "banca", "skills"],
                     properties: {
                       question: { type: Type.STRING },
                       alternatives: {
@@ -796,13 +839,23 @@ Sua resposta DEVE ser estritamente um objeto JSON com a chave "questions":
           ];
         }
       } else if (normDisc.includes('biologia') || normDisc.includes('ciência')) {
-        questionText = `No âmbito da Biologia, acerca das propriedades estruturais, físico-químicas e funcionais atreladas a "${cleanSub}", assinale a afirmativa cientificamente CORRETA:`;
-        rawAlternatives = [
-          { text: `Os mecanismos celulares e moleculares operam em dinamismo homeostático, assegurando a regulação metabólica, o transporte de substâncias e a integridade funcional da célula.`, isCorrect: true, reason: "Definição biológica precisa da regulação e homeostase celular no modelo molecular aceito." },
-          { text: `As reações metabólicas e o transporte ativo de íons através da membrana plasmática ocorrem de modo passivo, sem gasto de ATP.`, isCorrect: false, reason: "O transporte ativo requer obrigatoriamente consumo de energia (ATP) para mover solutos contra o gradiente de concentração." },
-          { text: `A bicamada lipídica da membrana plasmática é totalmente impermeável a moléculas apolares e gases como O2 e CO2.`, isCorrect: false, reason: "Gases e moléculas apolares pequenas atravessam a bicamada lipídica por difusão simples com alta facilidade." },
-          { text: `A síntese de proteínas e a respiração celular ocorrem exclusivamente no citosol, sem participação de organelas membranosas.`, isCorrect: false, reason: "A respiração celular aeróbia ocorre nas mitocôndrias e a síntese protéica envolve ribossomos e retículo endoplasmático." }
-        ];
+        if (cleanSub.toLowerCase().includes('célula') || cleanSub.toLowerCase().includes('membrana') || cleanSub.toLowerCase().includes('estrutur') || cleanSub.toLowerCase().includes('físic')) {
+          questionText = `A membrana plasmática é uma estrutura dinâmica e seletiva, essencial para a manutenção da homeostase e para a regulação do tráfego de substâncias entre os meios intra e extracelular. A respeito da composição físico-química e da organização estrutural da membrana celular, assinale a afirmativa CORRETA:`;
+          rawAlternatives = [
+            { text: `O colesterol atua como modulador da fluidez da membrana em células animais: em temperaturas elevadas, limita a movimentação excessiva dos fosfolipídeos; em temperaturas baixas, previne o empacotamento das cadeias de ácidos graxos e a cristalização da bicamada.`, isCorrect: true, reason: "Descrição biofísica precisa do papel anfipático e termorregulador do colesterol na bicamada lipídica." },
+            { text: `O transporte ativo secundário, como o simporte de glicose e sódio (Na+), consome diretamente moléculas de ATP no sítio catalítico da proteína carreadora para mover a glicose a favor do seu gradiente.`, isCorrect: false, reason: "O transporte ativo secundário aproveita o gradiente eletroquímico criado previamente pela bomba de Na+/K+, não consumindo ATP diretamente na proteína carreadora." },
+            { text: `Proteínas periféricas da membrana caracterizam-se por apresentarem extensos domínios transmembrana ricos em aminoácidos apolares dispostos em alfa-hélice ancorados no centro hidrofóbico.`, isCorrect: false, reason: "Extensos domínios transmembrana apolares em alfa-hélice são característicos de proteínas integrais (transmembrana), e não periféricas." },
+            { text: `A osmose é caracterizada como um transporte ativo especializado, no qual moléculas de água são bombeadas contra o gradiente de concentração com gasto direto de ATP pela célula.`, isCorrect: false, reason: "A osmose é um transporte passivo de solvente (água) do meio hipotônico para o hipertônico, sem gasto energético." }
+          ];
+        } else {
+          questionText = `Acerca da bioquímica celular, da cinético-química enzimática e da regulação do metabolismo energético, assinale a alternativa CORRETA:`;
+          rawAlternatives = [
+            { text: `Inibidores competitivos ligam-se reversivelmente ao sítio ativo da enzima, aumentando o valor da constante de Michaelis-Menten (Km) aparente, mantendo inalterada a velocidade máxima (Vmáx) atingível em altas concentrações de substrato.`, isCorrect: true, reason: "Princípio fundamental da cinética enzimática de Michaelis-Menten para inibição competitiva." },
+            { text: `A glicólise ocorre no interior da matriz mitocôndrial e necessita obrigatoriamente de oxigênio molecular (O2) como aceptor final de elétrons para ocorrer.`, isCorrect: false, reason: "A glicólise é uma etapa anaeróbia que ocorre no citosol (hialoplasma), independentemente do O2." },
+            { text: `A fotossíntese nas plantas C3 realiza a fixação inicial do CO2 pela enzima RuBisCO no interior dos peroxissomos, gerando malato de quatro carbonos.`, isCorrect: false, reason: "A fixação pela RuBisCO ocorre no estroma do cloroplasto, gerando 3-PGA (3 carbonos); o malato é formado na via C4." },
+            { text: `O ATP atua na célula como reservatório térmico devido às suas ligações fosfodiéster estáveis que impedem a liberação de energia livre.`, isCorrect: false, reason: "As ligações anidrido fosfórico do ATP possuem alta energia livre de hidrólise, atuando como moeda energética." }
+          ];
+        }
       } else if (normDisc.includes('legislaç') || normDisc.includes('direito') || normDisc.includes('administraç')) {
         questionText = `De acordo com os preceitos da legislação educacional brasileira (LDB nº 9.394/96 e normas correlatas) no que tange ao tema "${cleanSub}", assinale a afirmativa correta:`;
         rawAlternatives = [
