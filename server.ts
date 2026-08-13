@@ -608,18 +608,20 @@ Forneça um comentário explicativo completo no estilo FUNECE contendo:
     }).join("\n");
 
     const previousBlock = Array.isArray(previousQuestions) && previousQuestions.length > 0
-      ? `\n## 🚨 DIRETIVA DE INEDITISMO ABSOLUTO E ANTI-REPETIÇÃO RIGOROSA
-Você é um elaborador sênior da comissão CEV/FUNECE. O candidato JÁ RESOLVEU ${previousQuestions.length} questões em treinos anteriores.
-Abaixo estão os trechos/enunciados das questões que o aluno JÁ VIU e que É TERMINANTEMENTE PROIBIDO REPETIR:
-${previousQuestions.slice(-100).map((q: string, idx: number) => `   [${idx + 1}] "${q.substring(0, 180)}..."`).join('\n')}
+      ? `\n## 🚨 HISTÓRICO DE QUESTÕES JÁ GERADAS E DIRETIVA DE PROGRESSÃO CONCEITUAL
+O candidato JÁ RESOLVEU ${previousQuestions.length} questões em treinos anteriores.
+Abaixo estão os enunciados e recortes conceituais que o aluno JÁ VIU e que É ESTRITAMENTE PROIBIDO REPETIR:
 
-### 🚫 REGRAS INEGOCIÁVEIS DE ANTI-REPETIÇÃO (BANCA FUNECE):
-1. ZERO DUPLICIDADE: É ESTRITAMENTE PROIBIDO repetir qualquer enunciado, tese, situação-problema, texto motivador ou alternativa já utilizada acima.
-2. CADA ASSUNTO É EXTENSO DEMAIS: Todos os tópicos do edital da SEDUC-CE são amplos e possuem dezenas de subconceitos, autores de referência (Libâneo, Luckesi, Saviani, Vygotsky, Piaget, Freire, Veiga, Perrenoud, Tardif), leis (LDB 9.394/96, CF/88, ECA, PNE, BNCC), casos práticos e desdobramentos científicos. Se o usuário selecionar o mesmo tópico 100 vezes, crie 100 questões COMPLETAMENTE DIFERENTES, explorando outros subaspectos, exceções da regra e situações de sala de aula.`
-      : `\n## 🚨 DIRETIVA DE INEDITISMO ABSOLUTO E ANTI-REPETIÇÃO RIGOROSA
-Você é um elaborador sênior da comissão CEV/FUNECE. Cada assunto do edital é extenso demais e permite criar dezenas de questões inéditas.
-Todas as questões geradas DEVEM ser 100% inéditas, explorando diferentes subaspectos, estudos de caso práticos e desdobramentos teóricos profundos.
-NUNCA repita modelos, fórmulas prontas ou frases idênticas.`;
+${previousQuestions.slice(-60).map((q: string, idx: number) => `   [Questão Anterior ${idx + 1}] ${q}`).join('\n')}
+
+### 🚫 REGRAS ABSOLUTAS DE ANTI-REPETIÇÃO E EQUIVALÊNCIA CONCEITUAL:
+1. **REPETIÇÃO CONCEITUAL É ERRO GRAVE**: É TERMINANTEMENTE PROIBIDO gerar qualquer questão que avalie o mesmo conceito central, o mesmo mecanismo, o mesmo componente ou a mesma explicação de uma questão anterior.
+2. **COMPARABILIDADE SEMÂNTICA**: Uma questão DEVE ser considerada REPETIDA mesmo se o enunciado e as alternativas forem totalmente reescritos, caso esteja cobrando essencialmente o mesmo conhecimento prévio (exemplo: se uma questão anterior de 'Aspectos físicos, químicos e estruturais da célula' avaliou 'colesterol e fluidez da membrana', você ESTÁ PROIBIDO de gerar outra questão sobre colesterol/fluidez de membrana).
+3. **EXPLORAÇÃO PROGRESSIVA DO CONTEÚDO**: Cada tópico/subtópico do edital é um conjunto amplo e extenso de conteúdos. Você DEVE OBRIGATORIAMENTE selecionar um RECORTE CONCEITUAL OU MECANISMO AINDA NÃO EXPLORADO dentro do subtópico (por exemplo: avançar para transporte ativo secundário, bomba de Na+/K+, aquaporinas, osmose em meio hipertônico/hipotônico, proteínas transmembrana vs. periféricas, glicocálix, cinética enzimática de Michaelis-Menten, organelas e bioenergética, citosqueleto, etc.).
+4. **NOVIDADE REAL NO CONHECIMENTO**: A questão só é considerada nova se contiver NOVIDADE REAL no conhecimento avaliado. Não crie variações estéticas ou paráfrases da mesma questão.`
+      : `\n## 🚨 DIRETIVA DE PROGRESSÃO CONCEITUAL E ANTI-REPETIÇÃO RIGOROSA
+Cada tópico e subtópico do edital é um universo amplo de conteúdos. Ao gerar questões para esta sessão, explore progressivamente diferentes conhecimentos, conceitos, mecanismos, relações, aplicações, situações-problema, comparações, processos, estruturas e exceções.
+NUNCA concentre a geração no mesmo subassunto. A cada nova questão (mesmo em gerações múltiplas), selecione preferencialmente um recorte diferente e inédito do conteúdo programático.`;
 
     const randomSeed = `${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
 
@@ -636,19 +638,32 @@ ${FORMULA_FORMATTING_DIRECTIVE}
 
 ### 🚨 REGRAS DEFINITIVAS DO SISTEMA (CUMPRIR COM RIGOR ABSOLUTO)
 
-1. **CONTEÚDO PROGRAMÁTICO = O QUE A QUESTÃO COBRA:**
+1. **TRATAMENTO DO TÓPICO/SUBTÓPICO COMO CONJUNTO AMPLO DE CONTEÚDOS:**
+   - Trate cada tópico e subtópico do edital como um CONJUNTO AMPLO E EXTENSO de conteúdos e não como um único conceito isolado.
+   - Ao gerar questões, explore progressivamente diferentes conhecimentos, conceitos, mecanismos, relações, aplicações, situações-problema, comparações, processos, estruturas, exceções e interpretações existentes dentro do conteúdo programático selecionado.
+   - NUNCA concentre repetidamente as questões no mesmo subassunto apenas porque ele pertence ao tópico selecionado.
+
+2. **CONSULTA OBRIGATÓRIA AO HISTÓRICO E PREVENÇÃO DE EQUIVALÊNCIA CONCEITUAL:**
+   - Consulte obrigatoriamente o histórico de questões já geradas para o usuário, tópico e subtópico e IMPEÇA a criação de questões idênticas ou essencialmente equivalentes às anteriores.
+   - A comparação considera o texto literal, o conteúdo cobrado, o conceito central, o mecanismo avaliado, a situação apresentada e a resposta correta.
+   - Uma questão é CONSIDERADA REPETIDA mesmo que o enunciado e as alternativas tenham sido reescritos se estiver avaliando essencialmente o mesmo conhecimento de uma questão anterior.
+   - Mantenha memória dos conteúdos já cobrados e PRIORIZE CONTEÚDOS AINDA NÃO EXPLORADOS dentro do tópico.
+   - Exemplo obrigatório: Se uma questão anterior de 'Aspectos físicos, químicos e estruturais da célula' avaliou colesterol e fluidez da membrana, a próxima NÃO deve reformular colesterol ou fluidez; deve avançar para outro aspecto relevante do tópico (ex: composição química celular, proteínas, carboidratos, lipídios, ácidos nucleicos, organização estrutural, propriedades da membrana, transporte ativo/passivo, osmose, organelas, citosqueleto ou enzimologia).
+   - A questão só pode ser considerada nova quando houver NOVIDADE REAL no conhecimento avaliado. O objetivo é construir um banco progressivo.
+
+3. **CONTEÚDO PROGRAMÁTICO = O QUE A QUESTÃO COBRA:**
    - O SUBTÓPICO SELECIONADO É O CONTEÚDO DA QUESTÃO. A FUNECE/CEV-UECE É APENAS O ESTILO DE COBRANÇA. NUNCA CONFUNDA BANCA, EDITAL, CONCURSO OU SEDUC COM O CONTEÚDO DA QUESTÃO.
    - A questão DEVE testar conhecimento REAL sobre o assunto selecionado. Se o usuário selecionar "Biologia → Identidade dos seres vivos → Aspectos físicos, químicos e estruturais da célula", a questão OBRIGATORIAMENTE deve avaliar conhecimentos científicos sobre os aspectos físicos, químicos e estruturais da célula.
    - NÃO crie uma questão sobre a FUNECE, sobre o edital, sobre a SEDUC, sobre legislação educacional, sobre didática, sobre competências docentes ou sobre como a banca cobra o assunto.
    - O nome da banca pode determinar a forma de construção da questão, mas NUNCA pode substituir o conteúdo científico/acadêmico que está sendo avaliado.
 
-2. **HIERARQUIA OBRIGATÓRIA E FIDELIDADE À DISCIPLINA:**
+4. **HIERARQUIA OBRIGATÓRIA E FIDELIDADE À DISCIPLINA:**
    - HIERARQUIA: DISCIPLINA → TÓPICO → SUBTÓPICO.
    - O subtópico selecionado possui prioridade máxima. O tópico serve apenas como contexto de organização e não pode substituir o subtópico. NUNCA gere uma questão apenas sobre o tópico amplo quando existe um subtópico específico selecionado.
    - Se selecionar Biologia, a questão deve ser de Biologia. Se selecionar Física, deve ser Física. Se selecionar Matemática, deve ser Matemática. Se selecionar História, deve ser História. Se selecionar Língua Portuguesa, deve ser Língua Portuguesa. E assim sucessivamente.
    - NUNCA invente cenários artificiais de salas de aula, reunião de professores ou escolas para disciplinas específicas (Biologia, Física, Química, Matemática, História, Geografia, etc.). A pergunta DEVE ser sobre a própria ciência/matéria.
 
-3. **EXPRESSÕES E FRASES ESTRITAMENTE PROIBIDAS:**
+5. **EXPRESSÕES E FRASES ESTRITAMENTE PROIBIDAS:**
    - NUNCA escreva enunciados como:
      * "Considerando a matriz de referência do edital..."
      * "Para fins de avaliação na banca FUNECE..."
@@ -662,22 +677,22 @@ ${FORMULA_FORMATTING_DIRECTIVE}
      * "Em uma escola estadual de tempo integral..."
    - Essas expressões devem ser tratadas como ERRO GRAVE.
 
-4. **QUALIDADE DAS ALTERNATIVAS E DISTRATORES:**
+6. **QUALIDADE DAS ALTERNATIVAS E DISTRATORES:**
    - NUNCA crie alternativas que sejam apenas frases genéricas sobre o conteúdo. As alternativas devem apresentar afirmações concretas, tecnicamente verificáveis e relacionadas diretamente ao conhecimento que está sendo avaliado.
    - Evite alternativas vazias como: "o domínio desse conteúdo é importante para a formação", "o conhecimento desse tópico permite compreender fenômenos", "esse conteúdo deve ser articulado à prática pedagógica" ou qualquer construção genérica.
    - A questão deve possuir apenas UMA alternativa inequivocamente correta. Os três distratores devem ser plausíveis, pertencentes ao MESMO conteúdo e suficientemente próximos da resposta correta para exigir conhecimento real do candidato.
    - Distribua a alternativa correta ALEATORIAMENTE entre A, B, C e D.
 
-5. **EXPLICAÇÃO EDUCATIVA QUE ENSINA O CONTEÚDO:**
+7. **EXPLICAÇÃO EDUCATIVA QUE ENSINA O CONTEÚDO:**
    - Explique por que a alternativa correta está correta e por que cada distrator está incorreto com base no CONHECIMENTO ESPECÍFICO AVALIADO.
    - Não explique "como a FUNECE cobra" no lugar de explicar a matéria.
 
 ---
 
-### 📋 CHECK-LIST MENTAL DE VALIDAÇÃO (SE EXECUTAR ANTES DE CADA QUESTÃO):
+### 📋 CHECK-LIST MENTAL DE VALIDAÇÃO (EXECUTAR ANTES DE CADA QUESTÃO):
 1. A questão pertence exatamente à disciplina selecionada?
 2. A questão aborda diretamente o tópico/subtópico selecionado?
-3. Para responder, o candidato realmente precisa conhecer o conteúdo selecionado?
+3. O conhecimento avaliado traz NOVIDADE REAL em relação às questões anteriores do histórico?
 4. A FUNECE está sendo utilizada apenas como estilo e não como assunto?
 5. A questão poderia existir mesmo se o nome "FUNECE" fosse removido completamente?
 6. Nenhuma alternativa está falando genericamente sobre edital, banca, concurso, legislação ou pedagogia quando isso não fizer parte do conteúdo selecionado?
@@ -818,72 +833,136 @@ Sua resposta DEVE ser estritamente um objeto JSON com a chave "questions":
       let questionText = "";
       let rawAlternatives: { text: string; isCorrect: boolean; reason: string }[] = [];
 
-      const formatIndex = idx % 4;
+      // Combine previousQuestions strings into a single lookup text for keyword checking
+      const seenCombined = (Array.isArray(previousQuestions) ? previousQuestions : []).join(' ').toLowerCase();
 
-      if (normDisc.includes('português') || normDisc.includes('língua') || normDisc.includes('gramát')) {
-        if (formatIndex === 0) {
-          questionText = `No que se refere aos aspectos de sintaxe, coesão e regência associados ao tema de "${cleanSub}", assinale a alternativa que atende rigorosamente à norma-padrão da Língua Portuguesa:`;
-          rawAlternatives = [
-            { text: `A articulação sintática dos enunciados exige observância estrita às regras de concordância e à seleção adequada dos conectivos para a garantia da coesão e da clareza.`, isCorrect: true, reason: "A norma-padrão exige perfeita harmonia sintática entre os termos regentes e regidos, além do uso coerente dos elementos de coesão." },
-            { text: `O emprego dos conectivos subordinativos prescinde de concordância entre verbo e sujeito, operando de modo isolado no texto.`, isCorrect: false, reason: "A concordância verbal é um requisito independente e obrigatório na norma culta." },
-            { text: `A pontuação em orações subordinadas adjetivas restritivas deve obrigatoriamente incluir vírgulas isolando o termo.`, isCorrect: false, reason: "As vírgulas são empregadas nas orações adjetivas explicativas; as restritivas não são isoladas por vírgulas." },
-            { text: `As relações de regência verbal admitem a omissão de preposição antes de pronomes relativos mesmo quando exigida pelo verbo regente.`, isCorrect: false, reason: "Se o verbo regente exige preposição, esta deve ser obrigatoriamente colocada antes do pronome relativo." }
-          ];
-        } else {
-          questionText = `Análise a construção sintático-semântica e os recursos de coesão referente ao tópico de "${cleanSub}". Assinale a opção correta quanto à norma culta:`;
-          rawAlternatives = [
-            { text: `A exatidão no emprego da regência e da colocação pronominal assegura a precisão denotativa e a clareza no registro formal.`, isCorrect: true, reason: "Regência e colocação pronominal sustentam a denotação e a concisão no registro culto." },
-            { text: `O sinal indicativo de crase é obrigatório antes de verbos no infinitivo e de termos masculinos.`, isCorrect: false, reason: "É vedado o uso do sinal indicativo de crase antes de verbos e palavras masculinas." },
-            { text: `A substituição de conectivos adversativos por conjunções causais mantém inalterado o sentido original do período.`, isCorrect: false, reason: "Conectivos adversativos (oposição) e causais (motivo) possuem valores semânticos completamente distintos." },
-            { text: `A concordância nominal entre o adjetivo e múltiplos substantivos prescinde de alinhamento de gênero e número.`, isCorrect: false, reason: "A concordância nominal exige adequação estrita de gênero e número segundo as regras gramaticais." }
-          ];
-        }
-      } else if (normDisc.includes('biologia') || normDisc.includes('ciência')) {
-        if (cleanSub.toLowerCase().includes('célula') || cleanSub.toLowerCase().includes('membrana') || cleanSub.toLowerCase().includes('estrutur') || cleanSub.toLowerCase().includes('físic')) {
-          questionText = `A membrana plasmática é uma estrutura dinâmica e seletiva, essencial para a manutenção da homeostase e para a regulação do tráfego de substâncias entre os meios intra e extracelular. A respeito da composição físico-química e da organização estrutural da membrana celular, assinale a afirmativa CORRETA:`;
-          rawAlternatives = [
-            { text: `O colesterol atua como modulador da fluidez da membrana em células animais: em temperaturas elevadas, limita a movimentação excessiva dos fosfolipídeos; em temperaturas baixas, previne o empacotamento das cadeias de ácidos graxos e a cristalização da bicamada.`, isCorrect: true, reason: "Descrição biofísica precisa do papel anfipático e termorregulador do colesterol na bicamada lipídica." },
-            { text: `O transporte ativo secundário, como o simporte de glicose e sódio (Na+), consome diretamente moléculas de ATP no sítio catalítico da proteína carreadora para mover a glicose a favor do seu gradiente.`, isCorrect: false, reason: "O transporte ativo secundário aproveita o gradiente eletroquímico criado previamente pela bomba de Na+/K+, não consumindo ATP diretamente na proteína carreadora." },
-            { text: `Proteínas periféricas da membrana caracterizam-se por apresentarem extensos domínios transmembrana ricos em aminoácidos apolares dispostos em alfa-hélice ancorados no centro hidrofóbico.`, isCorrect: false, reason: "Extensos domínios transmembrana apolares em alfa-hélice são característicos de proteínas integrais (transmembrana), e não periféricas." },
-            { text: `A osmose é caracterizada como um transporte ativo especializado, no qual moléculas de água são bombeadas contra o gradiente de concentração com gasto direto de ATP pela célula.`, isCorrect: false, reason: "A osmose é um transporte passivo de solvente (água) do meio hipotônico para o hipertônico, sem gasto energético." }
-          ];
-        } else {
-          questionText = `Acerca da bioquímica celular, da cinético-química enzimática e da regulação do metabolismo energético, assinale a alternativa CORRETA:`;
-          rawAlternatives = [
-            { text: `Inibidores competitivos ligam-se reversivelmente ao sítio ativo da enzima, aumentando o valor da constante de Michaelis-Menten (Km) aparente, mantendo inalterada a velocidade máxima (Vmáx) atingível em altas concentrações de substrato.`, isCorrect: true, reason: "Princípio fundamental da cinética enzimática de Michaelis-Menten para inibição competitiva." },
-            { text: `A glicólise ocorre no interior da matriz mitocôndrial e necessita obrigatoriamente de oxigênio molecular (O2) como aceptor final de elétrons para ocorrer.`, isCorrect: false, reason: "A glicólise é uma etapa anaeróbia que ocorre no citosol (hialoplasma), independentemente do O2." },
-            { text: `A fotossíntese nas plantas C3 realiza a fixação inicial do CO2 pela enzima RuBisCO no interior dos peroxissomos, gerando malato de quatro carbonos.`, isCorrect: false, reason: "A fixação pela RuBisCO ocorre no estroma do cloroplasto, gerando 3-PGA (3 carbonos); o malato é formado na via C4." },
-            { text: `O ATP atua na célula como reservatório térmico devido às suas ligações fosfodiéster estáveis que impedem a liberação de energia livre.`, isCorrect: false, reason: "As ligações anidrido fosfórico do ATP possuem alta energia livre de hidrólise, atuando como moeda energética." }
-          ];
-        }
+      if (normDisc.includes('biologia') || normDisc.includes('ciência')) {
+        // Multi-variant sub-concept pool for Biology
+        const bioVariants = [
+          // Variant 0: Transporte Ativo Secundário e Gradiente Eletroquímico
+          {
+            key: 'simporte',
+            question: `Em relação aos mecanismos de transporte de membrana e à bioenergética celular em "${cleanSub}", considere as seguintes afirmações:\n\nI. O transporte ativo secundário, como o simporte de sódio e glicose (Na+/Glicose), não consome ATP de forma direta na proteína carreadora, utilizando o gradiente eletroquímico previamente estabelecido pela bomba de Na+/K+.\nII. A difusão simples ocorre a favor do gradiente de concentração sem necessidade de proteínas transportadoras nem consumo de energia metabólica.\nIII. A osmose é caracterizada como um transporte ativo especializado no qual a água é bombeada contra o gradiente de concentração com gasto direto de ATP.\n\nEstá correto o que se afirma em:`,
+            alternatives: [
+              { text: `I e II apenas.`, isCorrect: true, reason: "I está correta (o simporte utiliza a energia potencial do gradiente de Na+ gerado pela ATPase) e II está correta (difusão simples é passiva). III está incorreta pois osmose é transporte passivo." },
+              { text: `I e III apenas.`, isCorrect: false, reason: "A osmose é um transporte passivo de solvente (água), não um transporte ativo." },
+              { text: `II e III apenas.`, isCorrect: false, reason: "A afirmação III é incorreta." },
+              { text: `I, II e III.`, isCorrect: false, reason: "A afirmação III é incorreta." }
+            ]
+          },
+          // Variant 1: Osmose, Turgidez e Aquaporinas
+          {
+            key: 'osmose',
+            question: `No que tange às propriedades osmóticas, ao comportamento celular em soluções com diferentes tonicidades e ao tema de "${cleanSub}", assinale a alternativa CORRETA:`,
+            alternatives: [
+              { text: `Quando colocada em meio hipotônico, a célula vegetal absorve água por osmose até atingir a pressão de turgor, sem sofrer lise devido à resistência mecânica da parede celular celulósica.`, isCorrect: true, reason: "A parede celular impede a lise (hemólise) em células vegetais sob turgidez osmótica." },
+              { text: `Células animais colocadas em solução hipertônica ganham água rapidamente por difusão facilitada, sofrendo lise celular.`, isCorrect: false, reason: "Em meio hipertônico, a célula perde água por osmose e murcha (crenação)." },
+              { text: `As aquaporinas são canais proteicos que realizam o transporte ativo primário de água contra o gradiente de concentração mediante consumo de GTP.`, isCorrect: false, reason: "Aquaporinas facilitam a difusão passiva da água (osmose), sem gasto de energia." },
+              { text: `A plasmólise vegetal ocorre quando a célula é colocada em meio hipotônico e o vacúolo se expande até romper a membrana.`, isCorrect: false, reason: "A plasmólise ocorre em meio hipertônico, quando a célula perde água e o protoplasto se retrai." }
+            ]
+          },
+          // Variant 2: Colesterol e Fluidez da Membrana
+          {
+            key: 'colesterol',
+            question: `A respeito da organização biofísica da bicamada lipídica, do papel do colesterol e da estrutura de proteínas de membrana associadas a "${cleanSub}", assinale a alternativa CORRETA:`,
+            alternatives: [
+              { text: `O colesterol atua como modulador da fluidez da membrana em células animais: em temperaturas elevadas, limita a movimentação dos fosfolipídeos; em temperaturas baixas, previne o empacotamento dos ácidos graxos e a cristalização da bicamada.`, isCorrect: true, reason: "Descrição biofísica do papel termorregulador e anfipático do colesterol na bicamada lipídica." },
+              { text: `Proteínas periféricas da membrana possuem extensos domínios transmembrana ricos em aminoácidos apolares dispostos em alfa-hélice ancorados no centro hidrofóbico.`, isCorrect: false, reason: "Domínios transmembrana em alfa-hélice são característicos de proteínas integrais, e não periféricas." },
+              { text: `O glicocálix é composto por cadeias de ácidos graxos expostas na face citoplasmática da membrana para síntese direta de ATP.`, isCorrect: false, reason: "O glicocálix é constituído por glicoproteínas e glicolipídeos localizados na face extracelular, atuando no reconhecimento celular." },
+              { text: `Os fosfolipídeos da membrana são moléculas estritamente apolares que repelem a água tanto na cabeça de fosfato quanto nas caudas lipídicas.`, isCorrect: false, reason: "Os fosfolipídeos são anfiipáticos (cabeça polar/hidrofílica e caudas apolares/hidrofóbicas)." }
+            ]
+          },
+          // Variant 3: Enzimas e Cinética de Michaelis-Menten
+          {
+            key: 'enzima',
+            question: `Acerca da bioquímica celular, da cinético-química enzimática e da regulação metabólica em "${cleanSub}", assinale a alternativa CORRETA:`,
+            alternatives: [
+              { text: `Inibidores competitivos ligam-se reversivelmente ao sítio ativo da enzima, aumentando o valor da constante de Michaelis-Menten (Km) aparente, mantendo inalterada a velocidade máxima (Vmáx) em altas concentrações de substrato.`, isCorrect: true, reason: "Princípio fundamental da cinética enzimática de Michaelis-Menten para inibição competitiva." },
+              { text: `A glicólise ocorre no interior da matriz mitocôndrial e necessita obrigatoriamente de oxigênio molecular (O2) como aceptor final de elétrons.`, isCorrect: false, reason: "A glicólise é uma etapa anaeróbia que ocorre no citosol (hialoplasma)." },
+              { text: `A fotossíntese C3 realiza a fixação inicial do CO2 pela enzima RuBisCO no interior dos peroxissomos, gerando malato de quatro carbonos.`, isCorrect: false, reason: "A fixação do CO2 ocorre no estroma do cloroplasto, gerando 3-PGA (3 carbonos)." },
+              { text: `O ATP atua na célula como um reservatório térmico devido às suas ligações fosfodiéster estáveis que impedem a liberação de energia livre.`, isCorrect: false, reason: "O ATP é a moeda energética celular devido às ligações anidrido fosfórico de alta energia livre de hidrólise." }
+            ]
+          },
+          // Variant 4: Citosqueleto e Microtúbulos
+          {
+            key: 'citosqueleto',
+            question: `No que se refere ao citosqueleto, à organização estrutural e ao transporte intracelular referente ao tema de "${cleanSub}", assinale a alternativa CORRETA:`,
+            alternatives: [
+              { text: `Os microtúbulos, compostos por dímeros de tubulina alfa e beta, constituem os centríolos, fusos mitóticos, cílios e flagelos, atuando no transporte vesicular via proteínas motoras (cinesina e dyneina).`, isCorrect: true, reason: "Estrutura e dinâmica funcional dos microtúbulos e proteínas motoras associadas." },
+              { text: `Os filamentos intermediários são formados exclusivamente por actina G e participam ativamente da citocinese celular e contração muscular.`, isCorrect: false, reason: "Actina forma os microfilamentos (filamentos de actina), enquanto filamentos intermediários incluem queratinas e laminas." },
+              { text: `Os microfilamentos de actina são estruturas rígidas e estáticas que ancoram o núcleo celular sem dinamismo de polimerização.`, isCorrect: false, reason: "Microfilamentos de actina são altamente dinâmicos (polimerização/despolimerização) e atuam no movimento ameboide e citocinese." },
+              { text: `A tubulina polimeriza-se sem gasto energético de GTP ou ATP, sendo mantida por ligações covalentes irreversíveis.`, isCorrect: false, reason: "A montagem dos microtúbulos depende do consumo e hidrólise de GTP ligado às subunidades de tubulina." }
+            ]
+          }
+        ];
+
+        // Find variant not yet seen in previousQuestions or pick by index
+        const selectedVar = bioVariants.find(v => !seenCombined.includes(v.key)) || bioVariants[idx % bioVariants.length];
+        questionText = selectedVar.question;
+        rawAlternatives = selectedVar.alternatives;
+
+      } else if (normDisc.includes('português') || normDisc.includes('língua') || normDisc.includes('gramát')) {
+        const portVariants = [
+          {
+            key: 'concordância',
+            question: `No que se refere aos aspectos de sintaxe, coesão e regência associados ao tema de "${cleanSub}", assinale a alternativa que atende rigorosamente à norma-padrão da Língua Portuguesa:`,
+            alternatives: [
+              { text: `A articulação sintática dos enunciados exige observância estrita às regras de concordância e à seleção adequada dos conectivos para a garantia da coesão e da clareza.`, isCorrect: true, reason: "A norma-padrão exige perfeita harmonia sintática e uso coerente dos elementos de coesão." },
+              { text: `O emprego dos conectivos subordinativos prescinde de concordância entre verbo e sujeito, operando de modo isolado no texto.`, isCorrect: false, reason: "A concordância verbal é obrigatória na norma culta." },
+              { text: `A pontuação em orações subordinadas adjetivas restritivas deve obrigatoriamente incluir vírgulas isolando o termo.`, isCorrect: false, reason: "Apenas orações adjetivas explicativas usam vírgulas." },
+              { text: `As relações de regência verbal admitem a omissão de preposição antes de pronomes relativos mesmo quando exigida pelo verbo regente.`, isCorrect: false, reason: "A preposição exigida pelo verbo regente deve anteceder o pronome relativo." }
+            ]
+          },
+          {
+            key: 'crase',
+            question: `Análise a construção sintático-semântica, o emprego da crase e a colocação pronominal referente ao tópico de "${cleanSub}". Assinale a opção correta quanto à norma culta:`,
+            alternatives: [
+              { text: `A exatidão no emprego da regência e da colocação pronominal assegura a precisão denotativa e a clareza no registro formal.`, isCorrect: true, reason: "Regência e colocação pronominal sustentam a denotação no registro culto." },
+              { text: `O sinal indicativo de crase é obrigatório antes de verbos no infinitivo e de termos masculinos.`, isCorrect: false, reason: "É vedado o uso de crase antes de verbos e palavras masculinas." },
+              { text: `A substituição de conectivos adversativos por conjunções causais mantém inalterado o sentido original do período.`, isCorrect: false, reason: "Conectivos adversativos e causais possuem valores semânticos completamente distintos." },
+              { text: `A concordância nominal entre o adjetivo e múltiplos substantivos prescinde de alinhamento de gênero e número.`, isCorrect: false, reason: "A concordância nominal exige adequação de gênero e número." }
+            ]
+          }
+        ];
+        const selectedVar = portVariants.find(v => !seenCombined.includes(v.key)) || portVariants[idx % portVariants.length];
+        questionText = selectedVar.question;
+        rawAlternatives = selectedVar.alternatives;
+
       } else if (normDisc.includes('legislaç') || normDisc.includes('direito') || normDisc.includes('administraç')) {
         questionText = `De acordo com os preceitos da legislação educacional brasileira (LDB nº 9.394/96 e normas correlatas) no que tange ao tema "${cleanSub}", assinale a afirmativa correta:`;
         rawAlternatives = [
           { text: `A garantia do direito à educação, a igualdade de condições para acesso e permanência e a gestão democrática do ensino público constituem princípios do ensino nacional.`, isCorrect: true, reason: "Fundamentação expressa no Artigo 3º da LDB nº 9.394/96." },
-          { text: `A aplicação das diretrizes curriculares nacionais anula a autonomia pedagógica das unidades escolares na elaboração de seus Projetos Político-Pedagógicos.`, isCorrect: false, reason: "A LDB garante a autonomia das estabelecimentos de ensino na elaboração e execução de sua proposta pedagógica (Art. 12)." },
-          { text: `O ensino público pode restringir a liberdade de aprender, ensinar, pesquisar e divulgar o pensamento em função de orientações doutrinárias específicas.`, isCorrect: false, reason: "A LDB assegura explicitamente a liberdade de aprender, ensinar, pesquisar e divulgar o pensamento, a arte e o saber." },
-          { text: `A gestão democrática do ensino público veda a participação dos profissionais da educação e da comunidade local em conselhos escolares.`, isCorrect: false, reason: "A LDB (Art. 14) determina expressamente a participação dos profissionais da educação e da comunidade escolar/local nos conselhos." }
+          { text: `A aplicação das diretrizes curriculares nacionais anula a autonomia pedagógica das unidades escolares na elaboração de seus Projetos Político-Pedagógicos.`, isCorrect: false, reason: "A LDB garante a autonomia dos estabelecimentos de ensino (Art. 12)." },
+          { text: `O ensino público pode restringir a liberdade de aprender, ensinar, pesquisar e divulgar o pensamento em função de orientações doutrinárias específicas.`, isCorrect: false, reason: "A LDB assegura explicitamente a liberdade de aprender e ensinar." },
+          { text: `A gestão democrática do ensino público veda a participação dos profissionais da educação e da comunidade local em conselhos escolares.`, isCorrect: false, reason: "A LDB (Art. 14) determina expressamente a participação da comunidade em conselhos." }
         ];
       } else if (normDisc.includes('pedagogi') || normDisc.includes('didátic') || normDisc.includes('educaç')) {
-        if (formatIndex === 0) {
-          questionText = `Na Didática Geral e no estudo das Tendências Pedagógicas no Brasil, quanto ao desenvolvimento do trabalho pedagógico e ao tema "${cleanSub}", assinale a opção correta:`;
-          rawAlternatives = [
-            { text: `A articulação entre os saberes científicos e a realidade social dos estudantes caracteriza a Pedagogia Histórico-Crítica, visando à democratização do conhecimento e à emancipação do educando.`, isCorrect: true, reason: "Fundamento central da Pedagogia Histórico-Crítica (Dermeval Saviani)." },
-            { text: `A Tendência Liberal Tecnicista prioriza o diálogo sobre temas geradores e a conscientização política em detrimento do treinamento operacional.`, isCorrect: false, reason: "Temas geradores pertencem à Pedagogia Libertadora de Paulo Freire; o Tecnicismo foca na eficiência e neutralidade técnica." },
-            { text: `A Tendência Liberal Renovada Progressivista fundamenta-se na transmissão expositiva de conteúdos acumulados, sendo o aluno um receptor passivo.`, isCorrect: false, reason: "A Renovada Progressivista centra-se na atividade do aluno ('aprender a aprender') e em métodos ativos." },
-            { text: `A Tendência Progressista Libertadora concebe a avaliação do aprendizado como um instrumento puramente somativo e punitivo.`, isCorrect: false, reason: "A Pedagogia Libertadora recusa exames punitivos, defendendo uma práxis autoavaliativa e libertadora." }
-          ];
-        } else {
-          questionText = `Acerca do planejamento didático, da organização curricular e do tema de "${cleanSub}", assinale a alternativa cientificamente correta:`;
-          rawAlternatives = [
-            { text: `O planejamento didático intencional medeia a relação entre o conhecimento prévio do estudante e o conhecimento científico elaborado, promovendo a aprendizagem significativa.`, isCorrect: true, reason: "Conceito essencial da mediação pedagógica dialética." },
-            { text: `A avaliação formativa e contínua busca unicamente a classificação numérica final dos discentes para fins de seleção e exclusão.`, isCorrect: false, reason: "A avaliação formativa busca diagnosticar e reorientar o processo de ensino-aprendizagem, não classificar para excluir." },
-            { text: `A organização do trabalho pedagógico prescinde de coerência entre os objetivos de aprendizagem, as metodologias e os instrumentos de avaliação.`, isCorrect: false, reason: "O planejamento didático exige obrigatoriamente alinhamento entre objetivos, conteúdos, métodos e avaliação." },
-            { text: `A gestão do ensino público centraliza as decisões pedagógicas na equipe diretiva, dispensando a elaboração coletiva do Projeto Político-Pedagógico.`, isCorrect: false, reason: "O PPP deve ser elaborado coletivamente com a participação dos professores e da comunidade escolar." }
-          ];
-        }
+        const pedVariants = [
+          {
+            key: 'tendencias',
+            question: `Na Didática Geral e no estudo das Tendências Pedagógicas no Brasil, quanto ao desenvolvimento do trabalho pedagógico e ao tema "${cleanSub}", assinale a opção correta:`,
+            alternatives: [
+              { text: `A articulação entre os saberes científicos e a realidade social dos estudantes caracteriza a Pedagogia Histórico-Crítica, visando à democratização do conhecimento e à emancipação do educando.`, isCorrect: true, reason: "Fundamento central da Pedagogia Histórico-Crítica (Dermeval Saviani)." },
+              { text: `A Tendência Liberal Tecnicista prioriza o diálogo sobre temas geradores e a conscientização política em detrimento do treinamento operacional.`, isCorrect: false, reason: "Temas geradores pertencem à Pedagogia Libertadora de Paulo Freire." },
+              { text: `A Tendência Liberal Renovada Progressivista fundamenta-se na transmissão expositiva de conteúdos acumulados, sendo o aluno um receptor passivo.`, isCorrect: false, reason: "A Renovada Progressivista centra-se na atividade do aluno ('aprender a aprender')." },
+              { text: `A Tendência Progressista Libertadora concebe a avaliação do aprendizado como um instrumento puramente somativo e punitivo.`, isCorrect: false, reason: "A Pedagogia Libertadora recusa exames punitivos, defendendo uma práxis emancipatória." }
+            ]
+          },
+          {
+            key: 'planejamento',
+            question: `Acerca do planejamento didático, da organização curricular e do tema de "${cleanSub}", assinale a alternativa cientificamente correta:`,
+            alternatives: [
+              { text: `O planejamento didático intencional medeia a relação entre o conhecimento prévio do estudante e o conhecimento científico elaborado, promovendo a aprendizagem significativa.`, isCorrect: true, reason: "Conceito essencial da mediação pedagógica dialética." },
+              { text: `A avaliação formativa e contínua busca unicamente a classificação numérica final dos discentes para fins de seleção e exclusão.`, isCorrect: false, reason: "A avaliação formativa busca diagnosticar e reorientar o ensino-aprendizagem." },
+              { text: `A organização do trabalho pedagógico prescinde de coerência entre os objetivos de aprendizagem, as metodologias e os instrumentos de avaliação.`, isCorrect: false, reason: "Exige-se alinhamento entre objetivos, conteúdos, métodos e avaliação." },
+              { text: `A gestão do ensino público centraliza as decisões pedagógicas na equipe diretiva, dispensando a elaboração coletiva do Projeto Político-Pedagógico.`, isCorrect: false, reason: "O PPP deve ser elaborado coletivamente com a participação dos professores e comunidade." }
+            ]
+          }
+        ];
+        const selectedVar = pedVariants.find(v => !seenCombined.includes(v.key)) || pedVariants[idx % pedVariants.length];
+        questionText = selectedVar.question;
+        rawAlternatives = selectedVar.alternatives;
       } else {
-        // Outras disciplinas específicas (História, Geografia, Matemática, Física, Química, etc.)
         questionText = `No âmbito do estudo acadêmico de ${discipline || 'Conhecimentos Específicos'}, referente ao tópico de "${cleanSub}", assinale a proposição conceitualmente CORRETA:`;
         rawAlternatives = [
           { text: `O domínio dos fundamentos teóricos e conceituais inerentes a ${cleanSub.toLowerCase()} permite a compreensão precisa dos fenômenos, estruturas e processos da área de conhecimento.`, isCorrect: true, reason: "Análise conceitual e científica rigorosa do conteúdo específico selecionado." },

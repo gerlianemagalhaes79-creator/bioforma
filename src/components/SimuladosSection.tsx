@@ -375,6 +375,7 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
       } else {
         // Build a 100% unique question tailored to the exact discipline
         const normDisc = disciplineName.toLowerCase();
+        const seenCombined = seenTexts.join(' ').toLowerCase();
 
         let qText = `Acerca do tópico "${subtopicName}" (${topicName}), assinale a alternativa inteiramente CORRETA do ponto de vista conceitual e científico:`;
         let rawOpts = [
@@ -393,23 +394,53 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
             { isCorrect: false, text: `As relações de regência verbal admitem a omissão de preposição antes de pronomes relativos mesmo quando exigida pelo termo regente.` }
           ];
         } else if (normDisc.includes('biologia') || normDisc.includes('ciência')) {
-          if (subtopicName.toLowerCase().includes('célula') || subtopicName.toLowerCase().includes('membrana') || subtopicName.toLowerCase().includes('estrutur') || subtopicName.toLowerCase().includes('físic')) {
-            qText = `A membrana plasmática é uma estrutura dinâmica e seletiva, essencial para a manutenção da homeostase e para a regulação do tráfego de substâncias entre os meios intra e extracelular. A respeito da composição físico-química e da organização estrutural da membrana celular, assinale a afirmativa CORRETA:`;
-            rawOpts = [
-              { isCorrect: true, text: `O colesterol atua como modulador da fluidez da membrana em células animais: em temperaturas elevadas, limita a movimentação excessiva dos fosfolipídeos; em temperaturas baixas, previne o empacotamento das cadeias de ácidos graxos e a cristalização da bicamada.` },
-              { isCorrect: false, text: `O transporte ativo secundário, como o simporte de glicose e sódio (Na+), consome diretamente moléculas de ATP no sítio catalítico da proteína carreadora para mover a glicose a favor do seu gradiente.` },
-              { isCorrect: false, text: `Proteínas periféricas da membrana caracterizam-se por apresentarem extensos domínios transmembrana ricos em aminoácidos apolares dispostos em alfa-hélice ancorados no centro hidrofóbico.` },
-              { isCorrect: false, text: `A osmose é caracterizada como um transporte ativo especializado, no qual moléculas de água são bombeadas contra o gradiente de concentração com gasto direto de ATP pela célula.` }
-            ];
-          } else {
-            qText = `Acerca da bioquímica celular, da cinético-química enzimática e da regulação do metabolismo energético, assinale a alternativa CORRETA:`;
-            rawOpts = [
-              { isCorrect: true, text: `Inibidores competitivos ligam-se reversivelmente ao sítio ativo da enzima, aumentando o valor da constante de Michaelis-Menten (Km) aparente, mantendo inalterada a velocidade máxima (Vmáx) atingível em altas concentrações de substrato.` },
-              { isCorrect: false, text: `A glicólise ocorre no interior da matriz mitocôndrial e necessita obrigatoriamente de oxigênio molecular (O2) como aceptor final de elétrons para ocorrer.` },
-              { isCorrect: false, text: `A fotossíntese nas plantas C3 realiza a fixação inicial do CO2 pela enzima RuBisCO no interior dos peroxissomos, gerando malato de quatro carbonos.` },
-              { isCorrect: false, text: `O ATP atua na célula como reservatório térmico devido às suas ligações fosfodiéster estáveis que impedem a liberação de energia livre.` }
-            ];
-          }
+          const bioVars = [
+            {
+              key: 'simporte',
+              q: `Em relação aos mecanismos de transporte através da membrana celular e à bioenergética em "${subtopicName}", considere as seguintes afirmações:\n\nI. O transporte ativo secundário, como o simporte de sódio e glicose (Na+/Glicose), não consome ATP de forma direta na proteína carreadora, utilizando o gradiente eletroquímico previamente estabelecido pela bomba de Na+/K+.\nII. A difusão simples ocorre a favor do gradiente de concentração sem necessidade de proteínas transportadoras nem consumo de energia metabólica.\nIII. A osmose é caracterizada como um transporte ativo especializado com gasto de ATP.\n\nEstá correto o que se afirma em:`,
+              opts: [
+                { isCorrect: true, text: `I e II apenas.` },
+                { isCorrect: false, text: `I e III apenas.` },
+                { isCorrect: false, text: `II e III apenas.` },
+                { isCorrect: false, text: `I, II e III.` }
+              ]
+            },
+            {
+              key: 'osmose',
+              q: `No que tange às propriedades osmóticas, ao comportamento celular em soluções com diferentes tonicidades e ao tema de "${subtopicName}", assinale a alternativa CORRETA:`,
+              opts: [
+                { isCorrect: true, text: `Quando colocada em meio hipotônico, a célula vegetal absorve água por osmose até atingir a pressão de turgor, sem sofrer lise devido à resistência da parede celular celulósica.` },
+                { isCorrect: false, text: `Células animais colocadas em solução hipertônica ganham água rapidamente por difusão facilitada, sofrendo lise celular.` },
+                { isCorrect: false, text: `As aquaporinas são canais proteicos que realizam o transporte ativo primário de água contra o gradiente mediante consumo de GTP.` },
+                { isCorrect: false, text: `A plasmólise vegetal ocorre quando a célula é colocada em meio hipotônico e o vacúolo se expande.` }
+              ]
+            },
+            {
+              key: 'colesterol',
+              q: `A respeito da organização biofísica da bicamada lipídica, do papel do colesterol e da estrutura de proteínas de membrana associadas a "${subtopicName}", assinale a alternativa CORRETA:`,
+              opts: [
+                { isCorrect: true, text: `O colesterol atua como modulador da fluidez da membrana em células animais: em temperaturas elevadas, limita a movimentação dos fosfolipídeos; em temperaturas baixas, previne a cristalização da bicamada.` },
+                { isCorrect: false, text: `Proteínas periféricas da membrana caracterizam-se por apresentarem extensos domínios transmembrana apolares dispostos em alfa-hélice.` },
+                { isCorrect: false, text: `O glicocálix é composto por cadeias de ácidos graxos expostas na face citoplasmática para síntese de ATP.` },
+                { isCorrect: false, text: `Os fosfolipídeos da membrana são moléculas estritamente apolares sem cabeça hidrofílica.` }
+              ]
+            },
+            {
+              key: 'enzima',
+              q: `Acerca da bioquímica celular, da cinético-química enzimática e da regulação do metabolismo energético em "${subtopicName}", assinale a alternativa CORRETA:`,
+              opts: [
+                { isCorrect: true, text: `Inibidores competitivos ligam-se reversivelmente ao sítio ativo da enzima, aumentando o valor da constante de Michaelis-Menten (Km) aparente, mantendo inalterada a velocidade máxima (Vmáx).` },
+                { isCorrect: false, text: `A glicólise ocorre no interior da matriz mitocôndrial e necessita obrigatoriamente de O2 como aceptor final.` },
+                { isCorrect: false, text: `A fotossíntese nas plantas C3 realiza a fixação inicial do CO2 no interior dos peroxissomos.` },
+                { isCorrect: false, text: `O ATP atua na célula como reservatório térmico sem liberação de energia livre.` }
+              ]
+            }
+          ];
+
+          const selectedBio = bioVars.find(v => !seenCombined.includes(v.key)) || bioVars[i % bioVars.length];
+          qText = selectedBio.q;
+          rawOpts = selectedBio.opts;
+
         } else if (normDisc.includes('legislaç') || normDisc.includes('direito')) {
           qText = `De acordo com a legislação educacional brasileira referente ao tema "${subtopicName}", assinale a afirmativa correta:`;
           rawOpts = [
