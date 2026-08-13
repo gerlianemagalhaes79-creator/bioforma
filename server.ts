@@ -677,10 +677,15 @@ ${FORMULA_FORMATTING_DIRECTIVE}
      * "Em uma escola estadual de tempo integral..."
    - Essas expressões devem ser tratadas como ERRO GRAVE.
 
-6. **QUALIDADE DAS ALTERNATIVAS E DISTRATORES:**
-   - NUNCA crie alternativas que sejam apenas frases genéricas sobre o conteúdo. As alternativas devem apresentar afirmações concretas, tecnicamente verificáveis e relacionadas diretamente ao conhecimento que está sendo avaliado.
-   - Evite alternativas vazias como: "o domínio desse conteúdo é importante para a formação", "o conhecimento desse tópico permite compreender fenômenos", "esse conteúdo deve ser articulado à prática pedagógica" ou qualquer construção genérica.
-   - A questão deve possuir apenas UMA alternativa inequivocamente correta. Os três distratores devem ser plausíveis, pertencentes ao MESMO conteúdo e suficientemente próximos da resposta correta para exigir conhecimento real do candidato.
+6. **QUALIDADE, ESTRUTURAÇÃO E PLAUSIBILIDADE DOS DISTRATORES (ITENS ERRADOS):**
+   - **ZERO ERROS GROTESCOS OU ABSURDOS**: É ESTRITAMENTE PROIBIDO criar distratores com erros caricatos, absurdos ou ingênuos que possam ser descartados por eliminação fácil sem estudo prévio.
+   - **ERROS SUTIS E TÉCNICAMENTE EMBASADOS**: Cada distrator deve parecer 90% correto e altamente erudito, contendo apenas uma inconsistência conceitual pontual, como:
+     * Trocar conceitos ou termos de alta especificidade (ex: inibição competitiva vs. não-competitiva; transporte ativo primário vs. secundário; oração adjetiva explicativa vs. restritiva; tendência pedagógica renovada progressivista vs. renovada não-diretiva; Art. 12 vs. Art. 13 da LDB).
+     * Atribuir uma propriedade verdadeira a um compartimento, fase, classe ou mecanismo incorreto (ex: atribuir a função da membrana interna mitocondrial ao estroma do cloroplasto).
+     * Inverter sutilmente a relação de causa/efeito ou o sinal de uma regulação metabólica/química/conceitual.
+   - **PARIDADE DE EXTENSÃO E DENSIDADE VOCABULAR**: O item correto e os 3 distratores DEVEM ter extensão, densidade acadêmica e estrutura sintática rigorosamente equivalentes. A alternativa correta JAMAIS pode ser a única longa ou explicativa.
+   - **PROIBIÇÃO DE PALAVRAS "PISTA" DE CHUTE**: NÃO use termos absolutos entregadores de erro (como "prescinde totalmente", "anula integralmente", "sempre", "nunca", "vedado a todos", "sem exceção"), a menos que o conteúdo exija.
+   - **DISTRATORES CONCRETOS**: Evite frases genéricas vazias ("o conhecimento desse tópico é importante", "articula-se com a prática pedagógica").
    - Distribua a alternativa correta ALEATORIAMENTE entre A, B, C e D.
 
 7. **EXPLICAÇÃO EDUCATIVA QUE ENSINA O CONTEÚDO:**
@@ -837,15 +842,15 @@ Sua resposta DEVE ser estritamente um objeto JSON com a chave "questions":
       const seenCombined = (Array.isArray(previousQuestions) ? previousQuestions : []).join(' ').toLowerCase();
 
       if (normDisc.includes('biologia') || normDisc.includes('ciência')) {
-        // Multi-variant sub-concept pool for Biology
+        // Multi-variant sub-concept pool for Biology with subtle, academic distractors
         const bioVariants = [
           // Variant 0: Transporte Ativo Secundário e Gradiente Eletroquímico
           {
             key: 'simporte',
-            question: `Em relação aos mecanismos de transporte de membrana e à bioenergética celular em "${cleanSub}", considere as seguintes afirmações:\n\nI. O transporte ativo secundário, como o simporte de sódio e glicose (Na+/Glicose), não consome ATP de forma direta na proteína carreadora, utilizando o gradiente eletroquímico previamente estabelecido pela bomba de Na+/K+.\nII. A difusão simples ocorre a favor do gradiente de concentração sem necessidade de proteínas transportadoras nem consumo de energia metabólica.\nIII. A osmose é caracterizada como um transporte ativo especializado no qual a água é bombeada contra o gradiente de concentração com gasto direto de ATP.\n\nEstá correto o que se afirma em:`,
+            question: `Em relação aos mecanismos de transporte através da membrana celular e à bioenergética em "${cleanSub}", considere as seguintes afirmações:\n\nI. O transporte ativo secundário, como o simporte de sódio e glicose (Na+/Glicose), não consome ATP de forma direta na proteína carreadora, utilizando a energia potencial do gradiente eletroquímico de Na+ previamente estabelecido pela bomba de Na+/K+.\nII. A difusão simples do oxigênio e do gás carbônico ocorre a favor do gradiente de concentração sem necessidade de proteínas transportadoras nem consumo energético.\nIII. A difusão facilitada de íons por canais proteicos ocorre contra o gradiente eletroquímico celular mediante gasto direto de ATP.\n\nEstá correto o que se afirma em:`,
             alternatives: [
-              { text: `I e II apenas.`, isCorrect: true, reason: "I está correta (o simporte utiliza a energia potencial do gradiente de Na+ gerado pela ATPase) e II está correta (difusão simples é passiva). III está incorreta pois osmose é transporte passivo." },
-              { text: `I e III apenas.`, isCorrect: false, reason: "A osmose é um transporte passivo de solvente (água), não um transporte ativo." },
+              { text: `I e II apenas.`, isCorrect: true, reason: "I está correta (o simporte utiliza a energia do gradiente eletroquímico de Na+) e II está correta (difusão simples é passiva). III está incorreta pois difusão facilitada ocorre a favor do gradiente e não consome ATP." },
+              { text: `I e III apenas.`, isCorrect: false, reason: "A afirmação III é incorreta porque a difusão facilitada é um processo passivo a favor do gradiente." },
               { text: `II e III apenas.`, isCorrect: false, reason: "A afirmação III é incorreta." },
               { text: `I, II e III.`, isCorrect: false, reason: "A afirmação III é incorreta." }
             ]
@@ -853,12 +858,12 @@ Sua resposta DEVE ser estritamente um objeto JSON com a chave "questions":
           // Variant 1: Osmose, Turgidez e Aquaporinas
           {
             key: 'osmose',
-            question: `No que tange às propriedades osmóticas, ao comportamento celular em soluções com diferentes tonicidades e ao tema de "${cleanSub}", assinale a alternativa CORRETA:`,
+            question: `No que tange às propriedades osmóticas, ao comportamento celular em soluções de diferentes tonicidades e ao tema de "${cleanSub}", assinale a alternativa CORRETA:`,
             alternatives: [
-              { text: `Quando colocada em meio hipotônico, a célula vegetal absorve água por osmose até atingir a pressão de turgor, sem sofrer lise devido à resistência mecânica da parede celular celulósica.`, isCorrect: true, reason: "A parede celular impede a lise (hemólise) em células vegetais sob turgidez osmótica." },
-              { text: `Células animais colocadas em solução hipertônica ganham água rapidamente por difusão facilitada, sofrendo lise celular.`, isCorrect: false, reason: "Em meio hipertônico, a célula perde água por osmose e murcha (crenação)." },
-              { text: `As aquaporinas são canais proteicos que realizam o transporte ativo primário de água contra o gradiente de concentração mediante consumo de GTP.`, isCorrect: false, reason: "Aquaporinas facilitam a difusão passiva da água (osmose), sem gasto de energia." },
-              { text: `A plasmólise vegetal ocorre quando a célula é colocada em meio hipotônico e o vacúolo se expande até romper a membrana.`, isCorrect: false, reason: "A plasmólise ocorre em meio hipertônico, quando a célula perde água e o protoplasto se retrai." }
+              { text: `Quando colocada em meio hipotônico, a célula vegetal absorve água por osmose até atingir a pressão de turgor, sem sofrer lise devido à resistência mecânica da parede celular celulósica.`, isCorrect: true, reason: "A parede celular celulósica exerce pressão contrária (pressão de turgor), impedindo o rompimento osmótico da célula vegetal." },
+              { text: `Células animais colocadas em solução hipotônica perdem água rapidamente para o meio externo, assumindo aspecto murcho ou crenado.`, isCorrect: false, reason: "Em meio hipotônico, a célula animal ganha água por osmose podendo sofrer lise (hemólise); a crenação ocorre em meio hipertônico." },
+              { text: `As aquaporinas são proteínas carreadoras simportadoras que realizam o transporte ativo primário da água dependente da hidrólise de GTP.`, isCorrect: false, reason: "Aquaporinas são canais proteicos que facilitam a difusão passiva (osmose) da água, sem consumo energético." },
+              { text: `A plasmólise na célula vegetal caracteriza-se pela expansão do vacuólo e do protoplasto quando o tecido é imerso em solução hipotônica.`, isCorrect: false, reason: "A plasmólise ocorre em meio hipertônico, quando a célula perde água e o protoplasto se retrói." }
             ]
           },
           // Variant 2: Colesterol e Fluidez da Membrana
@@ -866,10 +871,10 @@ Sua resposta DEVE ser estritamente um objeto JSON com a chave "questions":
             key: 'colesterol',
             question: `A respeito da organização biofísica da bicamada lipídica, do papel do colesterol e da estrutura de proteínas de membrana associadas a "${cleanSub}", assinale a alternativa CORRETA:`,
             alternatives: [
-              { text: `O colesterol atua como modulador da fluidez da membrana em células animais: em temperaturas elevadas, limita a movimentação dos fosfolipídeos; em temperaturas baixas, previne o empacotamento dos ácidos graxos e a cristalização da bicamada.`, isCorrect: true, reason: "Descrição biofísica do papel termorregulador e anfipático do colesterol na bicamada lipídica." },
-              { text: `Proteínas periféricas da membrana possuem extensos domínios transmembrana ricos em aminoácidos apolares dispostos em alfa-hélice ancorados no centro hidrofóbico.`, isCorrect: false, reason: "Domínios transmembrana em alfa-hélice são característicos de proteínas integrais, e não periféricas." },
-              { text: `O glicocálix é composto por cadeias de ácidos graxos expostas na face citoplasmática da membrana para síntese direta de ATP.`, isCorrect: false, reason: "O glicocálix é constituído por glicoproteínas e glicolipídeos localizados na face extracelular, atuando no reconhecimento celular." },
-              { text: `Os fosfolipídeos da membrana são moléculas estritamente apolares que repelem a água tanto na cabeça de fosfato quanto nas caudas lipídicas.`, isCorrect: false, reason: "Os fosfolipídeos são anfiipáticos (cabeça polar/hidrofílica e caudas apolares/hidrofóbicas)." }
+              { text: `O colesterol atua como modulador da fluidez da membrana em células animais: em temperaturas elevadas, limita a movimentação dos fosfolipídeos; em temperaturas baixas, previne o empacotamento das cadeias de ácidos graxos e a cristalização da bicamada.`, isCorrect: true, reason: "Descrição biofísica do papel anfipático e termorregulador do colesterol na bicamada lipídica." },
+              { text: `Proteínas periféricas da membrana caracterizam-se por se ancorarem firmemente ao centro hidrofóbico através de domínios em alfa-hélice apolares transmembrana.`, isCorrect: false, reason: "Domínios apolares transmembrana em alfa-hélice são exclusivos de proteínas integrais (transmembrana), não periféricas." },
+              { text: `O glicocálix é uma camada de fosfolipídeos e esteroides exposta na face citoplasmática interna da membrana celular responsável pela síntese de ATP.`, isCorrect: false, reason: "O glicocálix é constituído por glicoproteínas e glicolipídeos localizados na face extracelular, atuando no reconhecimento celular." },
+              { text: `A assimetria lipídica da membrana plasmática é mantida por difusão lateral espontânea dos fosfolipídeos entre as monocamadas sem auxílio enzimático.`, isCorrect: false, reason: "A assimetria é mantida por enzimas específicas (flipases e flopases) que consomem ATP para mover fosfolipídeos entre as monocamadas." }
             ]
           },
           // Variant 3: Enzimas e Cinética de Michaelis-Menten
@@ -878,9 +883,9 @@ Sua resposta DEVE ser estritamente um objeto JSON com a chave "questions":
             question: `Acerca da bioquímica celular, da cinético-química enzimática e da regulação metabólica em "${cleanSub}", assinale a alternativa CORRETA:`,
             alternatives: [
               { text: `Inibidores competitivos ligam-se reversivelmente ao sítio ativo da enzima, aumentando o valor da constante de Michaelis-Menten (Km) aparente, mantendo inalterada a velocidade máxima (Vmáx) em altas concentrações de substrato.`, isCorrect: true, reason: "Princípio fundamental da cinética enzimática de Michaelis-Menten para inibição competitiva." },
-              { text: `A glicólise ocorre no interior da matriz mitocôndrial e necessita obrigatoriamente de oxigênio molecular (O2) como aceptor final de elétrons.`, isCorrect: false, reason: "A glicólise é uma etapa anaeróbia que ocorre no citosol (hialoplasma)." },
-              { text: `A fotossíntese C3 realiza a fixação inicial do CO2 pela enzima RuBisCO no interior dos peroxissomos, gerando malato de quatro carbonos.`, isCorrect: false, reason: "A fixação do CO2 ocorre no estroma do cloroplasto, gerando 3-PGA (3 carbonos)." },
-              { text: `O ATP atua na célula como um reservatório térmico devido às suas ligações fosfodiéster estáveis que impedem a liberação de energia livre.`, isCorrect: false, reason: "O ATP é a moeda energética celular devido às ligações anidrido fosfórico de alta energia livre de hidrólise." }
+              { text: `Inibidores não-competitivos ligam-se ao sítio ativo da enzima, alterando a afinidade pelo substrato e reduzindo o valor de Km sem afetar a Vmáx.`, isCorrect: false, reason: "Inibidores não-competitivos ligam-se a um sítio alostérico (fora do sítio ativo) e diminuem a Vmáx mantendo o Km inalterado." },
+              { text: `A glicólise ocorre na matriz mitocôndrial e consiste na oxidação completa da glicose em CO2 e H2O com elevada produção de ATP por fosforilação oxidativa.`, isCorrect: false, reason: "A glicólise ocorre no citosol (hialoplasma), produz piruvato e apenas 2 ATPs por fosforilação em nível de substrato." },
+              { text: `A enzima RuBisCO na fotossíntese C3 realiza a fixação do CO2 durante a fase fotoquímica dependente de luz no interior dos tilacoides.`, isCorrect: false, reason: "A RuBisCO atua no estroma do cloroplasto durante a etapa enzimática (ciclo de Calvin)." }
             ]
           },
           // Variant 4: Citosqueleto e Microtúbulos
@@ -888,10 +893,10 @@ Sua resposta DEVE ser estritamente um objeto JSON com a chave "questions":
             key: 'citosqueleto',
             question: `No que se refere ao citosqueleto, à organização estrutural e ao transporte intracelular referente ao tema de "${cleanSub}", assinale a alternativa CORRETA:`,
             alternatives: [
-              { text: `Os microtúbulos, compostos por dímeros de tubulina alfa e beta, constituem os centríolos, fusos mitóticos, cílios e flagelos, atuando no transporte vesicular via proteínas motoras (cinesina e dyneina).`, isCorrect: true, reason: "Estrutura e dinâmica funcional dos microtúbulos e proteínas motoras associadas." },
-              { text: `Os filamentos intermediários são formados exclusivamente por actina G e participam ativamente da citocinese celular e contração muscular.`, isCorrect: false, reason: "Actina forma os microfilamentos (filamentos de actina), enquanto filamentos intermediários incluem queratinas e laminas." },
-              { text: `Os microfilamentos de actina são estruturas rígidas e estáticas que ancoram o núcleo celular sem dinamismo de polimerização.`, isCorrect: false, reason: "Microfilamentos de actina são altamente dinâmicos (polimerização/despolimerização) e atuam no movimento ameboide e citocinese." },
-              { text: `A tubulina polimeriza-se sem gasto energético de GTP ou ATP, sendo mantida por ligações covalentes irreversíveis.`, isCorrect: false, reason: "A montagem dos microtúbulos depende do consumo e hidrólise de GTP ligado às subunidades de tubulina." }
+              { text: `Os microtúbulos, compostos por heterodímeros de tubulina alfa e beta, constituem os centríolos, fusos mitóticos, cílios e flagelos, atuando no transporte vesicular via proteínas motoras.`, isCorrect: true, reason: "Estrutura e dinâmica funcional dos microtúbulos e proteínas motoras associadas (cinesina e dineína)." },
+              { text: `Os filamentos intermediários são constituídos por polímeros dinâmicos de actina G e participam ativamente da citocinese celular e contração muscular.`, isCorrect: false, reason: "Microfilamentos são formados por actina; filamentos intermediários incluem queratina e laminas e têm função estrutural." },
+              { text: `Os microfilamentos de actina atuam no transporte anterógrado de vesículas sobre o fuso mitótico mediante hidrólise direta de GTP.`, isCorrect: false, reason: "O fuso mitótico e o transporte de vesículas dependem dos microtúbulos, e não dos microfilamentos de actina." },
+              { text: `A polimerização dos microtúbulos ocorre na extremidade negativa (-) associada à membrana plasmática através da adição de monômeros de miosina.`, isCorrect: false, reason: "A polimerização do microtúbulo ocorre na extremidade positiva (+), incorporando dímeros de tubulina." }
             ]
           }
         ];
@@ -907,20 +912,20 @@ Sua resposta DEVE ser estritamente um objeto JSON com a chave "questions":
             key: 'concordância',
             question: `No que se refere aos aspectos de sintaxe, coesão e regência associados ao tema de "${cleanSub}", assinale a alternativa que atende rigorosamente à norma-padrão da Língua Portuguesa:`,
             alternatives: [
-              { text: `A articulação sintática dos enunciados exige observância estrita às regras de concordância e à seleção adequada dos conectivos para a garantia da coesão e da clareza.`, isCorrect: true, reason: "A norma-padrão exige perfeita harmonia sintática e uso coerente dos elementos de coesão." },
-              { text: `O emprego dos conectivos subordinativos prescinde de concordância entre verbo e sujeito, operando de modo isolado no texto.`, isCorrect: false, reason: "A concordância verbal é obrigatória na norma culta." },
-              { text: `A pontuação em orações subordinadas adjetivas restritivas deve obrigatoriamente incluir vírgulas isolando o termo.`, isCorrect: false, reason: "Apenas orações adjetivas explicativas usam vírgulas." },
-              { text: `As relações de regência verbal admitem a omissão de preposição antes de pronomes relativos mesmo quando exigida pelo verbo regente.`, isCorrect: false, reason: "A preposição exigida pelo verbo regente deve anteceder o pronome relativo." }
+              { text: `A articulação sintática dos enunciados exige observância estrita às regras de concordância e à seleção adequada dos conectivos para a garantia da coesão e da clareza.`, isCorrect: true, reason: "A norma-padrão exige harmonia sintática entre os termos regentes e regidos e seleção adequada de conectivos." },
+              { text: `O emprego de conectivos subordinativos condicionais estabelece uma relação de causa concluída entre as orações do período.`, isCorrect: false, reason: "Conectivos condicionais estabelecem hipótese ou condição, não relação de causa." },
+              { text: `A pontuação em orações subordinadas adjetivas restritivas exige obrigatoriamente o emprego de vírgulas para delimitar o sentido geral do termo.`, isCorrect: false, reason: "Orações adjetivas restritivas não são isoladas por vírgulas; apenas as explicativas recebem pontuação." },
+              { text: `A regência do verbo regente admite a omissão de preposição antes de pronomes relativos quando o termo regido for um substantivo abstrato.`, isCorrect: false, reason: "Se o verbo exige preposição, esta deve ser obrigatoriamente antecedente ao pronome relativo." }
             ]
           },
           {
             key: 'crase',
             question: `Análise a construção sintático-semântica, o emprego da crase e a colocação pronominal referente ao tópico de "${cleanSub}". Assinale a opção correta quanto à norma culta:`,
             alternatives: [
-              { text: `A exatidão no emprego da regência e da colocação pronominal assegura a precisão denotativa e a clareza no registro formal.`, isCorrect: true, reason: "Regência e colocação pronominal sustentam a denotação no registro culto." },
-              { text: `O sinal indicativo de crase é obrigatório antes de verbos no infinitivo e de termos masculinos.`, isCorrect: false, reason: "É vedado o uso de crase antes de verbos e palavras masculinas." },
-              { text: `A substituição de conectivos adversativos por conjunções causais mantém inalterado o sentido original do período.`, isCorrect: false, reason: "Conectivos adversativos e causais possuem valores semânticos completamente distintos." },
-              { text: `A concordância nominal entre o adjetivo e múltiplos substantivos prescinde de alinhamento de gênero e número.`, isCorrect: false, reason: "A concordância nominal exige adequação de gênero e número." }
+              { text: `A exatidão no emprego da regência e da colocação pronominal assegura a precisão denotativa e a clareza no registro formal.`, isCorrect: true, reason: "Regência e colocação pronominal sustentam a clareza no registro culto." },
+              { text: `O sinal indicativo de crase deve ser empregado antes de verbos no infinitivo quando houver ideia de ação futura determinada.`, isCorrect: false, reason: "É vedado o uso do sinal indicativo de crase antes de verbos." },
+              { text: `A substituição de conectivos adversativos por conjunções concessivas preserva rigorosamente a estrutura sintática e o sentido original do período.`, isCorrect: false, reason: "Conectivos adversativos e concessivos possuem valores semânticos e exigências modais distintas." },
+              { text: `A concordância do adjetivo anteposto a múltiplos substantivos de gêneros diferentes faz-se obrigatoriamente no plural masculino.`, isCorrect: false, reason: "O adjetivo anteposto concorda em gênero e número com o substantivo mais próximo." }
             ]
           }
         ];
@@ -932,9 +937,9 @@ Sua resposta DEVE ser estritamente um objeto JSON com a chave "questions":
         questionText = `De acordo com os preceitos da legislação educacional brasileira (LDB nº 9.394/96 e normas correlatas) no que tange ao tema "${cleanSub}", assinale a afirmativa correta:`;
         rawAlternatives = [
           { text: `A garantia do direito à educação, a igualdade de condições para acesso e permanência e a gestão democrática do ensino público constituem princípios do ensino nacional.`, isCorrect: true, reason: "Fundamentação expressa no Artigo 3º da LDB nº 9.394/96." },
-          { text: `A aplicação das diretrizes curriculares nacionais anula a autonomia pedagógica das unidades escolares na elaboração de seus Projetos Político-Pedagógicos.`, isCorrect: false, reason: "A LDB garante a autonomia dos estabelecimentos de ensino (Art. 12)." },
-          { text: `O ensino público pode restringir a liberdade de aprender, ensinar, pesquisar e divulgar o pensamento em função de orientações doutrinárias específicas.`, isCorrect: false, reason: "A LDB assegura explicitamente a liberdade de aprender e ensinar." },
-          { text: `A gestão democrática do ensino público veda a participação dos profissionais da educação e da comunidade local em conselhos escolares.`, isCorrect: false, reason: "A LDB (Art. 14) determina expressamente a participação da comunidade em conselhos." }
+          { text: `A elaboração do Projeto Político-Pedagógico pela unidade escolar deve seguir estritamente a matriz estadual sem adaptações à comunidade local.`, isCorrect: false, reason: "A LDB (Art. 12) garante a autonomia dos estabelecimentos de ensino para elaborar e executar sua proposta pedagógica." },
+          { text: `A obrigatoriedade e gratuidade da educação básica abrange exclusivamente a faixa etária dos 6 aos 18 anos de idade.`, isCorrect: false, reason: "A educação básica obrigatória e gratuita abrange dos 4 aos 17 anos de idade (Art. 4º, I)." },
+          { text: `A gestão democrática do ensino público restringe a participação em conselhos escolares aos profissionais da educação com cargo efetivo.`, isCorrect: false, reason: "A LDB (Art. 14) determina a participação dos profissionais da educação e da comunidade escolar e local em conselhos." }
         ];
       } else if (normDisc.includes('pedagogi') || normDisc.includes('didátic') || normDisc.includes('educaç')) {
         const pedVariants = [
@@ -943,9 +948,9 @@ Sua resposta DEVE ser estritamente um objeto JSON com a chave "questions":
             question: `Na Didática Geral e no estudo das Tendências Pedagógicas no Brasil, quanto ao desenvolvimento do trabalho pedagógico e ao tema "${cleanSub}", assinale a opção correta:`,
             alternatives: [
               { text: `A articulação entre os saberes científicos e a realidade social dos estudantes caracteriza a Pedagogia Histórico-Crítica, visando à democratização do conhecimento e à emancipação do educando.`, isCorrect: true, reason: "Fundamento central da Pedagogia Histórico-Crítica (Dermeval Saviani)." },
-              { text: `A Tendência Liberal Tecnicista prioriza o diálogo sobre temas geradores e a conscientização política em detrimento do treinamento operacional.`, isCorrect: false, reason: "Temas geradores pertencem à Pedagogia Libertadora de Paulo Freire." },
-              { text: `A Tendência Liberal Renovada Progressivista fundamenta-se na transmissão expositiva de conteúdos acumulados, sendo o aluno um receptor passivo.`, isCorrect: false, reason: "A Renovada Progressivista centra-se na atividade do aluno ('aprender a aprender')." },
-              { text: `A Tendência Progressista Libertadora concebe a avaliação do aprendizado como um instrumento puramente somativo e punitivo.`, isCorrect: false, reason: "A Pedagogia Libertadora recusa exames punitivos, defendendo uma práxis emancipatória." }
+              { text: `A Tendência Liberal Tecnicista organiza o processo pedagógico a partir do diálogo sobre temas geradores e da conscientização política do estudante.`, isCorrect: false, reason: "Temas geradores e conscientização pertencem à Pedagogia Libertadora de Paulo Freire." },
+              { text: `A Tendência Liberal Renovada Progressivista fundamenta-se na transmissão expositiva de conteúdos acumulados com foco no treino de exames.`, isCorrect: false, reason: "A Renovada Progressivista centra-se na atividade do aluno ('aprender a aprender') e em métodos ativos." },
+              { text: `A Tendência Progressista Libertária propõe a centralização do trabalho escolar na figura do professor como autoridade moral e mediador instrucional.`, isCorrect: false, reason: "A Tendência Libertária recusa a autoridade centralizada, propondo a autogestão e formas não-diretivas." }
             ]
           },
           {
@@ -953,9 +958,9 @@ Sua resposta DEVE ser estritamente um objeto JSON com a chave "questions":
             question: `Acerca do planejamento didático, da organização curricular e do tema de "${cleanSub}", assinale a alternativa cientificamente correta:`,
             alternatives: [
               { text: `O planejamento didático intencional medeia a relação entre o conhecimento prévio do estudante e o conhecimento científico elaborado, promovendo a aprendizagem significativa.`, isCorrect: true, reason: "Conceito essencial da mediação pedagógica dialética." },
-              { text: `A avaliação formativa e contínua busca unicamente a classificação numérica final dos discentes para fins de seleção e exclusão.`, isCorrect: false, reason: "A avaliação formativa busca diagnosticar e reorientar o ensino-aprendizagem." },
-              { text: `A organização do trabalho pedagógico prescinde de coerência entre os objetivos de aprendizagem, as metodologias e os instrumentos de avaliação.`, isCorrect: false, reason: "Exige-se alinhamento entre objetivos, conteúdos, métodos e avaliação." },
-              { text: `A gestão do ensino público centraliza as decisões pedagógicas na equipe diretiva, dispensando a elaboração coletiva do Projeto Político-Pedagógico.`, isCorrect: false, reason: "O PPP deve ser elaborado coletivamente com a participação dos professores e comunidade." }
+              { text: `A avaliação formativa e processual tem como finalidade primordial a classificação e ordenação dos estudantes para concessão de certificados.`, isCorrect: false, reason: "A avaliação formativa busca diagnosticar e reorientar o processo de ensino-aprendizagem, não classificar estaticamente." },
+              { text: `A organização dos conteúdos curriculares deve ocorrer de forma estanque e linear, sem articulação com temas transversais ou interdisciplinares.`, isCorrect: false, reason: "As diretrizes curriculares exigem contextualização, interdisciplinaridade e transversalidade." },
+              { text: `O Projeto Político-Pedagógico (PPP) é um documento burocrático de elaboração exclusiva da equipe gestora para cumprimento de exigências administrativas.`, isCorrect: false, reason: "O PPP deve ser elaborado coletivamente com a participação dos professores, funcionários e comunidade escolar." }
             ]
           }
         ];
@@ -966,9 +971,9 @@ Sua resposta DEVE ser estritamente um objeto JSON com a chave "questions":
         questionText = `No âmbito do estudo acadêmico de ${discipline || 'Conhecimentos Específicos'}, referente ao tópico de "${cleanSub}", assinale a proposição conceitualmente CORRETA:`;
         rawAlternatives = [
           { text: `O domínio dos fundamentos teóricos e conceituais inerentes a ${cleanSub.toLowerCase()} permite a compreensão precisa dos fenômenos, estruturas e processos da área de conhecimento.`, isCorrect: true, reason: "Análise conceitual e científica rigorosa do conteúdo específico selecionado." },
-          { text: `A caracterização de ${cleanSub.toLowerCase()} fundamenta-se em princípios estáticos sem relação com os modelos explicativos consolidados da área.`, isCorrect: false, reason: "Os conhecimentos da área baseiam-se em teorias e modelos científicos amplamente fundamentados." },
-          { text: `As propriedades e relações inerentes a ${cleanSub.toLowerCase()} dispensam fundamentação empírica ou dedução lógica rigorosa.`, isCorrect: false, reason: "O conhecimento específico exige rigor metódico, empírico ou dedutivo." },
-          { text: `A interpretação dos fenômenos atrelados a ${cleanSub.toLowerCase()} prescinde de análise sistemática dos seus elementos constituintes.`, isCorrect: false, reason: "A análise sistemática dos componentes é essencial para a compreensão conceitual da matéria." }
+          { text: `A caracterização de ${cleanSub.toLowerCase()} fundamenta-se em princípios isolados sem relação com os modelos explicativos consolidados da área.`, isCorrect: false, reason: "Os conhecimentos da área baseiam-se em teorias e modelos científicos amplamente fundamentados." },
+          { text: `As propriedades e relações inerentes a ${cleanSub.toLowerCase()} apoiam-se unicamente em inferências empíricas sem necessidade de demonstração lógica ou teórica.`, isCorrect: false, reason: "O conhecimento específico exige rigor metódico, teórico e dedutivo." },
+          { text: `A interpretação dos fenômenos atrelados a ${cleanSub.toLowerCase()} limita-se à descrição superficial sem necessidade de análise estrutural sistemática.`, isCorrect: false, reason: "A análise sistemática dos componentes é essencial para a compreensão conceitual da matéria." }
         ];
       }
 
