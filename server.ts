@@ -860,11 +860,24 @@ IMPORTANTE: NUNCA faça meta-perguntas ou meta-comentários sobre como a banca e
     let disciplineSpecificInstruction = "";
     if (normDisc.includes('português') || normDisc.includes('língua') || normDisc.includes('letras')) {
       disciplineSpecificInstruction = `
-### 📚 DIRETIVA ESPECÍFICA PARA LÍNGUA PORTUGUESA / LITERATURA:
-- Forneça SEMPRE um período, frase ou excerto textual autêntico para análise gramatical ou literária.
-- Avalie rigorosamente a sintaxe da oração e do período (sujeito, predicado, complementos verbais/nominais, adjuntos, orações coordenadas/subordinadas, orações reduzidas), regência verbal/nominal, crase, concordância verbal/nominal, colocação pronominal, pontuação ou semântica conectiva.
-- DISTRATORES FUNECE: crie alternativas com pegadinhas técnicas autênticas e eruditas (ex: confundir sujeito paciente com objeto direto na voz passiva sintética com partícula 'se'; complemento nominal com adjunto adnominal em substantivos abstratos; oração subordinada substantiva apositiva com adjetiva explicativa; uso de crase com pronomes relativos). Todas as 4 alternativas devem ser bem escritas e formais!
-- NUNCA faça perguntas sobre a banca ou sobre o edital. Pergunte sobre a gramática/língua!`;
+### 📚 DIRETIVA OBRIGATÓRIA PARA LÍNGUA PORTUGUESA (100% PRÁTICA):
+- **PROIBIÇÃO TOTAL DE QUESTÕES TEÓRICAS OU META-CONCEITUAIS:** É TERMINANTEMENTE PROIBIDO criar enunciados ou alternativas baseados em meta-conceitos ou teorias genéricas (ex.: proibidíssimo usar termos como "No que tange aos preceitos científicos...", "A análise rigorosa evidencia...", etc.).
+- **QUESTÕES 100% PRÁTICAS E APLICADAS:** A questão DEVE ser 100% prática. Apresente frases curtas, excertos, lacunas para preenchimento ou listas de palavras reais para o aluno aplicar a regra gramatical:
+  * Em *Ortografia Oficial*: use listas de vocábulos reais com dúvidas frequentes de concurso (ex.: "x/ch", "s/z/ss/ç", "g/j", regras do Novo Acordo, uso do hífen, "exceção/pretensão/obsessão").
+  * Em *Acentuação Gráfica*: analise vocábulos e frases com aplicação de oxítonas, paroxítonas, proparoxítonas, hiatos e ditongos abertos segundo o Acordo Ortográfico.
+  * Em *Uso dos Porquês e Expressões*: use frases com lacunas para preenchimento (porque / por que / porquê / por quê; há / a; mal / mau; onde / aonde).
+  * Em *Colocação Pronominal*: apresente frases reais avaliando próclise com palavras atrativas, ênclise e mesóclise.
+  * Em *Sintaxe e Pontuação*: apresente períodos concretos para identificação de funções sintáticas reais (sujeito paciente, complemento nominal vs adjunto) e emprego correto de vírgulas.
+- **PADRÃO DE ENUNCIADO (ESTILO BANCA DE CONCURSO):**
+  * O enunciado deve ser direto, objetivo e focado na prática da banca FUNECE / CEV-UECE.
+  * Exemplos de enunciados padrão:
+    - "Assinale a alternativa em que todas as palavras estão grafadas CORRETAMENTE segundo a Ortografia Oficial:"
+    - "Assinale a opção que preenche correta e respectivamente as lacunas do período a seguir:"
+    - "A palavra destacada em que o acento gráfico foi empregado INCORRETAMENTE é:"
+    - "Quanto à colocação pronominal segundo a norma-padrão, assinale a opção inteiramente CORRETA:"
+- **DISTRATORES E GABARITO:**
+  * Crie alternativas (A, B, C, D) baseadas em dúvidas e erros reais e plausíveis de concursos.
+  * Apenas UMA alternativa correta indiscutível.`;
     } else if (normDisc.includes('biologia') || normDisc.includes('ciência')) {
       disciplineSpecificInstruction = `
 ### 🧬 DIRETIVA ESPECÍFICA PARA BIOLOGIA / CIÊNCIAS BIOLÓGICAS:
