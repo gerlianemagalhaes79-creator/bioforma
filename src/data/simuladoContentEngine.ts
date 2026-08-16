@@ -36,15 +36,235 @@ export const SANITY_BANNED_PATTERNS = [
   /de forma puramente aleatória e sem fundamentação/gi
 ];
 
-// Banco Curado de Questões de Conteúdo Real por Disciplinas e Subtópicos (Padrão FUNECE)
+// Banco Extenso e Especializado de Questões Autênticas por Subtópicos Específicos
 export const AUTHENTIC_CONTENT_QUESTION_BANK: ContentQuestionTemplate[] = [
-  // ==========================================
-  // LÍNGUA PORTUGUESA - SINTAXE E ANÁLISE LINGUÍSTICA
-  // ==========================================
+  // =========================================================================
+  // 📚 LÍNGUA PORTUGUESA - COBERTURA COMPLETA DE TODOS OS SUBTÓPICOS DO EDITAL
+  // =========================================================================
+  
+  // 1. CRASE (Emprego do Sinal Indicativo de Crase)
+  {
+    disciplineKeywords: ['português', 'portuguesa', 'letras', 'língua portuguesa'],
+    topicKeywords: ['crase', 'acento grave', 'morfossintaxe', 'regência'],
+    subtopicKeywords: ['crase', 'sinal indicativo de crase', 'emprego do sinal indicativo de crase', 'acento grave'],
+    question: `No que tange ao emprego do acento indicativo de crase de acordo com a norma-padrão da Língua Portuguesa, assinale a opção inteiramente CORRETA:`,
+    alternatives: [
+      { letter: 'A', text: 'O gestor escolar referiu-se àquela diretriz pedagógica com grande entusiasmo, mantendo-se fiel às normas aprovadas pelo conselho.' },
+      { letter: 'B', text: 'Os candidatos foram orientados à comparecer pontualmente à partir das oito horas da manhã no local de prova.' },
+      { letter: 'C', text: 'A professora dirigiu-se à ela para expor às razões pelas quais não acataria à proposta apresentada.' },
+      { letter: 'D', text: 'Entregamos o documento à Sua Excelência, solicitando apoio irrestrito às causas da educação pública estadual.' }
+    ],
+    correctAnswer: 'A',
+    explanation: `Gabarito: A\n\nGabarito Comentado:\n- A) Correta: O verbo 'referir-se' exige a preposição 'a' que se funde com o pronome demonstrativo 'àquela' (a + aquela = àquela); 'fiel' rege preposição 'a' que se funde com o artigo 'as' ('às normas').\n- B) Incorreta: Não há crase antes de verbo ('a comparecer') nem antes de 'partir' ('a partir').\n- C) Incorreta: Não ocorre crase antes de pronome pessoal ('a ela') nem com objeto direto de 'expor' ('as razões').\n- D) Incorreta: Não ocorre crase antes de pronomes de tratamento ('a Sua Excelência').`,
+    topic: 'Morfossintaxe, Regência e Crase',
+    subtopic: 'Emprego do Sinal Indicativo de Crase',
+    difficulty: 'Difícil',
+    skills: ['Crase', 'Regência Verbal e Nominal', 'Norma Culta']
+  },
+  {
+    disciplineKeywords: ['português', 'portuguesa', 'letras', 'língua portuguesa'],
+    topicKeywords: ['crase', 'acento grave', 'morfossintaxe'],
+    subtopicKeywords: ['crase', 'facultativa', 'proibida', 'casos especiais'],
+    question: `Em qual das opções abaixo o uso do acento grave indicativo de crase é FACULTATIVO?`,
+    alternatives: [
+      { letter: 'A', text: 'Encaminhou os novos relatórios à minha coordenadora pedagógica no início da manhã.' },
+      { letter: 'B', text: 'Os alunos assistiram à peça teatral com grande atenção e disciplina.' },
+      { letter: 'C', text: 'Os professores regressaram à escola logo após o término do recesso letivo.' },
+      { letter: 'D', text: 'A reunião estendeu-se até à uma hora da madrugada com intensos debates.' }
+    ],
+    correctAnswer: 'A',
+    explanation: `Gabarito: A\n\nGabarito Comentado:\n- A) Correta: Antes de pronome possessivo feminino no singular ('minha coordenadora'), o uso do artigo é facultativo, tornando a crase facultativa ('à minha' ou 'a minha').\n- B e C) Incorretas: Crase obrigatória pela regência dos termos e presença de artigo definido.\n- D) Incorreta: Antes de numeral que indica horas exatas a crase é obrigatória.`,
+    topic: 'Morfossintaxe, Regência e Crase',
+    subtopic: 'Emprego do Sinal Indicativo de Crase',
+    difficulty: 'Média',
+    skills: ['Crase Facultativa', 'Sintaxe Normativa']
+  },
+
+  // 2. PONTUAÇÃO (Vírgula, Ponto e Vírgula, Dois-Pontos)
+  {
+    disciplineKeywords: ['português', 'portuguesa', 'letras', 'língua portuguesa'],
+    topicKeywords: ['pontuação', 'sintaxe', 'estilo', 'vírgula'],
+    subtopicKeywords: ['pontuação', 'emprego da vírgula', 'dois-pontos', 'ponto e vírgula'],
+    question: `Assinale a alternativa em que o período está pontuado em estrita observância às normas gramaticais vigentes:`,
+    alternatives: [
+      { letter: 'A', text: 'Os coordenadores pedagógicos, cientes dos desafios da rede pública estadual, elaboraram, com prudência, um plano de intervenção escolar.' },
+      { letter: 'B', text: 'O diretor pedagógico da escola estadual, convocou todos os professores para a reunião de planejamento.' },
+      { letter: 'C', text: 'Os professores necessitam de mais recursos didáticos, porque os materiais antigos, já não atendem às exigências contemporâneas.' },
+      { letter: 'D', text: 'Durante as semanas de avaliação diagnóstica os docentes, constataram avanços expressivos na proficiência leitora.' }
+    ],
+    correctAnswer: 'A',
+    explanation: `Gabarito: A\n\nGabarito Comentado:\n- A) Correta: As vírgulas isolam adequadamente a oração adjetiva explicativa reduzida de particípio ('cientes dos desafios...') e o adjunto adverbial de modo intercalado ('com prudência').\n- B) Incorreta: Erro crasso de separação de sujeito e predicado por vírgula ('O diretor... convocou').\n- C) Incorreta: Vírgula indevida separando o sujeito 'os materiais antigos' do predicado 'já não atendem'.\n- D) Incorreta: Falta de vírgula após o adjunto adverbial deslocado de tempo e vírgula indevida entre o sujeito 'os docentes' e o verbo 'constataram'.`,
+    topic: 'Sintaxe, Concordância e Pontuação',
+    subtopic: 'Pontuação',
+    difficulty: 'Difícil',
+    skills: ['Pontuação', 'Emprego da Vírgula', 'Sintaxe da Oração']
+  },
+
+  // 3. CONCORDÂNCIA VERBAL E NOMINAL
+  {
+    disciplineKeywords: ['português', 'portuguesa', 'letras', 'língua portuguesa'],
+    topicKeywords: ['concordância', 'concordancia', 'verbal', 'nominal', 'sintaxe'],
+    subtopicKeywords: ['concordância nominal e verbal', 'concordancia nominal e verbal', 'concordância verbal', 'concordância nominal'],
+    question: `Analise a concordância nas frases abaixo:\n\nI. Devem haver projetos integradores em todas as escolas de ensino médio.\nII. Fazem três meses que o novo currículo entrou em vigor no estado.\nIII. Tratam-se de questões prioritárias para o desenvolvimento educacional.\nIV. Existiam muitas dúvidas entre os professores sobre a nova matriz do SPAECE.\n\nEstá em conformidade com o padrão culto da Língua Portuguesa APENAS o contido em:`,
+    alternatives: [
+      { letter: 'A', text: 'IV.' },
+      { letter: 'B', text: 'I e II.' },
+      { letter: 'C', text: 'II e III.' },
+      { letter: 'D', text: 'I, III e IV.' }
+    ],
+    correctAnswer: 'A',
+    explanation: `Gabarito: A\n\nGabarito Comentado:\n- A) Correta: Apenas a IV está correta. O verbo 'existir' é pessoal e concorda normalmente com seu sujeito ('muitas dúvidas existiam').\n- Distratores:\n  * I) Incorreta: 'Haver' impessoal transmite impessoalidade ao auxiliar ('Deve haver').\n  * II) Incorreta: 'Fazer' indicando tempo decorrido é impessoal ('Faz três meses').\n  * III) Incorreta: 'Tratar-se de' com preposição exige índice de indeterminação, mantendo o verbo no singular ('Trata-se de questões').`,
+    topic: 'Sintaxe, Concordância e Pontuação',
+    subtopic: 'Concordância Nominal e Verbal',
+    difficulty: 'Difícil',
+    skills: ['Concordância Verbal', 'Verbos Impessoais']
+  },
+
+  // 4. REGÊNCIA NOMINAL E VERBAL
+  {
+    disciplineKeywords: ['português', 'portuguesa', 'letras', 'língua portuguesa'],
+    topicKeywords: ['regência', 'regencia', 'transitividade', 'preposição'],
+    subtopicKeywords: ['regência nominal e verbal', 'regencia nominal e verbal', 'regência verbal', 'regência nominal'],
+    question: `De acordo com a regência preconizada pela norma-padrão da Língua Portuguesa, assinale a frase em que o verbo em destaque está empregado com a regência CORRETA:`,
+    alternatives: [
+      { letter: 'A', text: 'O candidato aprovado no concurso da SEDUC-CE sempre aspirava **ao** cargo de professor efetivo e visava **à** excelência pedagógica.' },
+      { letter: 'B', text: 'A decisão do conselho estadual implicou **em** alterações substanciais no calendário escolar vigente.' },
+      { letter: 'C', text: 'Os livros didáticos **que** os professores e alunos mais simpatizam foram adotados pela comissão técnica.' },
+      { letter: 'D', text: 'O coordenador pedagógico assistiu **o** debate acadêmico e procedeu **a** entrega dos certificados aos concluintes.' }
+    ],
+    correctAnswer: 'A',
+    explanation: `Gabarito: A\n\nGabarito Comentado:\n- A) Correta: 'Aspirar' (no sentido de desejar/almejar) é VTI e rege a preposição 'a' ('ao cargo'); 'visar' (com sentido de ter por objetivo) é VTI e rege 'a' ('à excelência').\n- B) Incorreta: 'Implicar' (acarretar) é VTD, não admitindo a preposição 'em' ('implicou alterações').\n- C) Incorreta: 'Simpatizar' é VTI regido por 'com' ('com que os professores... simpatizam').\n- D) Incorreta: 'Assistir' (presenciar/ver) é VTI com 'a' ('assistiu ao debate'); 'proceder' (realizar) exige crase ('procedeu à entrega').`,
+    topic: 'Morfossintaxe, Regência e Crase',
+    subtopic: 'Regência Nominal e Verbal',
+    difficulty: 'Difícil',
+    skills: ['Regência Verbal', 'Transitividade Verbal']
+  },
+
+  // 5. EMPREGO DAS CLASSES DE PALAVRAS / MORFOLOGIA
+  {
+    disciplineKeywords: ['português', 'portuguesa', 'letras', 'língua portuguesa'],
+    topicKeywords: ['classes de palavras', 'morfologia', 'pronomes', 'conjunções', 'verbos'],
+    subtopicKeywords: ['emprego das classes de palavras', 'classes de palavras', 'morfossintaxe', 'pronomes'],
+    question: `Considere o trecho: *"Embora o desafio fosse imenso, cada professor desempenhou **bastante** bem suas atribuições durante o semestre letivo."*\n\nO vocábulo destacado classifica-se morfologicamente como:`,
+    alternatives: [
+      { letter: 'A', text: 'Advérbio de intensidade, por intensificar o sentido do advérbio "bem", sendo, portanto, invariável.' },
+      { letter: 'B', text: 'Pronome indefinido adjetivo, acompanhando o substantivo "atribuições" em valor quantitativo.' },
+      { letter: 'C', text: 'Adjetivo qualificativo, exercendo a função sintática de predicativo do sujeito composto.' },
+      { letter: 'D', text: 'Conjunção subordinativa causal, responsável por articular as duas orações do período.' }
+    ],
+    correctAnswer: 'A',
+    explanation: `Gabarito: A\n\nGabarito Comentado:\n- A) Correta: Na frase, 'bastante' modifica o advérbio 'bem' ('muito bem'), funcionando como advérbio de intensidade, classe gramatical estritamente invariável.\n- B) Incorreta: Seria pronome indefinido se acompanhasse substantivo com flexão de plural (ex: 'bastantes atribuições').\n- C e D) Incorretas: Não qualifica substantivo nem conecta orações.`,
+    topic: 'Morfossintaxe, Regência e Crase',
+    subtopic: 'Emprego das Classes de Palavras',
+    difficulty: 'Média',
+    skills: ['Morfologia', 'Classes Gramaticais', 'Advérbios']
+  },
+
+  // 6. ACENTUAÇÃO GRÁFICA
+  {
+    disciplineKeywords: ['português', 'portuguesa', 'letras', 'língua portuguesa'],
+    topicKeywords: ['acentuação', 'acentuacao', 'ortografia', 'regras de acentuação'],
+    subtopicKeywords: ['acentuação gráfica', 'acentuacao grafica', 'proparoxítonas', 'paroxítonas', 'oxítonas', 'hiatos'],
+    question: `Assinale a opção em que todos os vocábulos são acentuados graficamente pela MESMA regra gramatical:`,
+    alternatives: [
+      { letter: 'A', text: 'Pedagógico – Didática – Epistemológico.' },
+      { letter: 'B', text: 'História – Ceará – Saúde.' },
+      { letter: 'C', text: 'País – Fácil – Café.' },
+      { letter: 'D', text: 'Relatório – Baú – Âmago.' }
+    ],
+    correctAnswer: 'A',
+    explanation: `Gabarito: A\n\nGabarito Comentado:\n- A) Correta: 'Pe-da-gó-gi-co', 'Di-dá-ti-ca' e 'E-pis-te-mo-ló-gi-co' são todas palavras proparoxítonas, e todas as proparoxítonas são obrigatoriamente acentuadas no português.\n- B) Incorreta: 'História' (paroxítona terminada em ditongo crescente), 'Ceará' (oxítona terminada em 'a'), 'Saúde' (hiato tônico 'u').\n- C) Incorreta: 'País' (hiato), 'Fácil' (paroxítona em 'l'), 'Café' (oxítona em 'e').\n- D) Incorreta: 'Relatório' (paroxítona em ditongo), 'Baú' (hiato), 'Âmago' (proparoxítona).`,
+    topic: 'Ortografia e Acentuação',
+    subtopic: 'Acentuação Gráfica',
+    difficulty: 'Fácil',
+    skills: ['Acentuação Gráfica', 'Proparoxítonas e Paroxítonas']
+  },
+
+  // 7. ORTOGRAFIA OFICIAL
+  {
+    disciplineKeywords: ['português', 'portuguesa', 'letras', 'língua portuguesa'],
+    topicKeywords: ['ortografia', 'grafia', 'novo acordo ortográfico', 'hífen'],
+    subtopicKeywords: ['ortografia oficial', 'grafia de palavras', 'hífen', 'emprego de letras'],
+    question: `Em conformidade com as regras do Novo Acordo Ortográfico e a ortografia oficial da Língua Portuguesa, assinale a opção com a grafia inteiramente CORRETA:`,
+    alternatives: [
+      { letter: 'A', text: 'Autoavaliação, infraestrutura, micro-ondas, inter-relação.' },
+      { letter: 'B', text: 'Auto-avaliação, infra-estrutura, microondas, interrelação.' },
+      { letter: 'C', text: 'Autoavaliação, infra-estrutura, micro-ondas, interrelação.' },
+      { letter: 'D', text: 'Auto-avaliação, infraestrutura, microondas, inter-relação.' }
+    ],
+    correctAnswer: 'A',
+    explanation: `Gabarito: A\n\nGabarito Comentado:\n- A) Correta: 'Autoavaliação' e 'infraestrutura' juntam-se sem hífen pois o segundo elemento começa por vogal diferente da que termina o prefixo; 'micro-ondas' e 'inter-relação' recebem hífen porque a vogal/consoante final do prefixo é idêntica à inicial do segundo elemento (o-o / r-r).\n- B, C e D) Apresentam incorreções no uso do hífen conforme o Acordo Ortográfico vigente.`,
+    topic: 'Ortografia e Acentuação',
+    subtopic: 'Ortografia Oficial',
+    difficulty: 'Média',
+    skills: ['Ortografia Oficial', 'Novo Acordo Ortográfico', 'Uso do Hífen']
+  },
+
+  // 8. TIPOLOGIA TEXTUAL
+  {
+    disciplineKeywords: ['português', 'portuguesa', 'letras', 'língua portuguesa'],
+    topicKeywords: ['tipologia textual', 'gêneros textuais', 'texto dissertativo', 'texto injuntivo'],
+    subtopicKeywords: ['tipologia textual', 'gêneros textuais', 'dissertação', 'narração', 'descrição', 'injunção'],
+    question: `Um texto cuja estrutura predominante visa defender uma tese por meio de argumentos fundamentados, dados estatísticos e relações lógicas de causa e efeito para persuadir o interlocutor enquadra-se na tipologia:`,
+    alternatives: [
+      { letter: 'A', text: 'Dissertativo-argumentativa.' },
+      { letter: 'B', text: 'Narrativa ficcional.' },
+      { letter: 'C', text: 'Injuntivo-instrucional.' },
+      { letter: 'D', text: 'Descritivo-sensorial.' }
+    ],
+    correctAnswer: 'A',
+    explanation: `Gabarito: A\n\nGabarito Comentado:\n- A) Correta: O texto dissertativo-argumentativo caracteriza-se pela proposição de uma tese central defendida por meio de argumentos consistentes e raciocínio lógico articulado.\n- B) Narrativo foca no relato de ações e acontecimentos temporalmente ordenados.\n- C) Injuntivo tem foco prescritivo/orientador (verbos no imperativo).\n- D) Descritivo foca na caracterização de seres, ambientes ou objetos.`,
+    topic: 'Compreensão, Tipologia e Semântica',
+    subtopic: 'Tipologia Textual',
+    difficulty: 'Fácil',
+    skills: ['Tipologia Textual', 'Gêneros e Tipos de Texto']
+  },
+
+  // 9. SIGNIFICAÇÃO DAS PALAVRAS / SEMÂNTICA
+  {
+    disciplineKeywords: ['português', 'portuguesa', 'letras', 'língua portuguesa'],
+    topicKeywords: ['significação das palavras', 'semântica', 'sinonímia', 'antonímia', 'polissemia', 'homonímia', 'paronímia'],
+    subtopicKeywords: ['significação das palavras', 'semântica', 'paronímia', 'homonímia', 'polissemia'],
+    question: `Assinale a opção que preenche correta e respectivamente as lacunas da frase:\n\n*"O diretor precisou _______ a autorização para a reforma, tendo o cuidado de não _______ as normas regimentais vigentes."*`,
+    alternatives: [
+      { letter: 'A', text: 'ratificar – infringir' },
+      { letter: 'B', text: 'retificar – infligir' },
+      { letter: 'C', text: 'ratificar – infligir' },
+      { letter: 'D', text: 'retificar – infringir' }
+    ],
+    correctAnswer: 'A',
+    explanation: `Gabarito: A\n\nGabarito Comentado:\n- A) Correta: 'Ratificar' significa confirmar, validar, reafirmar. 'Infringir' significa violar, desobedecer, transgredir uma norma. Logo: 'ratificar a autorização' (confirmar) e 'não infringir as normas' (não violar).\n- Distratores: 'Retificar' significa corrigir/emendar; 'Infligir' significa aplicar pena/castigo. Trata-se do clássico estudo dos parônimos.`,
+    topic: 'Compreensão, Tipologia e Semântica',
+    subtopic: 'Significação das Palavras',
+    difficulty: 'Média',
+    skills: ['Semântica', 'Parônimos e Homônimos']
+  },
+
+  // 10. COMPREENSÃO E INTERPRETAÇÃO DE TEXTOS
+  {
+    disciplineKeywords: ['português', 'portuguesa', 'letras', 'língua portuguesa'],
+    topicKeywords: ['compreensão', 'interpretação', 'leitura', 'inferência', 'coesão'],
+    subtopicKeywords: ['compreensão e interpretação de textos', 'interpretação de texto', 'leitura e compreensão'],
+    question: `Leia o fragmento a seguir:\n\n*"A democratização do acesso à escola pública é conquista inegável no Brasil contemporâneo; contudo, a garantia da permanência com aprendizagem efetiva e redução da evasão constitui o verdadeiro divisor de águas da política educacional."*\n\nA partir da leitura atenta do fragmento, infere-se corretamente que:`,
+    alternatives: [
+      { letter: 'A', text: 'A expansão quantitativa de matrículas na escola pública, embora fundamental, não é suficiente por si só para assegurar a equidade e a qualidade do processo formativo.' },
+      { letter: 'B', text: 'A evasão escolar decorre exclusivamente da falta de oferta de vagas nas instituições de ensino público estaduais.' },
+      { letter: 'C', text: 'O acesso à escola pública ainda não foi consolidado no país, sendo este o principal entrave enfrentado pelas políticas públicas.' },
+      { letter: 'D', text: 'A permanência do estudante no ambiente escolar independe da qualidade das práticas pedagógicas desenvolvidas pelos docentes.' }
+    ],
+    correctAnswer: 'A',
+    explanation: `Gabarito: A\n\nGabarito Comentado:\n- A) Correta: O conectivo adversativo 'contudo' contrapõe a conquista do acesso (expansão quantitativa) à necessidade imperiosa de assegurar a permanência com aprendizagem efetiva (qualidade e equidade).\n- B, C e D) Incorretas: Extrapolações ou contradições diretas ao sentido do fragmento.`,
+    topic: 'Compreensão, Tipologia e Semântica',
+    subtopic: 'Compreensão e Interpretação de Textos',
+    difficulty: 'Média',
+    skills: ['Compreensão Textual', 'Inferência de Sentido', 'Conectivos']
+  },
+
+  // 11. SINTAXE DA ORAÇÃO E DO PERÍODO
   {
     disciplineKeywords: ['português', 'portuguesa', 'letras', 'língua portuguesa'],
     topicKeywords: ['sintaxe', 'termo', 'oração', 'periodo', 'período', 'analise linguistica', 'análise linguística', 'estrutura da frase'],
-    subtopicKeywords: ['sujeito', 'predicado', 'transitividade', 'objeto', 'complemento nominal', 'adjunto'],
+    subtopicKeywords: ['sintaxe da oração e do período', 'sujeito', 'predicado', 'transitividade', 'objeto', 'complemento nominal', 'adjunto'],
     question: `Considere o período a seguir:\n\n*"Constatou-se a urgente necessidade de investimentos estruturais nas escolas públicas do interior."*\n\nEm conformidade com a norma-padrão da Língua Portuguesa e com as regras de análise sintática, assinale a afirmativa CORRETA:`,
     alternatives: [
       { letter: 'A', text: 'O termo "a urgente necessidade" exerce a função sintática de sujeito paciente do verbo constatar, uma vez que o verbo transitivo direto está apassivado pelo pronome "se".' },
@@ -54,73 +274,19 @@ export const AUTHENTIC_CONTENT_QUESTION_BANK: ContentQuestionTemplate[] = [
     ],
     correctAnswer: 'A',
     explanation: `Gabarito: A\n\nGabarito Comentado:\n- Alternativa A (Correta): O verbo "constatar" é transitivo direto e está acompanhado da partícula apassivadora "se" (VTD + se = voz passiva sintética). Logo, o termo "a urgente necessidade" é o sujeito paciente ("A urgente necessidade foi constatada").\n- Análise dos Distratores:\n  * B) Incorreta. O "se" é pronome apassivador (partícula apassivadora), e não índice de indeterminação, pois o verbo é VTD.\n  * C) Incorreta. O termo "de investimentos estruturais" está ligado ao substantivo abstrato "necessidade" e possui valor paciente (os investimentos são necessitados), configurando Complemento Nominal, e não adjunto adnominal.\n  * D) Incorreta. O termo expressa circunstância de lugar, atuando como Adjunto Adverbial de Lugar.`,
-    topic: 'Sintaxe da Oração e do Período',
-    subtopic: 'Termos Integrantes e Transitividade Verbal',
+    topic: 'Sintaxe, Concordância e Pontuação',
+    subtopic: 'Sintaxe da Oração e do Período',
     difficulty: 'Difícil',
     skills: ['Análise Sintática', 'Vozes Verbais', 'Termos da Oração']
   },
-  {
-    disciplineKeywords: ['português', 'portuguesa', 'letras', 'língua portuguesa'],
-    topicKeywords: ['sintaxe', 'concordância', 'regência', 'crase', 'pontuação'],
-    subtopicKeywords: ['concordância verbal', 'concordancia verbal', 'haver', 'fazer', 'impessoal'],
-    question: `Analise a concordância verbal nas sentenças abaixo:\n\nI. Devem haver soluções viáveis para os problemas de infraestrutura escolar.\nII. Fazem dez anos que os investimentos foram aprovados pelo conselho.\nIII. Tratam-se de propostas inovadoras voltadas ao aprimoramento pedagógico.\nIV. Havia muitos candidatos inscritos no processo seletivo estadual.\n\nDe acordo com a norma-padrão da Língua Portuguesa, está plenamente CORRETA apenas a sentença:`,
-    alternatives: [
-      { letter: 'A', text: 'IV, apenas, pois o verbo "haver" no sentido de existir é impessoal e não flexiona para o plural.' },
-      { letter: 'B', text: 'I e II, apenas, pois verbos que expressam tempo transcorrido ou existência concordam facultativamente com o substantivo plural que os acompanha.' },
-      { letter: 'C', text: 'II e III, apenas, em virtude da presença de expressões quantitativas no predicado que atraem a flexão plural dos verbos.' },
-      { letter: 'D', text: 'I, III e IV, pois a partícula "se" em orações passivas e as locuções verbais exigem pluralização automática dos núcleos verbais.' }
-    ],
-    correctAnswer: 'A',
-    explanation: `Gabarito: A\n\nGabarito Comentado:\n- Alternativa A (Correta): Apenas a proposição IV está correta. O verbo "haver" no sentido de existir é impessoal e deve ficar na 3ª pessoa do singular ("Havia muitos candidatos").\n- Análise dos Distratores:\n  * I) Incorreta. Na locução com o verbo impessoal "haver" ("deve haver"), o verbo auxiliar "dever" herda a impessoalidade e deve permanecer no singular: "Deve haver soluções".\n  * II) Incorreta. O verbo "fazer" indicando tempo decorrido é impessoal, devendo ficar no singular: "Faz dez anos".\n  * III) Incorreta. O verbo "tratar-se" é transitivo indireto acompanhado de índice de indeterminação do sujeito "se", exigindo a 3ª pessoa do singular: "Trata-se de propostas".`,
-    topic: 'Concordância Verbal e Nominal',
-    subtopic: 'Verbos Impessoais e Concordância com Partícula SE',
-    difficulty: 'Difícil',
-    skills: ['Concordância Verbal', 'Sintaxe Normativa']
-  },
-  {
-    disciplineKeywords: ['português', 'portuguesa', 'letras', 'língua portuguesa'],
-    topicKeywords: ['sintaxe', 'orações', 'período composto', 'subordinação', 'conectivos', 'conjunção'],
-    subtopicKeywords: ['oração subordinada', 'conjunções', 'valor semântico'],
-    question: `No período: *"Conquanto houvesse restrições orçamentárias expressivas, a comissão executou o cronograma de formação continuada."*, a oração destacada expressa relação semântica de:`,
-    alternatives: [
-      { letter: 'A', text: 'Concessão, estabelecendo uma quebra de expectativa ou contraste que não impede a ação principal.' },
-      { letter: 'B', text: 'Causa, explicitando o motivo determinante que impulsionou a execução integral do cronograma orçamentário.' },
-      { letter: 'C', text: 'Condição, impondo uma exigência circunstancial prévia indispensável para a realização da formação docente.' },
-      { letter: 'D', text: 'Conformidade, alinhando a prática pedagógica às diretrizes orçamentárias estabelecidas pela comissão.' }
-    ],
-    correctAnswer: 'A',
-    explanation: `Gabarito: A\n\nGabarito Comentado:\n- Alternativa A (Correta): O conectivo "conquanto" é uma conjunção subordinativa concessiva (equivalente a "embora", "ainda que", "posto que"), introduzindo uma oração subordinada adverbial concessiva que indica um fato contrário que não impede o desfecho da oração principal.\n- Análise dos Distratores:\n  * B) Causa seria introduzida por conectivos como "porque", "já que", "visto que".\n  * C) Condição seria introduzida por "se", "caso", "desde que".\n  * D) Conformidade seria introduzida por "conforme", "segundo", "consoante".`,
-    topic: 'Período Composto por Subordinação',
-    subtopic: 'Orações Subordinadas Adverbiais e Conjunções',
-    difficulty: 'Média',
-    skills: ['Semântica Conectiva', 'Orações Adverbiais']
-  },
-  {
-    disciplineKeywords: ['português', 'portuguesa', 'letras', 'língua portuguesa'],
-    topicKeywords: ['regência', 'crase', 'sintaxe'],
-    subtopicKeywords: ['regência verbal', 'uso do acento grave', 'crase'],
-    question: `No que tange à regência dos verbos e ao emprego do acento indicativo de crase, assinale a opção que atende integralmente à norma-padrão da Língua Portuguesa:`,
-    alternatives: [
-      { letter: 'A', text: 'O professor aspirava a uma vaga no concurso e sempre visava ao aprimoramento contínuo de suas práticas docentes.' },
-      { letter: 'B', text: 'O professor aspirava uma vaga no concurso e sempre visava o aprimoramento contínuo de suas práticas docentes.' },
-      { letter: 'C', text: 'O relatório que os fiscais assistiram continha críticas severas às quais a diretoria foi obrigada à responder.' },
-      { letter: 'D', text: 'O projeto implicará em reformulações curriculares profundas que todos os docentes devem obedecer cegamente.' }
-    ],
-    correctAnswer: 'A',
-    explanation: `Gabarito: A\n\nGabarito Comentado:\n- Alternativa A (Correta): O verbo 'aspirar' no sentido de desejar/almejar é VTI e rege a preposição 'a' ('aspirava a uma vaga'). O verbo 'visar' no sentido de ter como meta/objetivo também é VTI e rege 'a' ('visava ao aprimoramento').\n- Análise dos Distratores:\n  * B) 'Aspirar' e 'visar' no sentido de desejar exigem preposição 'a'.\n  * C) O verbo 'assistir' no sentido de presenciar é VTI ('a que assistiram'); não ocorre crase antes de verbo ('a responder').\n  * D) O verbo 'implicar' no sentido de acarretar é VTD (não admite 'em'); 'obedecer' é VTI ('a que todos devem obedecer').`,
-    topic: 'Regência Verbal e Nominal',
-    subtopic: 'Transitividade de Verbos Especiais e Crase',
-    difficulty: 'Difícil',
-    skills: ['Regência Verbal', 'Crase']
-  },
 
-  // ==========================================
-  // BIOLOGIA - CELULAR, GENÉTICA, FISIOLOGIA, ECOLOGIA
-  // ==========================================
+  // =========================================================================
+  // 🧬 BIOLOGIA - COBERTURA AMPLA DE TÓPICOS
+  // =========================================================================
   {
     disciplineKeywords: ['biologia', 'ciências biológicas'],
     topicKeywords: ['identidade dos seres vivos', 'célula', 'aspectos físicos', 'químicos e estruturais da célula', 'membrana'],
-    subtopicKeywords: ['membrana plasmática', 'mosaico fluido', 'transporte', 'osmose', 'lipídios'],
+    subtopicKeywords: ['membrana plasmática', 'mosaico fluido', 'transporte', 'osmose', 'lipídios', 'aspectos físicos, químicos e estruturais da célula'],
     question: `A membrana plasmática opera segundo o modelo do Mosaico Fluido, apresentando uma bicamada fosfolipídica anfipática com proteínas integradas e periféricas. A respeito dos fatores que modulam a fluidez e a permeabilidade seletiva da membrana celular, assinale a afirmativa CORRETA:`,
     alternatives: [
       { letter: 'A', text: 'O colesterol atua como um regulador bidirecional da fluidez: em altas temperaturas restringe a mobilidade fosfolipídica excessiva e em baixas temperaturas impede o empacotamento compacto das caudas de ácidos graxos.' },
@@ -138,79 +304,43 @@ export const AUTHENTIC_CONTENT_QUESTION_BANK: ContentQuestionTemplate[] = [
   {
     disciplineKeywords: ['biologia', 'ciências biológicas'],
     topicKeywords: ['organelas', 'funções celulares', 'bioenergética', 'respiração celular', 'fotossíntese'],
-    subtopicKeywords: ['mitocôndria', 'cloroplasto', 'fosforilação oxidativa', 'complexo de golgi'],
+    subtopicKeywords: ['mitocôndria', 'cloroplasto', 'fosforilação oxidativa', 'complexo de golgi', 'organelas'],
     question: `Durante o processo de respiração celular aeróbia em eucariontes, a síntese de ATP pela ATP sintase na fosforilação oxidativa é impulsionada diretamente por:`,
     alternatives: [
-      { letter: 'A', text: 'Um gradiente eletroquímico de prótons (H⁺) gerado pelo bombeamento ativo de elétrons através dos complexos da cadeia respiratória para o espaço intermembranas.' },
+      { letter: 'A', text: 'Um gradiente eletroquímico de prótons (H⁺) gerado pelo bombeamento ativo através dos complexos da cadeia respiratória para o espaço intermembranas.' },
       { letter: 'B', text: 'A hidrólise direta do ácido cítrico no ciclo de Krebs no interior da matriz mitocondrial catalisada por quinases específicas.' },
       { letter: 'C', text: 'A transferência direta do grupo fosfato do fosfoenolpiruvato durante a glicólise anaeróbia no citosol.' },
       { letter: 'D', text: 'O consumo de oxigênio molecular na matriz mitocondrial atuando como doador primário de prótons para a ATP sintase.' }
     ],
     correctAnswer: 'A',
-    explanation: `Gabarito: A\n\nGabarito Comentado:\n- Alternativa A (Correta): A hipótese quimiosmótica de Mitchell estabelece que o transporte de elétrons pela cadeia respiratória promove o bombeamento de prótons (H⁺) da matriz para o espaço intermembranas. O retorno desses prótons a favor do gradiente via ATP sintase aciona a rotação mecânica da enzima e a fosforilação de ADP em ATP.\n- Análise dos Distratores:\n  * B) O ciclo de Krebs produz NADH, FADH₂ e GTP por fosforilação em nível de substrato, mas não impulsiona diretamente a ATP sintase.\n  * C) A glicólise citosólica gera apenas 2 ATP líquidos por fosforilação em nível de substrato.\n  * D) O oxigênio é o aceptor FINAL (e não doador inicial) de elétrons e prótons, formando água (H₂O).`,
-    topic: 'Funções Celulares e Bioenergética',
-    subtopic: 'Respiração Celular e Fosforilação Oxidativa',
+    explanation: `Gabarito: A\n\nGabarito Comentado:\n- Alternativa A (Correta): A hipótese quimiosmótica de Mitchell estabelece que o transporte de elétrons pela cadeia respiratória promove o bombeamento de prótons (H⁺) da matriz para o espaço intermembranas. O retorno desses prótons via ATP sintase promove a síntese de ATP.\n- Distratores apresentam equívocos clássicos de compartimentação mitocondrial e etapas metabólicas.`,
+    topic: 'Identidade dos Seres Vivos',
+    subtopic: 'Organelas e Funções Celulares',
     difficulty: 'Difícil',
     skills: ['Bioquímica Celular', 'Metabolismo Energético']
   },
   {
     disciplineKeywords: ['biologia', 'ciências biológicas'],
-    topicKeywords: ['enzimas', 'bioquímica', 'cinética enzimática', 'metabolismo'],
-    subtopicKeywords: ['inibição enzimática', 'km', 'vmax', 'sítio ativo'],
-    question: `No estudo da cinética enzimática segundo o modelo de Michaelis-Menten, um inibidor competitivo caracteriza-se por:`,
+    topicKeywords: ['ciclo celular', 'divisão celular', 'mitose', 'meiose'],
+    subtopicKeywords: ['ciclo celular', 'mitose', 'meiose', 'prófase', 'anáfase', 'crossing-over'],
+    question: `No processo de divisão meiótica, a recombinação gênica (*crossing-over* ou permuta gênica) ocorre especificamente em qual subfase da Prófase I?`,
     alternatives: [
-      { letter: 'A', text: 'Ligar-se reversivelmente ao sítio ativo da enzima livre, aumentando o valor da constante $K_m$ aparente sem alterar a velocidade máxima ($V_{\\max}$) em saturação de substrato.' },
-      { letter: 'B', text: 'Ligar-se irreversivelmente a um sítio alostérico distante, reduzindo drasticamente a $V_{\\max}$ sem modificar a afinidade ($K_m$) da enzima pelo substrato.' },
-      { letter: 'C', text: 'Interagir exclusivamente com o complexo enzima-substrato (ES), diminuindo simultaneamente tanto o $K_m$ aparente quanto a $V_{\\max}$.' },
-      { letter: 'D', text: 'Promover a desnaturação térmica da cadeia polipeptídica terciária por quebra de pontes dissulfeto na fenda catalítica.' }
+      { letter: 'A', text: 'Paquíteno, momento em que os cromossomos homólogos pareados formam tétrades e realizam a troca física de segmentos de cromátides não-irmãs.' },
+      { letter: 'B', text: 'Leptóteno, fase caracterizada pela condensação inicial dos filamentos de cromatina e desintegração total do carioteca.' },
+      { letter: 'C', text: 'Zigóteno, etapa exclusiva de separação centrômica das cromátides-irmãs em direção aos polos opostos do fuso acromático.' },
+      { letter: 'D', text: 'Diacinese, momento em que os cromossomos homólogos atingem a placa equatorial metafásica sem contato entre cromátides.' }
     ],
     correctAnswer: 'A',
-    explanation: `Gabarito: A\n\nGabarito Comentado:\n- Alternativa A (Correta): O inibidor competitivo compete diretamente com o substrato pelo mesmo sítio ativo. Com isso, é necessária uma concentração maior de substrato para atingir metade da velocidade máxima (aumentando o $K_m$ aparente), mas com excesso de substrato o inibidor é deslocado e a $V_{\\max}$ original é alcançada.\n- Análise dos Distratores:\n  * B) Descreve inibição não-competitiva (ou alostérica).\n  * C) Descreve inibição incompetitiva (ou acompetitiva).\n  * D) Descreve desnaturação proteica geral.`,
+    explanation: `Gabarito: A\n\nGabarito Comentado:\n- A) Correta: O *crossing-over* ocorre no paquíteno (3ª subfase da Prófase I da Meiose), quando o complexo sinaptonêmico está totalmente formado entre os cromossomos homólogos.\n- B, C e D) Distratores detalham outras fases da meiose (leptóteno, zigóteno, diplóteno e diacinese) com conceitos invertidos.`,
     topic: 'Identidade dos Seres Vivos',
-    subtopic: 'Bioquímica e Cinética Enzimática',
-    difficulty: 'Avançado',
-    skills: ['Bioquímica', 'Cinética Enzimática']
-  },
-  {
-    disciplineKeywords: ['biologia', 'ciências biológicas'],
-    topicKeywords: ['transmissão da vida', 'genética', 'mendel', 'hereditariedade', 'código genético'],
-    subtopicKeywords: ['primeira lei', 'segunda lei', 'probabilidade genética', 'ligamento gênico'],
-    question: `Em um cruzamento entre dois indivíduos heterozigotos para dois pares de alelos com segregação independente ($AaBb \\times AaBb$), a probabilidade de se obter um descendente com genótipo duplamente homozigoto recessivo ($aabb$) ou homozigoto dominante para ambos os locos ($AABB$) é de:`,
-    alternatives: [
-      { letter: 'A', text: '2/16 (ou 1/8).' },
-      { letter: 'B', text: '1/16.' },
-      { letter: 'C', text: '4/16 (ou 1/4).' },
-      { letter: 'D', text: '9/16.' }
-    ],
-    correctAnswer: 'A',
-    explanation: `Gabarito: A\n\nGabarito Comentado:\n- Alternativa A (Correta): Para cada par heterozigoto ($Aa \\times Aa$), a chance de $AA$ é $1/4$ e de $aa$ é $1/4$. Sendo segregação independente (Segunda Lei de Mendel):\n  * $P(AABB) = P(AA) \\times P(BB) = 1/4 \\times 1/4 = 1/16$.\n  * $P(aabb) = P(aa) \\times P(bb) = 1/4 \\times 1/4 = 1/16$.\n  * Como são eventos mutuamente exclusivos (regra do OU): $1/16 + 1/16 = 2/16 = 1/8$.\n- Análise dos Distratores:\n  * B) 1/16 corresponde apenas à probabilidade de um dos genótipos isoladamente.\n  * C) 4/16 corresponderia aos duplamente heterozigotos ($AaBb$).\n  * D) 9/16 é a proporção fenotípica dominante dupla ($A\\_B\\_$).`,
-    topic: 'Transmissão da Vida e Genética',
-    subtopic: 'Segunda Lei de Mendel e Cálculos de Probabilidade',
+    subtopic: 'Ciclo Celular e Divisão Celular',
     difficulty: 'Difícil',
-    skills: ['Genética Clássica', 'Probabilidade Genética']
-  },
-  {
-    disciplineKeywords: ['biologia', 'ciências biológicas'],
-    topicKeywords: ['ecologia', 'populações', 'comunidades', 'ecossistemas', 'ciclos biogeoquímicos'],
-    subtopicKeywords: ['ciclo do nitrogênio', 'fixação', 'nitrificação', 'desnitrificação'],
-    question: `No ciclo biogeoquímico do nitrogênio, a conversão microbiológica de amônia ($NH_3$ / $NH_4^+$) em nitrato ($NO_3^-$) ocorre em duas etapas oxidativas sucessivas denominadas:`,
-    alternatives: [
-      { letter: 'A', text: 'Nitrosação (por bactérias do gênero *Nitrosomonas*) seguida de Nitratação (por bactérias do gênero *Nitrobacter*).' },
-      { letter: 'B', text: 'Amonificação (por fungos saprófitos) seguida de Desnitrificação (por bactérias anaeróbias estritas).' },
-      { letter: 'C', text: 'Fixação biológica (por cianobactérias) seguida de Hidrólise proteica (por actinomicetos).' },
-      { letter: 'D', text: 'Desaminação oxidativa (por protozoários ciliados) seguida de Redução anaeróbia de nitritos.' }
-    ],
-    correctAnswer: 'A',
-    explanation: `Gabarito: A\n\nGabarito Comentado:\n- Alternativa A (Correta): A nitrificação é um processo quimiossintetizante aeróbio realizado em duas etapas:\n  1. Nitrosação: $2NH_3 + 3O_2 \\rightarrow 2NO_2^- + 2H^+ + 2H_2O$ (*Nitrosomonas* / *Nitrosococcus*).\n  2. Nitratação: $2NO_2^- + O_2 \\rightarrow 2NO_3^-$ (*Nitrobacter*).\n- Análise dos Distratores:\n  * B) Amonificação é a decomposição de matéria orgânica gerando amônia; Desnitrificação converte nitrato em $N_2$ gasoso.\n  * C) Fixação biológica converte $N_2$ atmosférico em amônia.\n  * D) Desaminação remove grupos amina de aminoácidos.`,
-    topic: 'Ecologia e Meio Ambiente',
-    subtopic: 'Ciclos Biogeoquímicos e Dinâmica do Nitrogênio',
-    difficulty: 'Difícil',
-    skills: ['Ecologia', 'Microbiologia', 'Ciclos Biogeoquímicos']
+    skills: ['Citogenética', 'Meiose e Recombinação']
   },
 
-  // ==========================================
-  // MATEMÁTICA
-  // ==========================================
+  // =========================================================================
+  // 📐 MATEMÁTICA
+  // =========================================================================
   {
     disciplineKeywords: ['matemática', 'matematica'],
     topicKeywords: ['funções', 'álgebra', 'geometria', 'trigonometria', 'análise combinatória', 'probabilidade'],
@@ -223,82 +353,20 @@ export const AUTHENTIC_CONTENT_QUESTION_BANK: ContentQuestionTemplate[] = [
       { letter: 'D', text: '$V(6, 16)$ e valor máximo igual a $16$.' }
     ],
     correctAnswer: 'A',
-    explanation: `Gabarito: A\n\nGabarito Comentado:\n- Alternativa A (Correta): Para a função $f(x) = ax^2 + bx + c$ com $a = -2, b = 12, c = -10$:\n  * $x_v = \\frac{-b}{2a} = \\frac{-12}{2(-2)} = \\frac{-12}{-4} = 3$.\n  * $y_v = f(3) = -2(3)^2 + 12(3) - 10 = -2(9) + 36 - 10 = -18 + 36 - 10 = 8$.\n  * Como $a = -2 < 0$, a concavidade é voltada para baixo, logo o vértice representa o ponto de MÁXIMO da função, cujo valor máximo é $y_v = 8$.\n- Análise dos Distratores:\n  * B) Incorreta. Erro no cálculo de $y_v$ utilizando o termo independente $c$.\n  * C) Incorreta. Erro no sinal de $x_v$ e na classificação (é ponto de máximo, não mínimo).\n  * D) Incorreta. Omissão da divisão por $2a$ na fórmula do vértice.`,
+    explanation: `Gabarito: A\n\nGabarito Comentado:\n- Alternativa A (Correta): Para a função $f(x) = ax^2 + bx + c$ com $a = -2, b = 12, c = -10$:\n  * $x_v = \\frac{-b}{2a} = \\frac{-12}{2(-2)} = 3$.\n  * $y_v = f(3) = -2(9) + 36 - 10 = 8$.\n  * Como $a < 0$, a concavidade é para baixo, sendo $y_v = 8$ o valor máximo.`,
     topic: 'Funções e Álgebra',
     subtopic: 'Função Quadrática e Otimização',
     difficulty: 'Média',
-    skills: ['Álgebra', 'Função Quadrática', 'Cálculo de Vértice']
-  },
-  {
-    disciplineKeywords: ['matemática', 'matematica'],
-    topicKeywords: ['combinatória', 'análise combinatória', 'probabilidade', 'contagem'],
-    subtopicKeywords: ['combinação simples', 'permutação', 'arranjo'],
-    question: `Um comitê pedagógico formado por 4 professores será escolhido a partir de um grupo composto por 6 professores de Ciências da Natureza e 5 professores de Ciências Humanas. Sabendo que o comitê deve conter obrigatoriamente exatamente 2 professores de Ciências da Natureza e 2 professores de Ciências Humanas, o número total de comissões distintas que podem ser formadas é igual a:`,
-    alternatives: [
-      { letter: 'A', text: '150.' },
-      { letter: 'B', text: '330.' },
-      { letter: 'C', text: '75.' },
-      { letter: 'D', text: '180.' }
-    ],
-    correctAnswer: 'A',
-    explanation: `Gabarito: A\n\nGabarito Comentado:\n- Alternativa A (Correta): A ordem dos membros não importa (combinação simples):\n  * Escolha dos 2 professores de Natureza entre 6: $C(6, 2) = \\frac{6 \\times 5}{2 \\times 1} = 15$.\n  * Escolha dos 2 professores de Humanas entre 5: $C(5, 2) = \\frac{5 \\times 4}{2 \\times 1} = 10$.\n  * Pelo Princípio Fundamental da Contagem (regra do produto): $15 \\times 10 = 150$.\n- Análise dos Distratores:\n  * B) 330 é $C(11, 4)$, ou seja, todas as combinações de 4 membros sem restrição de área.\n  * C) 75 é metade de 150 (erro por divisão indevida por 2).\n  * D) 180 é resultado de confusão com arranjos parciais.`,
-    topic: 'Análise Combinatória e Probabilidade',
-    subtopic: 'Combinação Simples e Princípio Fundamental da Contagem',
-    difficulty: 'Média',
-    skills: ['Análise Combinatória', 'Resolução de Problemas']
+    skills: ['Álgebra', 'Função Quadrática']
   },
 
-  // ==========================================
-  // HISTÓRIA
-  // ==========================================
-  {
-    disciplineKeywords: ['história', 'historia'],
-    topicKeywords: ['história do ceará', 'brasil colônia', 'brasil império', 'brasil república'],
-    subtopicKeywords: ['confederação do equador', 'revoltas provinciais', 'movimentos emancipacionistas'],
-    question: `A Confederação do Equador (1824), movimento republicano e separatista deflagrado em Pernambuco com expressiva adesão no Ceará, teve como um dos seus principais fatores desencadeadores:`,
-    alternatives: [
-      { letter: 'A', text: 'A dissolução autoritária da Assembleia Constituinte de 1823 por D. Pedro I e a outorga da Constituição de 1824 com a instituição do Poder Moderador.' },
-      { letter: 'B', text: 'A decretação da Lei de Terras de 1850 que inviabilizou a posse camponesa nas províncias do Norte e centralizou as sesmarias.' },
-      { letter: 'C', text: 'A invasão holandesa no Nordeste açucareiro e a imposição da cobrança de impostos confiscatórios pela Companhia das Índias Ocidentais.' },
-      { letter: 'D', text: 'A eclosão da Guerra dos Emboabas e o controle monopolista das rotas de gado pelo sertão cearense.' }
-    ],
-    correctAnswer: 'A',
-    explanation: `Gabarito: A\n\nGabarito Comentado:\n- Alternativa A (Correta): A 'Noite da Agonia' (fechamento da Constituinte em 1823) e a imposição centralizadora da Carta de 1824 com o Poder Moderador geraram forte descontentamento nas províncias nordestinas, levando líderes como Frei Caneca (PE) e Tristão de Alencar Araripe (CE) a proclamarem a Confederação do Equador.\n- Análise dos Distratores:\n  * B) A Lei de Terras é de 1850 (Segundo Reinado), período muito posterior.\n  * C) As invasões holandesas ocorreram no século XVII (1630-1654).\n  * D) A Guerra dos Emboabas ocorreu em Minas Gerais (1707-1709) no contexto da mineração.`,
-    topic: 'Brasil Império e História do Ceará',
-    subtopic: 'Confederação do Equador e Movimentos Liberais',
-    difficulty: 'Difícil',
-    skills: ['Historiografia Brasileira', 'História Regional do Ceará']
-  },
-
-  // ==========================================
-  // GEOGRAFIA
-  // ==========================================
-  {
-    disciplineKeywords: ['geografia'],
-    topicKeywords: ['geografia do ceará', 'domínios morfoclimáticos', 'caatinga', 'semiárido'],
-    subtopicKeywords: ['semiárido cearense', 'relevo', 'depressão sertaneja', 'bacias hidrográficas'],
-    question: `No que se refere ao quadro natural do Ceará e ao domínio das Caatingas / Semiárido nordestino, a Depressão Sertaneja é caracterizada por:`,
-    alternatives: [
-      { letter: 'A', text: 'Superfícies rebaixadas esculpidas sobre o embasamento cristalino pré-cambriano, com solos rasos e pedregosos (litólicos) e drenagem intermitente dominada por rios temporários.' },
-      { letter: 'B', text: 'Extensos planaltos sedimentares úmidos recobertos por florestas latifoliadas perenes alimentadas por aquíferos freáticos profundos.' },
-      { letter: 'C', text: 'Vales profundos de origem vulcânica recente com intensa atividade sísmica e drenagem perene permanente.' },
-      { letter: 'D', text: 'Planícies costeiras formadas exclusivamente por cordões arenosos holocênicos sob influência direta do clima equatorial superúmido.' }
-    ],
-    correctAnswer: 'A',
-    explanation: `Gabarito: A\n\nGabarito Comentado:\n- Alternativa A (Correta): A Depressão Sertaneja corresponde à unidade geomorfológica predominante no Ceará, modelada sobre o embasamento cristalino, marcada por intemperismo predominantemente físico, solos pouco profundos e rios com regime intermitente/temporário.\n- Análise dos Distratores:\n  * B) Descreve os maciços residuais úmidos (brejos de altitude como Baturité e Ibiapaba), não a Depressão Sertaneja.\n  * C) O relevo cearense é geologicamente estável e antigo, sem vulcanismo recente.\n  * D) Descreve a faixa litorânea litorânea/costeira.`,
-    topic: 'Geografia do Ceará e Domínios Morfoclimáticos',
-    subtopic: 'Depressão Sertaneja e Recursos Hídricos no Semiárido',
-    difficulty: 'Difícil',
-    skills: ['Geomorfologia', 'Climatologia Regional']
-  },
-
-  // ==========================================
-  // EDUCAÇÃO BRASILEIRA, DIDÁTICA E LEGISLAÇÃO
-  // ==========================================
+  // =========================================================================
+  // 🎓 EDUCAÇÃO BRASILEIRA, DIDÁTICA E LEGISLAÇÃO
+  // =========================================================================
   {
     disciplineKeywords: ['educação brasileira', 'didática', 'pedagogia', 'conhecimentos pedagógicos'],
-    topicKeywords: ['tendências pedagógicas', 'trabalho pedagógico', 'planejamento', 'avaliação'],
-    subtopicKeywords: ['histórico-crítica', 'saviani', 'libâneo', 'avaliação formativa'],
+    topicKeywords: ['tendências pedagógicas', 'trabalho pedagógico', 'planejamento', 'avaliação', 'história do pensamento pedagógico brasileiro'],
+    subtopicKeywords: ['histórico-crítica', 'saviani', 'libâneo', 'avaliação formativa', 'teoria da educação e diferentes correntes do pensamento pedagógico brasileiro'],
     question: `Na concepção da Pedagogia Histórico-Crítica formulada por Dermeval Saviani, a prática pedagógica escolar é estruturada em torno de:`,
     alternatives: [
       { letter: 'A', text: 'Um movimento dialético que parte da Prática Social Inicial, passa pela Problematização, Instrumentalização e Catarse, culminando na Prática Social Final qualificada.' },
@@ -307,16 +375,16 @@ export const AUTHENTIC_CONTENT_QUESTION_BANK: ContentQuestionTemplate[] = [
       { letter: 'D', text: 'Uma transmissão enciclopédica estática e descontextualizada dos conteúdos clássicos por meio da memorização mnemônica.' }
     ],
     correctAnswer: 'A',
-    explanation: `Gabarito: A\n\nGabarito Comentado:\n- Alternativa A (Correta): A Pedagogia Histórico-Crítica de Saviani organiza os 5 passos metodológicos dialéticos: 1. Prática Social Inicial; 2. Problematização; 3. Instrumentalização (apropriação dos instrumentos culturais/científicos); 4. Catarse (incorporação crítica do saber); 5. Prática Social Final transformada.\n- Análise dos Distratores:\n  * B) Descreve a Tendência Liberal Tecnicista (Behaviorismo de Skinner).\n  * C) Descreve a Tendência Liberal Renovada Não-Diretiva (Carl Rogers).\n  * D) Descreve a Tendência Liberal Tradicional.`,
-    topic: 'Tendências Pedagógicas na Educação Brasileira',
-    subtopic: 'Pedagogia Histórico-Crítica e Mediação Didática',
+    explanation: `Gabarito: A\n\nGabarito Comentado:\n- Alternativa A (Correta): A Pedagogia Histórico-Crítica de Saviani organiza os 5 passos metodológicos dialéticos: 1. Prática Social Inicial; 2. Problematização; 3. Instrumentalização; 4. Catarse; 5. Prática Social Final transformada.\n- Análise dos Distratores: Descrevem tecnicismo, não-diretivismo rogeriano e pedagogia tradicional.`,
+    topic: 'História do Pensamento Pedagógico Brasileiro',
+    subtopic: 'Teoria da Educação e Diferentes Correntes do Pensamento Pedagógico Brasileiro',
     difficulty: 'Avançado',
     skills: ['Teoria Pedagógica', 'Didática Fundamental']
   },
   {
     disciplineKeywords: ['administração pública', 'legislação', 'conhecimentos básicos'],
-    topicKeywords: ['ldb', 'lei 9394/96', 'constituição federal', 'gestão democrática'],
-    subtopicKeywords: ['artigo 3', 'artigo 13', 'artigo 14', 'princípios do ensino'],
+    topicKeywords: ['ldb', 'lei 9394/96', 'constituição federal', 'gestão democrática', 'legislação nacional básica da educação'],
+    subtopicKeywords: ['artigo 3', 'artigo 13', 'artigo 14', 'princípios do ensino', 'lei nº 9.394/1996 e alterações'],
     question: `De acordo com o Artigo 13 da Lei de Diretrizes e Bases da Educação Nacional (LDB nº 9.394/1996), constitui incumbência legal expressa dos docentes nos estabelecimentos de ensino:`,
     alternatives: [
       { letter: 'A', text: 'Participar da elaboração da proposta pedagógica do estabelecimento de ensino e zelar pela aprendizagem dos alunos, estabelecendo estratégias de recuperação para os de menor rendimento.' },
@@ -325,16 +393,16 @@ export const AUTHENTIC_CONTENT_QUESTION_BANK: ContentQuestionTemplate[] = [
       { letter: 'D', text: 'Exercer com exclusividade a auditoria contábil dos recursos do FUNDEB no âmbito do conselho tutelar.' }
     ],
     correctAnswer: 'A',
-    explanation: `Gabarito: A\n\nGabarito Comentado:\n- Alternativa A (Correta): O Artigo 13 da LDB nº 9.394/96 estabelece expressamente como incumbência dos docentes: 'I - participar da elaboração da proposta pedagógica do estabelecimento de ensino; II - elaborar e cumprir plano de trabalho (...); III - zelar pela aprendizagem dos alunos; IV - estabelecer estratégias de recuperação para os alunos de menor rendimento'.\n- Análise dos Distratores:\n  * B, C e D) Referem-se a competências exclusivas dos órgãos executivos, conselhos de educação ou sistemas de ensino, e não ao corpo docente.`,
-    topic: 'Legislação da Educação Básica',
-    subtopic: 'Incumbências Docentes e Organização Escolar na LDB',
+    explanation: `Gabarito: A\n\nGabarito Comentado:\n- Alternativa A (Correta): O Artigo 13 da LDB nº 9.394/96 estabelece expressamente as incumbências dos docentes (participação no PPP, plano de trabalho, zelar pela aprendizagem e ministrar dias letivos).\n- Distratores atribuem aos docentes competências de conselhos ou do poder executivo.`,
+    topic: 'Legislação Nacional Básica da Educação',
+    subtopic: 'Lei nº 9.394/1996 e alterações (LDB)',
     difficulty: 'Média',
     skills: ['Legislação Educacional', 'LDB 9.394/96']
   },
   {
     disciplineKeywords: ['dados e indicadores educacionais', 'leitura e interpretação de dados'],
     topicKeywords: ['spaece', 'ideb', 'censo escolar', 'indicadores'],
-    subtopicKeywords: ['escala de proficiência', 'padrões de desempenho', 'fluxo escolar'],
+    subtopicKeywords: ['escala de proficiência', 'padrões de desempenho', 'fluxo escolar', 'spaece'],
     question: `No Sistema Permanente de Avaliação da Educação Básica do Ceará (SPAECE), os resultados de proficiência dos estudantes do Ensino Médio em Língua Portuguesa e Matemática são categorizados em quatro Padrões de Desempenho. A escala correta, do nível mais básico ao mais consolidado, é:`,
     alternatives: [
       { letter: 'A', text: 'Muito Crítico, Crítico, Intermediário e Adequado.' },
@@ -343,7 +411,7 @@ export const AUTHENTIC_CONTENT_QUESTION_BANK: ContentQuestionTemplate[] = [
       { letter: 'D', text: 'Em Desenvolvimento, Parcial, Satisfatório e Pleno.' }
     ],
     correctAnswer: 'A',
-    explanation: `Gabarito: A\n\nGabarito Comentado:\n- Alternativa A (Correta): O SPAECE adota oficialmente os quatro níveis de padrões de desempenho: 1. Muito Crítico; 2. Crítico; 3. Intermediário; 4. Adequado. Essa categorização orienta as políticas pedagógicas e o cálculo do Índice de Desempenho Escolar do Ceará.\n- Análise dos Distratores:\n  * B) 'Insuficiente, Básico, Proficiente e Avançado' é a nomenclatura utilizada pelo SARESP (São Paulo) e SAEB.\n  * C e D) São escalas descritivas genéricas não adotadas pela SEDUC-CE / CAEd.`,
+    explanation: `Gabarito: A\n\nGabarito Comentado:\n- Alternativa A (Correta): O SPAECE adota oficialmente os quatro níveis de padrões de desempenho: 1. Muito Crítico; 2. Crítico; 3. Intermediário; 4. Adequado.\n- Distratores trazem nomenclaturas de outros sistemas como SARESP ou SAEB.`,
     topic: 'Indicadores Educacionais e Avaliação Externa',
     subtopic: 'Padrões de Desempenho e Metodologia SPAECE',
     difficulty: 'Difícil',
@@ -351,7 +419,7 @@ export const AUTHENTIC_CONTENT_QUESTION_BANK: ContentQuestionTemplate[] = [
   }
 ];
 
-// Utilitário de Embaralhamento de Alternativas (Garante que o gabarito A, B, C, D seja uniformemente distribuído)
+// Utilitário de Embaralhamento de Alternativas (Garante distribuição homogênea entre A, B, C, D)
 export function shuffleQuestionOptions(
   alternatives: { letter: 'A' | 'B' | 'C' | 'D'; text: string }[],
   correctAnswer: 'A' | 'B' | 'C' | 'D',
@@ -364,7 +432,6 @@ export function shuffleQuestionOptions(
   const letters: ('A' | 'B' | 'C' | 'D')[] = ['A', 'B', 'C', 'D'];
   const correctObj = alternatives.find(a => (a.letter || '').toUpperCase() === correctAnswer.toUpperCase()) || alternatives[0];
 
-  // Create cloned array and shuffle using Fisher-Yates with random offset
   const cloned = [...alternatives];
   for (let i = cloned.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -383,7 +450,6 @@ export function shuffleQuestionOptions(
     };
   });
 
-  // Re-align explanation header if it had hardcoded Gabarito: A / B / C / D
   let updatedExplanation = explanation;
   if (updatedExplanation) {
     updatedExplanation = updatedExplanation
@@ -411,7 +477,6 @@ export function sanitizeSimuladoQuestion(q: any, fallbackTopic: string, fallback
     cleanedExplanation = cleanedExplanation.replace(pat, '').trim();
   });
 
-  // Ensure options is an array of 4 letters
   const rawAlternatives = Array.isArray(q.alternatives) ? q.alternatives : (Array.isArray(q.options) ? q.options : []);
   const validLetters: ('A' | 'B' | 'C' | 'D')[] = ['A', 'B', 'C', 'D'];
 
@@ -432,10 +497,10 @@ export function sanitizeSimuladoQuestion(q: any, fallbackTopic: string, fallback
     rawCorrect = 'A';
   }
 
-  // Shuffle alternatives to ensure perfectly balanced distribution of correct answers across A, B, C, D
+  // Randomize alternative order
   const { shuffledAlternatives, newCorrectAnswer, updatedExplanation } = shuffleQuestionOptions(
-    normalizedAlternatives,
-    rawCorrect as 'A' | 'B' | 'C' | 'D',
+    normalizedAlternatives as any,
+    rawCorrect as any,
     cleanedExplanation
   );
 
@@ -487,7 +552,6 @@ export function isSemanticDuplicate(questionText: string, seenQuestionList: stri
   for (const seen of seenQuestionList) {
     const seenHash = computeQuestionSemanticHash(seen);
     if (targetHash === seenHash) return true;
-    // Check heavy substring overlap
     if (seen.length > 35 && questionText.length > 35) {
       const s1 = questionText.substring(0, 50).toLowerCase();
       const s2 = seen.substring(0, 50).toLowerCase();
@@ -495,6 +559,115 @@ export function isSemanticDuplicate(questionText: string, seenQuestionList: stri
     }
   }
   return false;
+}
+
+// Procedural Dynamic Question Synthesizer for Topic Variations
+function synthesizeProceduralTopicQuestion(
+  discipline: string,
+  topicName: string,
+  subtopicName: string,
+  index: number
+): ContentQuestionTemplate {
+  const normSub = (subtopicName || topicName || '').toLowerCase();
+  const seed = Math.abs(index + subtopicName.length + (subtopicName.charCodeAt(0) || 1));
+
+  // Synthesize for Portuguese specific subtopics
+  if (normSub.includes('crase') || normSub.includes('acento grave')) {
+    const sentences = [
+      {
+        q: `No que se refere ao uso do acento indicativo de crase em regências nominais e verbais, assinale a opção inteiramente CORRETA:`,
+        correct: `A comissão técnica deu preferência **à** elaboração de projetos inovadores em detrimento de medidas paliativas.`,
+        d1: `O professor orientou os alunos à entregarem o trabalho à partir do meio-dia.`,
+        d2: `O texto fazia menção à Sua Santidade em tom solene e respeitoso.`,
+        d3: `Todos os envolvidos assistiram à ela expor suas considerações finais.`
+      },
+      {
+        q: `Analise as frases abaixo quanto ao emprego da crase e assinale a opção CORRETA:`,
+        correct: `Referiu-se **àquela** portaria ministerial com absoluto domínio das normas da administração escolar.`,
+        d1: `Dirigiu-se à uma funcionária para solicitar à ela maiores esclarecimentos.`,
+        d2: `O resultado foi anunciado à todos os professores presentes à cerimônia.`,
+        d3: `Estavam dispostos à colaborar com as novas diretrizes pedagógicas.`
+      }
+    ];
+    const chosen = sentences[seed % sentences.length];
+    return {
+      disciplineKeywords: ['português'],
+      topicKeywords: ['crase'],
+      question: chosen.q,
+      alternatives: [
+        { letter: 'A', text: chosen.correct },
+        { letter: 'B', text: chosen.d1 },
+        { letter: 'C', text: chosen.d2 },
+        { letter: 'D', text: chosen.d3 }
+      ],
+      correctAnswer: 'A',
+      explanation: `Gabarito: A\n\nGabarito Comentado:\n- A) Correta: O termo rege a preposição 'a' que se contrai com o artigo definido feminino ou pronome demonstrativo.\n- B, C e D) Incorretas: Apresentam casos proibidos de crase (antes de verbo, pronome pessoal, pronome de tratamento ou palavras masculinas).`,
+      topic: topicName,
+      subtopic: subtopicName,
+      difficulty: 'Difícil',
+      skills: ['Crase', 'Regência']
+    };
+  }
+
+  if (normSub.includes('pontua') || normSub.includes('vírgula') || normSub.includes('virgula')) {
+    return {
+      disciplineKeywords: ['português'],
+      topicKeywords: ['pontuação'],
+      question: `Em relação às regras de pontuação na norma-padrão da Língua Portuguesa, assinale a alternativa em que as vírgulas foram empregadas de forma inteiramente ADEQUADA:`,
+      alternatives: [
+        { letter: 'A', text: 'Os professores da rede estadual, motivados pelos resultados do SPAECE, planejaram, com rigor técnico, as novas oficinas pedagógicas.' },
+        { letter: 'B', text: 'O coordenador pedagógico, reuniu todos os docentes no auditório para avaliar o plano de ação.' },
+        { letter: 'C', text: 'As novas diretrizes educacionais visam, a melhoria contínua dos índices de proficiência leitora.' },
+        { letter: 'D', text: 'Durante o conselho de classe os docentes, debateram estratégias para a redução do abandono escolar.' }
+      ],
+      correctAnswer: 'A',
+      explanation: `Gabarito: A\n\nGabarito Comentado:\n- A) Correta: As vírgulas isolam a oração adjetiva explicativa e o adjunto adverbial de modo intercalado.\n- B, C e D) Incorretas: Separam indevidamente sujeito de predicado ou verbo de complemento por vírgula.`,
+      topic: topicName,
+      subtopic: subtopicName,
+      difficulty: 'Difícil',
+      skills: ['Pontuação', 'Sintaxe']
+    };
+  }
+
+  if (normSub.includes('concord') || normSub.includes('verbal') || normSub.includes('nominal')) {
+    return {
+      disciplineKeywords: ['português'],
+      topicKeywords: ['concordância'],
+      question: `Quanto à concordância verbal e nominal, assinale a opção que atende estritamente à norma-padrão da Língua Portuguesa:`,
+      alternatives: [
+        { letter: 'A', text: 'Havia muitas pendências curriculares a serem sanadas, mas devem existir saídas viáveis para a equipe pedagógica.' },
+        { letter: 'B', text: 'Fazem muitos anos que os projetos pedagógicos foram implementados na instituição de ensino.' },
+        { letter: 'C', text: 'Devem haver soluções imediatas para os desafios de infraestrutura apontados no relatório.' },
+        { letter: 'D', text: 'Tratam-se de reivindicações legítimas apresentadas pela comunidade escolar.' }
+      ],
+      correctAnswer: 'A',
+      explanation: `Gabarito: A\n\nGabarito Comentado:\n- A) Correta: 'Havia' impessoal no singular e 'existir' pessoal com auxiliar no plural ('devem existir saídas').\n- B, C e D) Erros com verbos impessoais 'fazer' e 'haver' ou indeterminação com partícula 'se'.`,
+      topic: topicName,
+      subtopic: subtopicName,
+      difficulty: 'Difícil',
+      skills: ['Concordância Verbal', 'Sintaxe']
+    };
+  }
+
+  // General Fallback dynamically created for the exact topic and subtopic
+  return {
+    disciplineKeywords: [discipline.toLowerCase()],
+    topicKeywords: [topicName.toLowerCase()],
+    subtopicKeywords: [subtopicName.toLowerCase()],
+    question: `No que tange aos conceitos científicos e preceitos fundamentais do tema "${subtopicName}" (${topicName}), assinale a alternativa teórica e conceitualmente CORRETA:`,
+    alternatives: [
+      { letter: 'A', text: `A análise rigorosa de "${subtopicName}" evidencia que seus princípios operam de maneira estruturada e articulada com as diretrizes e mecanismos científicos da área.` },
+      { letter: 'B', text: `Os preceitos de "${subtopicName}" baseiam-se em formulações meramente intuitivas que desconsideram o referencial teórico consolidado na literatura especializada.` },
+      { letter: 'C', text: `A aplicação de "${subtopicName}" restringe-se exclusivamente a situações atípicas e prescinde de fundamentação metodológica formal.` },
+      { letter: 'D', text: `O desenvolvimento de "${subtopicName}" fundamenta-se na inversão empírica de seus conceitos basilares sem validação técnica correspondente.` }
+    ],
+    correctAnswer: 'A',
+    explanation: `Gabarito: A\n\nGabarito Comentado:\n- A) Correta: Apresenta a definição consistente e alinhada à matriz teórica de ${subtopicName}.\n- B, C e D) Apresentam distorções conceituais, reducionismos ou afirmações contrárias ao rigor científico da disciplina.`,
+    topic: topicName,
+    subtopic: subtopicName,
+    difficulty: 'Difícil',
+    skills: ['Domínio Teórico', 'Rigor FUNECE']
+  };
 }
 
 // Gerador de Fallback Especializado por Disciplina com 100% de Rigor e Zero Meta-Texto
@@ -513,8 +686,8 @@ export function generateCuratedFallbackForTopic(
   const candidates = AUTHENTIC_CONTENT_QUESTION_BANK.filter(item => {
     const discMatch = item.disciplineKeywords.some(k => normDisc.includes(k) || normTop.includes(k));
     const topMatch = item.topicKeywords.some(k => normTop.includes(k) || normSub.includes(k));
-    const subMatch = item.subtopicKeywords ? item.subtopicKeywords.some(k => normSub.includes(k)) : true;
-    return (discMatch && (topMatch || subMatch)) || topMatch;
+    const subMatch = item.subtopicKeywords ? item.subtopicKeywords.some(k => normSub.includes(k) || normTop.includes(k)) : false;
+    return (discMatch && (subMatch || topMatch)) || subMatch;
   });
 
   const unseenCandidate = candidates.find(c => !isSemanticDuplicate(c.question, seenTexts));
@@ -522,68 +695,6 @@ export function generateCuratedFallbackForTopic(
     return unseenCandidate;
   }
 
-  if (candidates.length > 0) {
-    return candidates[index % candidates.length];
-  }
-
-  // If no direct template, build a dedicated question with high-density distractors based on discipline area
-  if (normDisc.includes('português') || normDisc.includes('língua') || normDisc.includes('letras')) {
-    return {
-      disciplineKeywords: ['português'],
-      topicKeywords: ['sintaxe'],
-      question: `Considere o período a seguir:\n\n*"Constatou-se a imperiosa necessidade de reformulação dos critérios avaliativos nas escolas da rede estadual."*\n\nEm conformidade com as regras de sintaxe da Língua Portuguesa e o padrão culto, assinale a opção CORRETA:`,
-      alternatives: [
-        { letter: 'A', text: 'O termo "a imperiosa necessidade" funciona como sujeito paciente do verbo constatar, caracterizando a voz passiva sintética formada por VTD acompanhado de pronome apassivador.' },
-        { letter: 'B', text: 'A partícula "se" classifica-se sintaticamente como índice de indeterminação do sujeito, tornando a oração destituída de sujeito determinado.' },
-        { letter: 'C', text: 'O termo "de reformulação dos critérios" classifica-se como adjunto adnominal do substantivo necessidade por possuir sentido ativo em relação ao núcleo.' },
-        { letter: 'D', text: 'O verbo constatar atua como transitivo indireto regido pela preposição "de", com sujeito oculto contextualmente recuperável.' }
-      ],
-      correctAnswer: 'A',
-      explanation: `Gabarito: A\n\nGabarito Comentado:\n- A) Correta: O verbo constatar é VTD acompanhado de partícula apassivadora "se", tornando "a imperiosa necessidade" o sujeito paciente.\n- B) Incorreta: O "se" é pronome apassivador.\n- C) Incorreta: "de reformulação dos critérios" é Complemento Nominal.\n- D) Incorreta: Constatar é VTD.`,
-      topic: topicName || 'Sintaxe da Língua Portuguesa',
-      subtopic: subtopicName || 'Termos da Oração e Vozes Verbais',
-      difficulty: 'Difícil',
-      skills: ['Sintaxe', 'Concordância']
-    };
-  }
-
-  if (normDisc.includes('biologia') || normDisc.includes('ciência')) {
-    return {
-      disciplineKeywords: ['biologia'],
-      topicKeywords: ['célula'],
-      question: `A respeito dos mecanismos moleculares de transporte através da membrana plasmática e da geração do potencial de repouso celular, assinale a afirmativa CORRETA:`,
-      alternatives: [
-        { letter: 'A', text: 'A bomba de Na⁺/K⁺ ATPase realiza transporte ativo primário acoplado à hidrólise de ATP, transportando 3 íons Na⁺ para o meio extracelular e 2 íons K⁺ para o meio intracelular contra seus respectivos gradientes eletroquímicos.' },
-        { letter: 'B', text: 'A difusão facilitada de glicose por carreadores da família GLUT consome diretamente a energia livre derivada da hidrólise de trifosfato de adenosina (ATP) na face citoplasmática.' },
-        { letter: 'C', text: 'A osmose caracteriza-se pelo fluxo termodinâmico de solutos do meio hipotônico para o hipertônico impulsionado por pressão osmótica hidrostática direta.' },
-        { letter: 'D', text: 'Proteínas periféricas da membrana celular ancoradas na matriz extracelular são responsáveis pela formação dos canais iônicos transmembrana voltagem-dependentes.' }
-      ],
-      correctAnswer: 'A',
-      explanation: `Gabarito: A\n\nGabarito Comentado:\n- A) Correta: A bomba de Na⁺/K⁺ é uma ATPase tipo P de transporte ativo primário que hidrolisa 1 ATP para ejetar 3 Na⁺ e internalizar 2 K⁺ contra gradientes eletroquímicos.\n- B) Incorreta: Difusão facilitada é transporte passivo (sem gasto direto ou indireto de ATP).\n- C) Incorreta: A osmose é o deslocamento do SOLVENTE (água) do meio hipotônico para o hipertônico.\n- D) Incorreta: Canais iônicos transmembrana são formados por proteínas integrais intrínsecas, não periféricas.`,
-      topic: topicName || 'Biologia Celular',
-      subtopic: subtopicName || 'Transporte Transmembrana e Fisiologia',
-      difficulty: 'Avançado',
-      skills: ['Biologia Celular', 'Biofísica']
-    };
-  }
-
-  // Fallback para Educação / Didática
-  return {
-    disciplineKeywords: ['educação'],
-    topicKeywords: ['didática'],
-    question: `No que tange ao planejamento curricular e à avaliação da aprendizagem na perspectiva formativa e mediadora, assinale a proposição CORRETA:`,
-    alternatives: [
-      { letter: 'A', text: 'A avaliação formativa atua como instrumento diagnóstico contínuo de regulação das aprendizagens, permitindo a reorientação das práticas pedagógicas e a identificação de lacunas ao longo do processo educativo.' },
-      { letter: 'B', text: 'A avaliação somativa deve ter primazia absoluta sobre os aspectos qualitativos com o propósito exclusivo de classificação, seriação e ranqueamento discente.' },
-      { letter: 'C', text: 'O planejamento do trabalho docente dispensa a articulação prévia entre os objetivos pedagógicos, os conteúdos científicos e os critérios avaliativos definidos.' },
-      { letter: 'D', text: 'A avaliação diagnóstica restringe-se ao encerramento do ano letivo com a finalidade estrita de atribuição de conceitos finais para progressão escolar.' }
-    ],
-    correctAnswer: 'A',
-    explanation: `Gabarito: A\n\nGabarito Comentado:\n- A) Correta: A avaliação formativa (Scriven / Perrenoud / Luckesi) visa acompanhar continuamente o desenvolvimento do estudante para identificar dificuldades e regular a ação didática.\n- B, C e D) Apresentam concepções reducionistas ou distorcidas contrárias aos preceitos da didática contemporânea.`,
-    topic: topicName || 'Didática e Avaliação',
-    subtopic: subtopicName || 'Avaliação Formativa e Planejamento',
-    difficulty: 'Média',
-    skills: ['Didática', 'Avaliação da Aprendizagem']
-  };
+  // If all matching candidates are seen or no direct candidate matches, synthesize a procedural topic question
+  return synthesizeProceduralTopicQuestion(discipline, topicName, subtopicName, index);
 }
-
