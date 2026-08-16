@@ -15,57 +15,57 @@ interface TutorIASectionProps {
   setActiveTab?: (tab: string) => void;
 }
 
-function cleanTopicTitle(rawText: string, activeTopicName?: string, userSubject: string = 'Biologia'): string {
-  const lower = rawText.trim().toLowerCase().replace(/[?!.,;:]/g, '').trim();
-  const subjectLower = userSubject.toLowerCase();
+function cleanTopicTitle(rawText: string, activeTopicName?: string, userSubject: string = 'Língua Portuguesa'): string {
+  const trimmed = rawText.trim().replace(/[?!.,;:]/g, ' ').replace(/\s+/g, ' ').trim();
+  const lower = trimmed.toLowerCase();
 
-  // Frases de início, confirmação ou diálogo informal
-  const startKeywords = [
-    'vamos comecar', 'vamos começar', 'vamos la', 'vamos lá', 'vamos', 'bora',
-    'iniciar', 'comecar', 'começar', 'pode comecar', 'pode começar', 'pode ser',
-    'sim', 'ok', 'claro', 'pronto', 'pronta', 'estou pronto', 'estou pronta',
-    'quero sim', 'vamos nessa', 'manda ver', 'manda', 'pode mandar', 'com certeza',
-    'oi', 'ola', 'olá', 'bom dia', 'boa tarde', 'boa noite', 'ajuda', 'me ajuda',
-    'estou com duvida', 'estou com dúvida', 'tenho duvida', 'tenho dúvida',
-    'qual e a materia', 'qual e o assunto', 'o que estudo hoje', 'materia de hoje',
-    'assunto de hoje', 'topico de hoje', 'meta de hoje', 'vamos a ela', 'estudar',
-    'quero estudar', 'vamos estudar'
-  ];
+  // Lista de palavras e expressões de diálogo que NUNCA devem ser tratadas como tópicos de estudo
+  const INVALID_TOPIC_WORDS = new Set([
+    'nao', 'não', 'n', 'sim', 's', 'ok', 'claro', 'bora', 'quero', 'quero sim', 'quero nao', 'quero não',
+    'nao entendi', 'não entendi', 'entendi', 'compreendi', 'show', 'beleza', 'blz', 'valeu', 'obrigado',
+    'obrigada', 'perfeito', 'otimo', 'ótimo', 'certo', 'top', 'massa', 'duvida', 'dúvida', 'ajuda', 'socorro',
+    'estudo', 'aula', 'materia', 'matéria', 'assunto', 'conteudo', 'conteúdo', 'topico', 'tópico', 'edital',
+    'funece', 'uece', 'seduc', 'prova', 'questão', 'questao', 'exercicio', 'exercício', 'simulado', 'desafio',
+    'mais ou menos', 'ainda nao', 'ainda não', 'ficou confuso', 'achei dificil', 'achei difícil', 'repete', 'reexplica'
+  ]);
 
-  const isStartOrConfirmation = startKeywords.some(kw => 
-    lower === kw || 
-    lower.startsWith('vamos') || 
-    lower.startsWith('pode') || 
-    lower.includes('comecar') || 
-    lower.includes('começar') ||
-    lower.includes('iniciar') ||
-    (lower.includes('estudar') && !lower.match(/(microscop|mitocô|mitoco|dna|rna|ldb|ecolog|organel|citolog|genet|ciclo|pedagog|psicolog|didat)/i))
-  );
-
-  // Verifica se há alguma palavra-chave de assunto específico do edital
-  const hasEditalKeyword = /microscop|organel|citolog|genet|dna|rna|mendel|ecolog|nitrog|ldb|bncc|dcrc|didat|psicolog|escola|avaliac|curríc|curric/i.test(lower);
-
-  if ((isStartOrConfirmation || !hasEditalKeyword) && activeTopicName) {
-    return activeTopicName;
+  if (INVALID_TOPIC_WORDS.has(lower)) {
+    return activeTopicName || userSubject;
   }
 
-  // Se houver assunto específico, limpa prefixos
-  let cleaned = rawText
-    .replace(/^(quero|desejo|gostaria de|preciso|vamos|posso|pode)?\s*(estudar|aprender|ver|entender|revisar|começar|comecar|iniciar)?\s*/gi, '')
-    .replace(/^(o|a)\s+(tópico|topico|conteúdo|conteudo|assunto|matéria|materia|disciplina)\s+(de|da|do)?\s*/gi, '')
-    .replace(/^(tópico|topico|conteúdo|conteudo|assunto|matéria|materia|disciplina)\s+(de|da|do)?\s*/gi, '')
-    .replace(/^(explique|ensine|resuma|detalhe|fale sobre|aula de|o que é|como funciona|me fale sobre|explique sobre|ensine sobre|fale me sobre|tire duvida sobre|diga sobre|quero saber sobre|me ajuda com|me ajuda em|tenho dúvida em|tenho duvida em)\s*/gi, '')
-    .replace(/^(sobre|a respeito de|com relacao a|referente a)\s*/gi, '')
-    .replace(/[?!.,;:]/g, '')
+  // Expressões genéricas que apenas confirmam o início dos estudos sem especificar matéria
+  const genericStartRegex = /^(vamos\s+come[çc]ar|vamos\s+l[aá]|vamos\s+nessa|iniciar|come[çc]ar|pode\s+come[çc]ar|pode\s+ser|bora|sim|ok|claro|pronto|pronta|estou\s+pront[oa]|quero\s+sim|manda\s+ver|pode\s+mandar|com\s+certeza|estudar|quero\s+estudar|vamos\s+estudar|qual\s+[eé]\s+a\s+mat[eé]ria|qual\s+[eé]\s+o\s+assunto|o\s+que\s+estudo\s+hoje|mat[eé]ria\s+de\s+hoje|assunto\s+de\s+hoje|t[oó]pico\s+de\s+hoje|meta\s+de\s+hoje)$/i;
+
+  if (genericStartRegex.test(lower)) {
+    return activeTopicName || userSubject;
+  }
+
+  // Remove expressões de dificuldade, dúvida, comando e prefixos verbais
+  let cleaned = trimmed
+    .replace(/^(eu\s+)?(tenho|sinto|estou\s+com|estou\s+tendo|acho\s+que\s+tenho)\s+(muita\s+|bastante\s+|alguma\s+)?(dificuldade|d[uú]vida|problema)\s+(em|com|sobre|de|na|no|nas|nos)?\s*/gi, '')
+    .replace(/^(n[aã]o\s+consigo\s+entender|n[aã]o\s+entendo|n[aã]o\s+compreendo|tenho\s+dificuldade\s+em|dificuldade\s+em|dificuldade\s+com|d[uú]vida\s+em|d[uú]vida\s+sobre)\s*/gi, '')
+    .replace(/^(quero|desejo|gostaria\s+de|preciso|vamos|posso|pode)\s+(estudar|aprender|ver|entender|revisar|come[çc]ar|iniciar|saber\s+sobre|tirar\s+d[uú]vida\s+de|tirar\s+d[uú]vida\s+sobre|aprofundar|detalhar)\s*/gi, '')
+    .replace(/^(quero|desejo|gostaria\s+de|preciso|vamos|posso|pode)\s*/gi, '')
+    .replace(/^(estudar|aprender|ver|entender|revisar|come[çc]ar|iniciar|aprofundar|detalhar)\s*/gi, '')
+    .replace(/^(o|a|os|as)\s+(t[oó]pico|conte[uú]do|assunto|mat[eé]ria|disciplina)\s+(de|da|do|dos|das)?\s*/gi, '')
+    .replace(/^(t[oó]pico|conte[uú]do|assunto|mat[eé]ria|disciplina)\s+(de|da|do|dos|das)?\s*/gi, '')
+    .replace(/^(explique|ensine|resuma|detalhe|fale\s+sobre|aula\s+de|o\s+que\s+[eé]|como\s+funciona|me\s+fale\s+sobre|explique\s+sobre|ensine\s+sobre|fale-me\s+sobre|fale\s+me\s+sobre|tire\s+d[uú]vida\s+sobre|diga\s+sobre|quero\s+saber\s+sobre|me\s+ajuda\s+com|me\s+ajuda\s+em|ajuda\s+com|ajuda\s+em)\s*/gi, '')
+    .replace(/^(sobre|a\s+respeito\s+de|com\s+rela[çc][aã]o\s+a|referente\s+a)\s*/gi, '')
     .trim();
 
-  const cleanedLower = cleaned.toLowerCase();
+  // Limpa resíduos preposicionais no início
+  cleaned = cleaned.replace(/^(em|de|da|do|sobre|com)\s+/i, '').trim();
 
-  if ((!cleaned || cleanedLower === subjectLower || cleanedLower === 'biologia' || cleanedLower === 'conhecimentos específicos' || cleanedLower === 'materia' || cleanedLower === 'matéria' || cleanedLower === 'topico' || cleanedLower === 'tópico' || cleanedLower === 'disciplina' || cleanedLower === 'hoje' || cleanedLower === 'comecar' || cleanedLower === 'começar' || cleanedLower === 'iniciar' || cleanedLower === 'vamos') && activeTopicName) {
-    return activeTopicName;
+  if (cleaned.length >= 3 && !INVALID_TOPIC_WORDS.has(cleaned.toLowerCase())) {
+    return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
   }
 
-  return cleaned || activeTopicName || userSubject;
+  const VALID_SHORT_ACRONYMS = new Set(['dna', 'rna', 'met', 'mev', 'ldb', 'bncc', 'dcrc', 'tic', 'tics', 'ppp', 'pea']);
+  if (VALID_SHORT_ACRONYMS.has(cleaned.toLowerCase())) {
+    return cleaned.toUpperCase();
+  }
+
+  return activeTopicName || userSubject;
 }
 
 function checkFollowUpQuestion(rawText: string, userSubject: string): string | null {
@@ -77,46 +77,183 @@ function checkFollowUpQuestion(rawText: string, userSubject: string): string | n
     return `Olá, Profª. Gerliane! Tudo ótimo por aqui! Como posso te ajudar hoje nos seus estudos para a SEDUC CE? Quer tirar uma dúvida, ver a meta de hoje ou resolver questões da FUNECE?`;
   }
 
+  // 0.1. Resposta de negação / não entendi / ainda com dúvida
+  const isNegativeOrUnclear = /^(n[aã]o|n|ainda\s+n[aã]o|n[aã]o\s+entendi|n[aã]o\s+ficou\s+claro|n[aã]o\s+muito|mais\s+ou\s+menos|achei\s+dif[ií]cil|fiquei\s+com\s+d[uú]vida|ficou\s+confuso|n[aã]o\s+compreendi|pode\s+explicar\s+de\s+novo|explica\s+de\s+novo|repete|reexplica|como\s+assim|n[aã]o\s+sei)[\s.!,]*$/i.test(lower);
+  if (isNegativeOrUnclear) {
+    return `Sem problemas, Profª. Gerliane! Quando a teoria parece abstrata, a melhor forma de fixar o conteúdo para a FUNECE é com um exemplo prático do cotidiano:
+
+🥖 **A Cena da Padaria (Entendendo a Sintaxe na Prática):**
+Imagine a frase: *"A professora comprou um bolo de chocolate quentinho para os alunos ontem na padaria."*
+
+• 👤 **Sujeito:** Quem comanda a ação principal $\rightarrow$ *"A professora"*.
+• 🎬 **Predicado / Verbo:** O que aconteceu $\rightarrow$ *"comprou..."*.
+• 📦 **Objeto Direto:** O que foi comprado diretamente (sem pedágio de preposição) $\rightarrow$ *"um bolo"*.
+• 🎯 **Objeto Indireto:** Para quem foi destinado (com pedágio/preposição) $\rightarrow$ *"para os alunos"*.
+• 🏷️ **Adjuntos Adnominais:** As características coladas no substantivo $\rightarrow$ *"de chocolate"*, *"quentinho"*.
+• 📍 **Adjuntos Adverbiais:** As circunstâncias de tempo e lugar $\rightarrow$ *"ontem"* (tempo), *"na padaria"* (lugar).
+
+⚡ **E a Pegadinha da FUNECE (Complemento Nominal vs Adjunto Adnominal):**
+• Se dissermos *"A admiração **da aluna**"* $\rightarrow$ A aluna é quem pratica a admiração (**Agente**) = **Adjunto Adnominal**.
+• Se dissermos *"A admiração **pela professora**"* $\rightarrow$ A professora é o alvo admirado (**Paciente**) = **Complemento Nominal**.
+
+Ficou muito mais claro de visualizar agora? Quer que eu detalhe algum termo específico ou prefere responder a uma questão para treinar?`;
+  }
+
+  // 0.2. Respostas de agradecimento / compreensão / confirmação
+  const isGratitudeOrUnderstood = /^(obrigad[oa]|valeu|entendi|compreendi|agora\s+entendi|ficou\s+claro|agora\s+ficou\s+claro|show|show\s+de\s+bola|beleza|blz|perfeito|perfeita|[oó]timo|[oó]tima|certo|top|muito\s+bom|muito\s+boa|excelente|massa|maravilha|entendido|de\s+boa)[\s.!,]*$/i.test(lower);
+  if (isGratitudeOrUnderstood) {
+    return `Excelente, Profª. Gerliane! Fico muito feliz que o conceito tenha ficado claro! 🎯
+
+Como a matéria é vasta no edital da SEDUC CE / FUNECE, qual é o próximo passo que você prefere agora:
+1. 📖 **Avançar para o próximo tópico:** Orações Subordinadas, Concordância, Regência ou Crase?
+2. 🧠 **Fazer um microdesafio da FUNECE:** Testar seus conhecimentos com uma questão inédita com gabarito comentado?`;
+  }
+
   // Se for frase de início da aula, não é pergunta de seguimento
   if (lower.includes('vamos começar') || lower.includes('vamos comecar') || lower.includes('quero estudar') || lower.includes('vamos la') || lower.includes('materia de hoje')) {
     return null;
   }
 
-  // 1. Dúvida específica sobre Resolução / Limite de Resolução / Abbe
+  // 1. Pergunta se "isso é tudo" em Sintaxe ou se tem mais conteúdo
+  if ((lower.includes('isso') || lower.includes('só') || lower.includes('so') || lower.includes('tem mais') || lower.includes('o que mais') || lower.includes('tudo que tem') || lower.includes('quais outros') || lower.includes('acabou') || lower.includes('completo')) && (lower.includes('sintaxe') || lower.includes('portug') || lower.includes('materia') || lower.includes('matéria') || lower.includes('conteúdo') || lower.includes('conteudo') || lower.includes('tudo'))) {
+    return `**Não, Profª. Gerliane! A Sintaxe é um dos blocos mais densos, estratégicos e cobrados da Língua Portuguesa pela banca FUNECE (CEV/UECE).**
+
+O que vimos anteriormente foi a visão geral e os termos essenciais da oração. No edital completo da SEDUC CE 2026, a Sintaxe se desdobra em 4 pilares indispensáveis:
+
+📌 **1. Sintaxe do Período Simples (Termos da Oração):**
+• **Essenciais:** Sujeito (determinado simples/composto, indeterminado, oracional e oração sem sujeito/verbos impessoais) e Predicado (verbal, nominal e verbo-nominal + predicativo do sujeito e do objeto).
+• **Integrantes:** Objeto Direto/Indireto, Complemento Nominal e Agente da Passiva.
+• **Acessórios:** Adjunto Adnominal, Adjunto Adverbial, Aposto e Vocativo.
+
+📌 **2. Sintaxe do Período Composto (Relações Interoracionais):**
+• **Orações Coordenadas:** Assindéticas e Sindéticas (Aditivas, Adversativas, Alternativas, Conclusivas e Explicativas).
+• **Orações Subordinadas Substantivas:** Subjetivas, Objetivas Diretas, Objetivas Indiretas, Completivas Nominais, Predicativas e Apositivas.
+• **Orações Subordinadas Adjetivas:** Explicativas (com vírgula) vs. Restritivas (sem vírgula).
+• **Orações Subordinadas Adverbiais:** Causais, Concessivas, Consecutivas, Condicionais, Conformativas, Comparativas, Finais, Proporcionais e Temporais.
+• **Orações Reduzidas:** De Infinitivo, Gerúndio e Particípio (a FUNECE ama cobrar o desdobramento e o valor semântico!).
+
+📌 **3. Mecanismos Normativos e Relações Sintáticas:**
+• **Concordância Verbal e Nominal:** Casos gerais e especiais (verbos *Haver/Fazer*, sujeito composto posposto, partícula *SE*).
+• **Regência Verbal e Nominal:** Emprego obrigatório de preposição com verbos notáveis (*aspirar, visar, assistir, preferir, esquecer/lembrar*).
+• **Crase:** Casos obrigatórios, casos proibidos e os 3 casos facultativos (*Mnemônico: Até a sua Maria*).
+• **Colocação Pronominal:** Próclise (fatores de atração), Ênclise e Mesóclise.
+
+📌 **4. Sintaxe de Pontuação:**
+• Emprego obrigatório e proibido da vírgula (nunca separar sujeito de predicado nem verbo de seu complemento!).
+
+💡 **Foco FUNECE:** Os temas com maior índice de questões em provas da SEDUC CE são: **1) Diferença entre Complemento Nominal e Adjunto Adnominal**, **2) Funções do SE e do QUE**, e **3) Orações Subordinadas Concessivas vs. Causais**.
+
+Qual dessas 4 partes você quer aprofundar agora ou quer que eu te ensine com exemplos bem práticos do dia a dia?`;
+  }
+
+  // 2. Pedido de exemplos da vida real / simplificação
+  if (lower.includes('exemplo') || lower.includes('vida real') || lower.includes('dia a dia') || lower.includes('simplifi') || lower.includes('descomplica') || lower.includes('mais fácil') || lower.includes('mais facil') || lower.includes('prático') || lower.includes('pratico')) {
+    return `Com certeza, Profª. Gerliane! Vamos descomplicar a **Sintaxe** com uma analogia prática do cotidiano:
+
+🥖 **A Cena da Padaria (Entendendo os Termos da Oração):**
+Imagine a frase: *"A professora comprou um bolo de chocolate quentinho para os alunos ontem na padaria."*
+
+• 👤 **Sujeito:** Quem comanda a ação principal $\rightarrow$ *"A professora"*.
+• 🎬 **Predicado / Verbo:** O que aconteceu $\rightarrow$ *"comprou..."*.
+• 📦 **Objeto Direto:** O que foi comprado diretamente (sem pedágio de preposição) $\rightarrow$ *"um bolo"*.
+• 🎯 **Objeto Indireto:** Para quem foi destinado (com pedágio/preposição) $\rightarrow$ *"para os alunos"*.
+• 🏷️ **Adjuntos Adnominais:** As características coladas no substantivo que você pode tirar sem desestruturar a frase $\rightarrow$ *"de chocolate"*, *"quentinho"*.
+• 📍 **Adjuntos Adverbiais:** As circunstâncias de tempo e lugar $\rightarrow$ *"ontem"* (tempo), *"na padaria"* (lugar).
+
+⚡ **E a Pegadinha da FUNECE (Complemento Nominal vs Adjunto Adnominal):**
+• Se dissermos *"A admiração **da aluna**"* $\rightarrow$ A aluna é quem pratica a admiração (**Agente**) = **Adjunto Adnominal**.
+• Se dissermos *"A admiração **pela professora**"* $\rightarrow$ A professora é o alvo admirado (**Paciente**) = **Complemento Nominal**.
+
+Ficou muito mais claro de visualizar agora? Quer resolver uma questão da FUNECE para testar ou prefere detalhar outro ponto?`;
+  }
+
+  // 3. Diferença entre Complemento Nominal e Adjunto Adnominal
+  if ((lower.includes('complemento nominal') || lower.includes('adjunto adnominal')) && (lower.includes('diferen') || lower.includes('como') || lower.includes('versus') || lower.includes('vs') || lower.includes('dúvida') || lower.includes('duvida'))) {
+    return `Essa é a dúvida que mais derruba candidatos na FUNECE! Vamos fixar com a **Regra de Ouro Incontestável**:
+
+Ambos vêm introduzidos por preposição e ligados a um substantivo. O segredo é:
+
+1. **Ligado a Adjetivo ou Advérbio:** É **SEMPRE Complemento Nominal** (*"favorável ao projeto"*, *"longe de casa"*).
+2. **Ligado a Substantivo Concreto:** É **SEMPRE Adjunto Adnominal** (*"copo de vidro"*, *"livro do professor"*).
+3. **Ligado a Substantivo Abstrato (O Ponto Crítico da FUNECE):**
+   • **Papel AGENTE (quem pratica a ação):** $\rightarrow$ **Adjunto Adnominal** (*"A crítica do professor"* = o professor criticou).
+   • **Papel PACIENTE (quem sofre/recebe a ação):** $\rightarrow$ **Complemento Nominal** (*"A crítica ao professor"* = o professor recebeu a crítica).
+
+💡 **Resumo mental rápido:** Sofreu a ação = **CN**. Praticou a ação = **AA**.
+
+Ficou clara essa distinção? Quer que eu coloque uma questão de concurso para você treinar esse macete?`;
+  }
+
+  // 4. Funções do SE (Partícula Apassivadora vs. Índice de Indeterminação)
+  if (lower.includes('função do se') || lower.includes('funcoes do se') || lower.includes('particula apassivadora') || lower.includes('índice de indeterminação') || (lower.includes('se') && (lower.includes('apassiv') || lower.includes('indetermin')))) {
+    return `Na FUNECE, a diferenciação do **SE** é feita pelo teste da transitividade verbal:
+
+1. **Partícula Apassivadora (PA):**
+   • Verbo Transitivo Direto (VTD) ou Transitivo Direto e Indireto (VTDI).
+   • O termo seguinte é o **SUJEITO PACIENTE** (o verbo concorda com ele!).
+   • *Exemplo:* *"Vendem-se casas"* $\rightarrow$ *"Casas são vendidas"*. (Verbo no plural concordando com *casas*).
+
+2. **Índice de Indeterminação do Sujeito (IIS):**
+   • Verbo Transitivo Indireto (VTI), Intransitivo (VI) ou de Ligação (VL) + Preposição.
+   • O sujeito é **INDETERMINADO** e o verbo fica OBRIGATORIAMENTE na **3ª pessoa do singular**!
+   • *Exemplo:* *"Precisa-se de professores"* (e NUNCA *"Precisam-se de professores"*).
+
+Conseguiu pegar o macete do VTD (concorda) vs VTI (fica no singular)?`;
+  }
+
+  // 5. Resposta de questões (Alternativas A, B, C, D)
+  const isOptionLetter = /^(alternativa\s+|letra\s+|opção\s+|opcao\s+)?([a-d])[\s.!,]*$/i.test(lower);
+  if (isOptionLetter) {
+    const letterMatch = lower.match(/[a-d]/i);
+    const letter = letterMatch ? letterMatch[0].toUpperCase() : 'B';
+    return `**Resposta Analisada: Letra ${letter}!** 🎯
+
+${letter === 'C' || letter === 'B' ? 'Excelente! Você acertou a linha de raciocínio da banca FUNECE!' : 'Atenção aos distratores da banca!'}
+
+**Comentário Técnico FUNECE:**
+Na análise sintática da FUNECE, a banca exige a identificação precisa da transitividade verbal e da regência do termo. Lembre-se:
+• Substantivos abstratos que exigem termo com papel paciente caracterizam **Complemento Nominal**.
+• Verbos impessoais (*Haver* no sentido de existir e *Fazer* indicando tempo) não admitem sujeito nem pluralização.
+
+Quer resolver outro microdesafio da FUNECE ou prefere avançar para o próximo tópico do cronograma?`;
+  }
+
+  // 6. Pedido explícito de questão / simulado
+  if (lower.includes('questão') || lower.includes('questao') || lower.includes('exercício') || lower.includes('exercicio') || lower.includes('simulado') || lower.includes('desafio') || lower.includes('manda a questão') || lower.includes('quero responder')) {
+    return `🧠 **Desafio de Fixação — Sintaxe e Termos da Oração (Padrão FUNECE / SEDUC CE):**
+
+Considere o período extraído de texto oficial:
+*"Constatou-se a urgente necessidade de novos investimentos pedagógicos nas escolas estaduais."*
+
+Com base na sintaxe da Língua Portuguesa e na norma culta, assinale a opção **CORRETA**:
+
+A) O termo *"a urgente necessidade"* desempenha a função sintática de Objeto Direto do verbo *constatar*.
+B) A partícula *"se"* classifica-se como Índice de Indeterminação do Sujeito, tornando a oração sem sujeito.
+C) O termo *"de novos investimentos pedagógicos"* exerce a função de Complemento Nominal do substantivo abstrato *necessidade*.
+D) O termo *"nas escolas estaduais"* funciona como Objeto Indireto regido pela preposição *em*.
+
+---
+💡 *Dica do Mentor:* Analise a transitividade do verbo *constatar* e o papel semântico do termo ligado a *necessidade*. Qual alternativa você marca: **A, B, C ou D**?`;
+  }
+
+  // 7. Microscopia - Resolução / Abbe
   if (lower.includes('resoluc') || lower.includes('resoluç') || lower.includes('abbe') || lower.includes('limite de resol')) {
     return `O **Poder de Resolução** é a capacidade do microscópio de distinguir dois pontos extremamente próximos como estruturas separadas.\n\nDiferente da ampliação (que apenas aumenta o tamanho da imagem), o limite de resolução ($d$) depende do comprimento de onda ($\lambda$) e da abertura numérica ($AN$) da lente, pela fórmula de Abbe ($d = \\frac{0,61 \\cdot \\lambda}{AN}$). Quanto menor o $d$, maior o detalhamento! No microscópio óptico o limite é ~200 nm, enquanto no eletrônico atinge fração de nanômetro.\n\nFicou claro por que aumentar a imagem sem poder de resolução gera apenas uma imagem desfocada?`;
   }
 
-  // 2. Dúvida sobre MET 2D
+  // 8. MET 2D
   if ((lower.includes('met') || lower.includes('transmissao') || lower.includes('transmissão')) && (lower.includes('2d') || lower.includes('plana') || lower.includes('atravess') || lower.includes('corte') || lower.includes('por que') || lower.includes('porque') || lower.includes('como'))) {
     return `No **MET (Microscópio Eletrônico de Transmissão)**, a imagem é em 2D porque o feixe de elétrons *atravessa* (transmite por) um corte celular ultra-fino.\n\nComo a amostra é fatiada em lâminas extremamente finas para os elétrons passarem por dentro dela, a imagem resultante no sensor é uma projeção bidimensional (2D) da ultraestrutura interna.\n\nEntendeu por que o MET gera essa fatia plana interna em 2D enquanto o MEV gera uma imagem tridimensional?`;
   }
 
-  // 3. Dúvida sobre MEV 3D
+  // 9. MEV 3D
   if ((lower.includes('mev') || lower.includes('varredura')) && (lower.includes('3d') || lower.includes('superficie') || lower.includes('superfície') || lower.includes('relevo') || lower.includes('por que') || lower.includes('porque') || lower.includes('como'))) {
     return `No **MEV (Microscópio Eletrônico de Varredura)**, a imagem é em 3D porque a amostra é recoberta com metal (ouro) e o feixe de elétrons *varre* a superfície externa.\n\nOs elétrons refletidos rebatem em detectores que mapeiam a profundidade e a topografia celular, gerando uma imagem tridimensional (3D) de alta profundidade de campo.\n\nConseguiu visualizar essa diferença entre varrer a superfície (MEV 3D) e atravessar a amostra (MET 2D)?`;
   }
 
-  // 4. Dúvida sobre Hematoxilina / Eosina
-  if (lower.includes('hematoxilina') || lower.includes('eosina') || lower.includes('corante') || lower.includes('colora')) {
-    return `A **Hematoxilina** é um corante básico com afinidade por estruturas ácidas (basófilas) da célula, como o DNA do núcleo, tingindo-as em roxo/azul.\n\nA **Eosina** é um corante ácido com afinidade por estruturas básicas (acidófilas), como as proteínas do citoplasma, tingindo-as em rosa.\n\nA FUNECE adora trocar essa relação! Conseguiu fixar que Hematoxilina cora o núcleo e Eosina cora o citoplasma?`;
-  }
-
-  // 5. Dúvida sobre Ampliação vs Resolução
-  if (lower.includes('amplia') || lower.includes('aumento')) {
-    return `A **Ampliação** representa o quanto a imagem é multiplicada em tamanho (ex: 100x, 1000x).\n\nPorém, aumentar a imagem sem ter um bom **Poder de Resolução** gera apenas a chamada "ampliação vazia": a imagem fica maior, mas completamente desfocada! Por isso a FUNECE foca tanto na resolução como o parâmetro principal.\n\nFicou clara essa diferença entre aumentar o tamanho e conseguir enxergar detalhes?`;
-  }
-
-  // 6. Dúvida pedagógica (Inatismo / Behaviorismo)
+  // 10. Dúvida pedagógica (Inatismo / Behaviorismo)
   if (lower.includes('inatismo') || lower.includes('behaviorismo') || lower.includes('comportamentalismo') || lower.includes('cognitivismo') || lower.includes('interacionismo')) {
     return `Nas teorias de aprendizagem cobradas pela FUNECE:\n\n• **Inatismo:** Defende que os conhecimentos e capacidades do aluno já nascem pré-formados com ele.\n• **Behaviorismo / Comportamentalismo:** Defende que a aprendizagem ocorre por estímulo-resposta e reforço do ambiente (Skinner).\n• **Interacionismo / Cognitivismo:** O conhecimento é construído na relação ativa do sujeito com o meio e a sociedade (Piaget / Vygotsky).\n\nA FUNECE gosta de perguntar sobre o papel do professor em cada vertente. Qual dessas abordagens você quer detalhar agora?`;
-  }
-
-  // 7. Pergunta curta com "por que", "como", "e ", "qual", "o que é"
-  const isQuestion = lower.includes('?') || lower.startsWith('por que') || lower.startsWith('porque') || lower.startsWith('como') || lower.startsWith('e ') || lower.startsWith('qual') || lower.startsWith('o que');
-  
-  if (isQuestion && lower.length < 120) {
-    return `Sobre a sua dúvida específica:\n\nEsse é um detalhe muito importante exigido pela FUNECE! A banca cobra com precisão o termo técnico e o mecanismo prático de aplicação.\n\nConseguiu entender bem esse ponto ou quer que eu te ensine de uma forma mais simplificada adequando a exemplos da vida real?`;
   }
 
   return null;
@@ -134,8 +271,51 @@ function buildSpecificTeachingLesson(rawTopic: string, userSubject: string, acti
 
   let body = '';
 
-  // 1. Noções Básicas de Microscopia
-  if (lower.includes('microscop') || lower.includes('ampliação') || lower.includes('ampliacao') || lower.includes('resolução') || lower.includes('resolucao') || lower.includes('mev') || lower.includes('met')) {
+  // 1. Sintaxe / Termos da Oração / Período Composto (Língua Portuguesa)
+  if (lower.includes('sintaxe') || lower.includes('sujeito') || lower.includes('predicado') || lower.includes('complemento nominal') || lower.includes('adjunto') || lower.includes('oraç') || lower.includes('orac') || lower.includes('período') || lower.includes('periodo') || lower.includes('subordinad') || lower.includes('coordenad') || lower.includes('transitividade') || lower.includes('objeto direto')) {
+    body = `**Sintaxe da Língua Portuguesa (Período Simples e Composto) — Conceito Central e Aplicação FUNECE**
+
+🎯 **Ponto Central e Definição Técnica:**
+A **Sintaxe** é a parte da gramática normativa que estuda a disposição das palavras na frase e as relações lógicas que elas estabelecem entre si (funções sintáticas) e entre as orações no período.
+• **Termos Essenciais:** Sujeito (determinado, indeterminado, oracional ou oração sem sujeito/verbos impessoais) e Predicado (verbal, nominal ou verbo-nominal).
+• **Termos Integrantes:** Complementos Verbais (Objeto Direto e Indireto), Complemento Nominal e Agente da Passiva.
+• **Termos Acessórios:** Adjunto Adnominal, Adjunto Adverbial e Aposto (+ Vocativo, que é termo independente).
+
+⚡ **Aplicação Prática e Padrão FUNECE:**
+• **Complemento Nominal vs. Adjunto Adnominal:** Com substantivos abstratos regidos pela preposição "de", se o termo exercer papel **paciente** (alvo da ação), é Complemento Nominal (*"A leitura do livro"*); se exercer papel **agente** (autor da ação), é Adjunto Adnominal (*"A leitura do professor"*).
+• **Funções do "QUE":** Pronome Relativo (inicia Oração Subordinada Adjetiva e pode ser substituído por *o qual/a qual*) vs. Conjunção Integrante (inicia Oração Subordinada Substantiva e pode ser substituído por *isso*).
+• **Funções do "SE":** Partícula Apassivadora (com VTD/VTDI concordando com o sujeito paciente: *"Alugam-se casas"*) vs. Índice de Indeterminação do Sujeito (com VTI/VI/VL na 3ª pessoa do singular: *"Precisa-se de professores"*).
+• ⚠️ **Pegadinha da FUNECE:** A banca adora cobrar orações subordinadas **reduzidas** (de gerúndio, particípio e infinitivo) e exigir que o candidato faça o desdobramento exato da conjunção correspondente.`;
+  }
+  // 2. Concordância, Regência e Crase (Língua Portuguesa)
+  else if (lower.includes('concordância') || lower.includes('concordancia') || lower.includes('regência') || lower.includes('regencia') || lower.includes('crase') || lower.includes('pontuação') || lower.includes('pontuacao')) {
+    body = `**Concordância, Regência e Crase — Conceito Central e Aplicação FUNECE**
+
+🎯 **Ponto Central e Definição Técnica:**
+• **Concordância Verbal e Nominal:** Harmonia morfossintática de número e pessoa entre o verbo e seu sujeito, e de gênero e número entre o substantivo e seus determinantes.
+• **Regência Verbal e Nominal:** Relação de subordinação entre o termo regente e o termo regido, estabelecendo a presença ou ausência obrigatória de preposição.
+• **Crase:** Fenômeno fonético-sintático da fusão da preposição *a* com o artigo feminino *a(s)* ou pronomes demonstrativos (*aquele, aquela, aquilo*).
+
+⚡ **Aplicação Prática e Padrão FUNECE:**
+• **Verbos Impessoais (HAVER e FAZER):** *Haver* no sentido de existir/ocorrer e *Fazer* indicando tempo decorrido são impessoais e permanecem rigorosamente na **3ª pessoa do singular** (*"Havia muitos candidatos"*, *"Faz três anos"*).
+• **Regência de Verbos Notáveis:** *Aspirar* e *Visar* (sentido de desejar/almejar são VTI e exigem preposição "a", sem aceitar pronome *lhe*); *Assistir* (sentido de presenciar é VTI com "a"); *Preferir* (exige "a" e rejeita termos intensificadores como *"mais... do que"*).
+• **Regra Prática da Crase:** Substitua a palavra feminina por uma masculina correspondente; se surgir a combinação **AO**, o uso do acento grave é obrigatório (*"Fui à escola" $\rightarrow$ "Fui ao colégio"*).
+• ⚠️ **Pegadinha da FUNECE:** A banca cobra com frequência a proibição de crase antes de verbos, palavras masculinas, pronomes de tratamento e pronomes indefinidos.`;
+  }
+  // 3. Morfologia e Classes de Palavras (Língua Portuguesa)
+  else if (lower.includes('morfologia') || lower.includes('classe') || lower.includes('verbo') || lower.includes('pronome') || lower.includes('conjunção') || lower.includes('conjuncao') || lower.includes('advérbio') || lower.includes('adverbio') || lower.includes('coesão') || lower.includes('coesao')) {
+    body = `**Morfologia, Classes Gramaticais e Coesão — Conceito Central e Aplicação FUNECE**
+
+🎯 **Ponto Central e Definição Técnica:**
+A **Morfologia** analisa a estrutura interna, a formação e a classificação das 10 classes de palavras da Língua Portuguesa (Substantivo, Artigo, Adjetivo, Numeral, Pronome, Verbo, Advérbio, Preposição, Conjunção e Interjeição), articuladas aos mecanismos de coesão textual referencial (anáfora/catáfora) e sequencial (conjunções e conectivos).
+
+⚡ **Aplicação Prática e Padrão FUNECE:**
+• **Conjunções Coordenativas e Subordinativas:** A FUNECE exige a identificação do valor semântico exato dos conectivos (*concessivo, consecutivo, causal, proporcional, condicional, explicativo*). Exemplo: *embora, conquanto, posto que* (concessivas) vs. *porque, já que, visto que* (causais).
+• **Colocação Pronominal:** Regras estritas de próclise (palavras negativas, pronomes relativos, conjunções subordinativas, advérbios atraem o pronome para antes do verbo).
+• ⚠️ **Pegadinha da FUNECE:** A banca costuma colocar orações com valor semântico de causa e consequência invertidas para induzir o candidato ao erro.`;
+  }
+  // 4. Noções Básicas de Microscopia
+  else if (lower.includes('microscop') || lower.includes('ampliação') || lower.includes('ampliacao') || lower.includes('resolução') || lower.includes('resolucao') || lower.includes('mev') || lower.includes('met')) {
     body = `**Noções Básicas de Microscopia — Conceito Central e Aplicação FUNECE**
 
 🎯 **Ponto Central e Definição Técnica:**
@@ -146,87 +326,112 @@ A **Microscopia** compreende o conjunto de técnicas de magnificação e anális
 • **Microscópio Óptico de Luz (MO):** Utiliza fótons de luz visível e lentes de vidro. Limite de resolução de ~200 nm. Exige coloração histológica (ex: Hematoxilina/Eosina).
 • **Microscópio Eletrônico de Transmissão (MET):** Feixe de elétrons atravessa cortes ultrafinos da amostragem, permitindo mapear a **ultraestrutura interna** (2D) em escala de nanômetros.
 • **Microscópio Eletrônico de Varredura (MEV):** Feixe de elétrons varre a superfície recoberta de metal, gerando mapeamento **tridimensional (3D) da superfície**.
-⚠️ **Pegadinha da FUNECE:** A banca adora trocar as funções de MET e MEV. Guarde que o MET atravessa (2D interno) e o MEV varre a superfície (3D externo).`;
+• ⚠️ **Pegadinha da FUNECE:** A banca adora trocar as funções de MET e MEV. Guarde que o MET atravessa (2D interno) e o MEV varre a superfície (3D externo).`;
   }
-  // 2. Organelas Celulares / Citologia
-  else if (lower.includes('organela') || lower.includes('citologia') || lower.includes('célula') || lower.includes('celula')) {
-    body = `**Organelas Celulares — Conceito Central e Aplicação FUNECE**
+  // 5. Organelas Celulares / Citologia
+  else if (lower.includes('organela') || lower.includes('citologia') || lower.includes('célula') || lower.includes('celula') || lower.includes('membrana') || lower.includes('transporte ativo') || lower.includes('osmose')) {
+    body = `**Biologia Celular, Membranas e Organelas — Conceito Central e Aplicação FUNECE**
 
 🎯 **Ponto Central e Definição Técnica:**
-As **Organelas Celulares** são subestruturas especializadas imersas no hialoplasma/citoplasma das células eucarióticas. Sua função biológica primária é promover a **compartimentalização celular**, permitindo que diferentes reações bioquímicas incompatíveis ocorram isoladamente com máxima eficiência energética.
+A **Célula** é a unidade morfofisiológica fundamental dos seres vivos. A membrana plasmática opera segundo o modelo do **Mosaico Fluido** (bicamada fosfolipídica anfipática com proteínas integrais e periféricas e colesterol modulador térmico de fluidez). As **organelas citoplasmáticas** promovem a compartimentalização e especialização metabólica dos eucariontes.
 
 ⚡ **Aplicação Prática e Padrão FUNECE:**
-• **Mitocôndrias:** Síntese de ATP via respiração celular aeróbia. Possuem origem endossimbiótica (DNA circular próprio, ribossomos 70S e autoduplicação por fissão binária).
-• **Retículo Endoplasmático Rugoso (RER):** Revestido de ribossomos; atua na síntese e transporte de proteínas destinadas à secreção ou membranas.
-• **Retículo Endoplasmático Liso (REL):** Sem ribossomos; atua na síntese de lipídios/esteroides e desintoxicação celular.
-• **Complexo Golgiense:** Secreção celular, modificação pós-traducional de proteínas e formação do acrossomo do espermatozoide.
-• **Lisossomos:** Vesículas com hidrolases ácidas para digestão intracelular (autofagia e heterofagia).
-⚠️ **Pegadinha da FUNECE:** A banca costuma afirmar falsamente que vegetais não possuem mitocôndrias (possuem mitocôndrias E cloroplastos!) ou que a duplicação do DNA ocorre durante a mitose (ocorre na Fase S da Interfase).`;
+• **Mecanismos de Transporte:**
+  - *Passivo (sem gasto de ATP):* Difusão simples (gases/apolares), difusão facilitada (permeases/aquaporinas) e osmose (fluxo de solvente do meio hipotônico para o hipertônico).
+  - *Ativo (com gasto de ATP):* Primário (Bomba de $\\text{Na}^+/\\text{K}^+$: 3 $\\text{Na}^+$ saem, 2 $\\text{K}^+$ entram) e Secundário (simporte e antiporte aproveitando gradiente eletroquímico).
+• **Organelas Estratégicas:** Mitocôndrias (respiração aeróbia com DNA circular e ribossomos 70S), RER (síntese proteica exportável), REL (síntese lipídica e desintoxicação), Complexo Golgiense (glicosilação e acrossomo) e Lisossomos (hidrolases ácidas).
+• ⚠️ **Pegadinha da FUNECE:** A banca afirma que células vegetais não realizam respiração ou não possuem mitocôndrias (possuem mitocôndrias E cloroplastos!).`;
   }
-  // 3. Genética / DNA / RNA / Mendel
-  else if (lower.includes('genética') || lower.includes('genetica') || lower.includes('dna') || lower.includes('rna') || lower.includes('mendel') || lower.includes('síntese') || lower.includes('sintese')) {
+  // 6. Genética / DNA / RNA / Mendel
+  else if (lower.includes('genética') || lower.includes('genetica') || lower.includes('dna') || lower.includes('rna') || lower.includes('mendel') || lower.includes('síntese') || lower.includes('sintese') || lower.includes('mutação') || lower.includes('mutacao')) {
     body = `**Genética e Biologia Molecular — Conceito Central e Aplicação FUNECE**
 
 🎯 **Ponto Central e Definição Técnica:**
-A **Genética Molecular** estuda a estrutura, duplicação e expressão do material genético. O ponto central é o **Dogma Central da Biologia Molecular**: o DNA duplica-se de maneira semiconservativa, é transcrito em RNAm e este é traduzido em sequências de aminoácidos (proteínas) nos ribossomos.
+A **Genética Molecular** estuda a estrutura, duplicação e expressão do material genético. O ponto central é o **Dogma Central da Biologia Molecular**: o DNA duplica-se de maneira semiconservativa na Fase S da Interfase, é transcrito em RNA mensageiro e este é traduzido em sequências polipeptídicas (proteínas) nos ribossomos.
 
 ⚡ **Aplicação Prática e Padrão FUNECE:**
-• **Estrutura do DNA:** Dupla hélice antiparalela (5'→3' e 3'→5') estabilizada por pontes de hidrogênio (A=T com 2 pontes; C≡G com 3 pontes).
-• **Código Genético Degenerado:** Múltiplos códons codificam o mesmo aminoácido.
-• **Leis de Mendel e Linkage:** A 1ª Lei trata da segregação dos alelos na meiose; a 2ª Lei trata da segregação independente em cromossomos distintos; o Linkage ocorre quando os genes estão no mesmo cromossomo.
-⚠️ **Pegadinha da FUNECE:** A banca afirma com frequência que a replicação do DNA ocorre durante a divisão celular. Correção: a duplicação ocorre exclusivamente na **Fase S da Interfase**.`;
+• **Estrutura e Pareamento do DNA:** Dupla hélice antiparalela (5' $\\rightarrow$ 3' e 3' $\\rightarrow$ 5') estabilizada por pontes de hidrogênio (A=T com 2 pontes; C $\\equiv$ G com 3 pontes).
+• **Código Genético:** Universal e Degenerado/Redundante (mais de um códon trinca pode codificar o mesmo aminoácido).
+• **Leis de Mendel:** 1ª Lei (Segregação independente dos alelos na meiose) e 2ª Lei (Segregação de pares de genes em cromossomos homólogos distintos).
+• ⚠️ **Pegadinha da FUNECE:** A banca frequentemente afirma que a replicação do DNA ocorre durante a mitose. Correção: a duplicação ocorre exclusivamente na **Fase S da Interfase**.`;
   }
-  // 4. Ecologia / Ciclos / Relações
-  else if (lower.includes('ecologia') || lower.includes('ecossistema') || lower.includes('cadeia') || lower.includes('teia') || lower.includes('nitrogênio') || lower.includes('nitrogenio') || lower.includes('ciclo')) {
-    body = `**Ecologia e Ciclos Biogeoquímicos — Conceito Central e Aplicação FUNECE**
+  // 7. Ecologia / Ciclos / Relações
+  else if (lower.includes('ecologia') || lower.includes('ecossistema') || lower.includes('cadeia') || lower.includes('teia') || lower.includes('nitrogênio') || lower.includes('nitrogenio') || lower.includes('ciclo') || lower.includes('sucessão') || lower.includes('sucessao')) {
+    body = `**Ecologia e Dinâmica dos Ecossistemas — Conceito Central e Aplicação FUNECE**
 
 🎯 **Ponto Central e Definição Técnica:**
-A **Ecologia** estuda a dinâmica das interações entre organismos e o ambiente abiótico. A regra central estabelece que o **fluxo de energia é unidirecional e decrescente** ao longo da teia alimentar (~10% retido por nível trófico), enquanto a **matéria é 100% cíclica** e reciclada pelos decompositores.
+A **Ecologia** estuda as relações recíprocas entre os seres vivos (fatores bióticos) e o meio físico (fatores abióticos).
+• **Fluxo de Energia:** É rigorosamente **unidirecional e decrescente** ao longo dos níveis tróficos (~10% transferido por nível).
+• **Ciclo da Matéria:** É **100% cíclico**, dependendo obrigatoriamente da atuação dos decompositores (fungos e bactérias).
 
 ⚡ **Aplicação Prática e Padrão FUNECE:**
-• **Ciclo do Nitrogênio:** Etapas bacterianas estritas: Fixação (*Rhizobium*) $\rightarrow$ Nitrosação (*Nitrosomonas*) $\rightarrow$ Nitratação (*Nitrobacter*) $\rightarrow$ Desnitrificação (*Pseudomonas*).
-• **Magnificação Trófica:** Concentração progressiva de substâncias não biodegradáveis (agrotóxicos/metais) nos organismos do **topo da cadeia alimentar**.
-• **Nicho Ecológico vs. Habitat:** Habitat é o espaço físico; Nicho é a função ecológica e hábitos da espécie.
-⚠️ **Pegadinha da FUNECE:** A FUNECE costuma alegar que a energia é reciclada pelos decompositores. Errado! Apenas a MATÉRIA se recicla; a energia dissipa-se como calor.`;
+• **Ciclo do Nitrogênio (Passo a Passo Bioquímico):**
+  1. *Fixação:* $\\text{N}_2 \\rightarrow \\text{NH}_3$ (*Rhizobium* e cianobactérias).
+  2. *Nitrosação:* $\\text{NH}_3 \\rightarrow \\text{NO}_2^-$ (*Nitrosomonas*).
+  3. *Nitratação:* $\\text{NO}_2^- \\rightarrow \\text{NO}_3^-$ (*Nitrobacter*).
+  4. *Desnitrificação:* $\\text{NO}_3^- \\rightarrow \\text{N}_2$ (*Pseudomonas*).
+• **Magnificação Trófica / Bioacumulação:** Compostos xenobióticos persistentes (metais pesados, agrotóxicos) acumulam-se em maiores concentrações nos **consumidores do topo da cadeia**.
+• ⚠️ **Pegadinha da FUNECE:** A banca alega que a energia é reciclada pelos decompositores. Falso! A energia dissipa-se continuamente sob a forma de calor.`;
   }
-  // 5. LDB / Legislação / DCRC
-  else if (lower.includes('ldb') || lower.includes('lei 9394') || lower.includes('legislação') || lower.includes('legislacao') || lower.includes('dcrc') || lower.includes('bncc') || lower.includes('diretrizes')) {
-    body = `**LDB (Lei nº 9.394/1996) — Conceito Central e Aplicação FUNECE**
+  // 8. LDB / Legislação / DCRC / BNCC / Estatuto CE
+  else if (lower.includes('ldb') || lower.includes('lei 9394') || lower.includes('legislação') || lower.includes('legislacao') || lower.includes('dcrc') || lower.includes('bncc') || lower.includes('diretrizes') || lower.includes('estatuto') || lower.includes('10884') || lower.includes('9826')) {
+    body = `**Legislação Educacional e Normas do Ceará — Conceito Central e Aplicação FUNECE**
 
 🎯 **Ponto Central e Definição Técnica:**
-A **LDB** é a legislação orgânica federal que disciplina a Educação Nacional no Brasil. Ela divide a Educação Escolar em duas categorias: Educação Básica (composta por Educação Infantil, Ensino Fundamental e Ensino Médio) e Educação Superior.
-
-⚡ **Aplicação Prática e Padrão FUNECE:**
+A **Legislação Educacional** (LDB nº 9.394/1996, DCRC, BNCC e normas estaduais do Ceará) estrutura o ordenamento jurídico do ensino público.
+• **Educação Escolar:** Divide-se em **Educação Básica** (Educação Infantil, Ensino Fundamental e Ensino Médio) e **Educação Superior**.
 • **Obrigatoriedade e Gratuidade:** Dos **4 aos 17 anos** de idade (Pré-escola, Ensino Fundamental e Ensino Médio).
-• **Carga Horária Mínima:** 800 horas distribuídas em no mínimo 200 dias de efetivo trabalho escolar.
-• **Frequência Mínima Exigida:** 60% na Educação Infantil e 75% no Ensino Fundamental e Médio para aprovação.
-⚠️ **Pegadinha da FUNECE:** A banca tenta enganar afirmando que a Creche (0 aos 3 anos) é de matrícula obrigatória pelos pais. Incorreto! O dever de oferta é do Estado, mas a obrigação da família de matricular o aluno inicia aos **4 anos** (Pré-escola).`;
-  }
-  // 6. Genérico Estruturado
-  else {
-    body = `**${cleaned} (${userSubject}) — Conceito Central e Aplicação FUNECE**
-
-🎯 **Ponto Central e Definição Técnica:**
-O tópico **${cleaned}** compreende a fundamentação teórica e as definições essenciais no campo de **${userSubject}**. Sua análise exige a compreensão exata das propriedades, nomenclaturas oficiais e diretrizes vigentes.
 
 ⚡ **Aplicação Prática e Padrão FUNECE:**
-• **Aplicação Direta:** A banca avalia a capacidade de relacionar a definição teórica com a resolução de problemas e situações-problema.
-• **Atalhos e Cuidados:** Atenção a termos absolutistas nas alternativas (*sempre, nunca, apenas, exclusivamente*) que buscam invalidar proposições corretas.`;
+• **Regras de Organização Escolar (Art. 24 da LDB):**
+  - Carga horária mínima anual: **800 horas**, distribuídas em no mínimo **200 dias** de efetivo trabalho escolar.
+  - Frequência mínima para aprovação: **60%** na Educação Infantil e **75%** no Ensino Fundamental e Ensino Médio.
+  - Avaliação: Prevalência dos aspectos **qualitativos sobre os quantitativos** e dos resultados ao longo do período sobre os de eventuais exames finais.
+• **Gestão Democrática:** Princípio constitucional com participação dos profissionais da educação na elaboração do Projeto Político-Pedagógico (PPP) e das comunidades escolar e local em Conselhos Escolares.
+• ⚠️ **Pegadinha da FUNECE:** A banca tenta afirmar que a creche (0 a 3 anos) é de matrícula obrigatória para os pais. Errado! A oferta é dever do Estado, mas a obrigatoriedade de matrícula pela família inicia aos 4 anos (Pré-escola).`;
+  }
+  // 9. Didática e Teorias Pedagógicas
+  else if (lower.includes('didática') || lower.includes('didatica') || lower.includes('pedagog') || lower.includes('tendência') || lower.includes('tendencia') || lower.includes('avaliação') || lower.includes('avaliacao') || lower.includes('planejamento') || lower.includes('currículo') || lower.includes('curriculo') || lower.includes('saviani') || lower.includes('libâneo') || lower.includes('libaneo') || lower.includes('freire')) {
+    body = `**Didática, Teorias da Aprendizagem e Tendências Pedagógicas — Conceito Central e Aplicação FUNECE**
+
+🎯 **Ponto Central e Definição Técnica:**
+A **Didática** é o ramo da Pedagogia que estuda os métodos, processos e fundamentos do ensino-aprendizagem. As tendências pedagógicas dividem-se em duas grandes vertentes (segundo Libâneo e Saviani):
+• **Tendências Liberais (Manutenção do Status Quo):** Tradicional, Renovada Progressivista, Renovada Não-Diretiva e Tecnicista.
+• **Tendências Progressistas (Transformação Social):** Libertadora (Paulo Freire), Libertária e Crítico-Social dos Conteúdos / Histórico-Crítica (Saviani/Libâneo).
+
+⚡ **Aplicação Prática e Padrão FUNECE:**
+• **Modalidades de Avaliação Escolar:**
+  - *Diagnóstica (Inicial):* Identifica conhecimentos prévios e necessidades dos estudantes.
+  - *Formativa (Processual/Contínua):* Acompanha a aprendizagem durante o processo para regular e reorientar as práticas pedagógicas.
+  - *Somativa (Classificatória/Final):* Mensura resultados ao final do período letivo.
+• **Relação Teoria e Prática (Práxis):** A Pedagogia Histórico-Crítica valoriza o domínio dos conteúdos científicos contextualizados como instrumento de emancipação das classes populares.
+• ⚠️ **Pegadinha da FUNECE:** A banca frequentemente confunde a Pedagogia Libertadora (foco no diálogo horizontal e temas geradores) com a Pedagogia Libertária (autogestão e não-diretividade).`;
+  }
+  // 10. Assunto Genérico / Outras Matérias
+  else {
+    body = `**${cleaned} — Conceito Central e Aplicação FUNECE (SEDUC CE)**
+
+🎯 **Ponto Central e Definição Técnica:**
+O tópico **${cleaned}** constitui um dos pilares conceituais fundamentais exigidos no edital do Concurso SEDUC CE 2026. A abordagem deste conteúdo demanda o domínio rigoroso de seus postulados teóricos, terminologia técnico-científica oficial e critérios operacionais normatizados pela literatura de referência da banca FUNECE (CEV/UECE).
+
+⚡ **Aplicação Prática e Padrão FUNECE:**
+• **Diretriz de Cobrança:** A banca FUNECE privilegia a articulação entre os princípios teóricos de **${cleaned}** e a resolução de situações-problema aplicadas, valorizando o rigor conceitual sem espaço para ambiguidades.
+• **Atenção aos Distratores:** Cuidado redobrado com alternativas que utilizam termos restritivos (*sempre, nunca, apenas, exclusivamente*) ou que invertem causas e consequências.`;
   }
 
-  // Se a usuária pediu EXPLICITAMENTE uma questão ou exercício
+  // Se a aluna pediu EXPLICITAMENTE uma questão ou exercício
   if (userWantsQuiz) {
     body += `\n\n🧠 **Desafio de Fixação da FUNECE:**
-*(Adaptada SEDUC CE)* Sobre este tema, qual das alternativas apresenta a proposição correta segundo a literatura de referência?
+*(Inédita Padrão SEDUC CE)* Sobre este tema, assinale a afirmativa CORRETA segundo a literatura de referência da banca:
 
-A) Os conceitos teóricos aplicam-se independentemente da estrutura do sistema.
-B) A correspondência exata entre fundamentação técnica e função operacional assegura o acerto da questão.
-C) Trata-se de um tópico meramente secundário sem cobrança em provas da UECE.
-D) A aplicação prática exclui os postulados clássicos da literatura de referência.
+A) A fundamentação teórica independe dos princípios conceituais e normativos aplicáveis.
+B) A correspondência exata entre os mecanismos técnicos e as relações funcionais assegura o acerto da questão na prova da FUNECE.
+C) Trata-se de um tópico com cobrança exclusivamente descritiva sem aplicação analítica.
+D) A prática exclui os postulados clássicos normatizados pela literatura acadêmica.
 
 ---
 **Gabarito Comentado:**
-**Resposta Incontestável: B.** A FUNECE fundamenta suas questões na correspondência exata entre a definição teórica e sua função técnica.`;
+**Resposta Incontestável: B.** A FUNECE fundamenta suas questões na correspondência exata entre a definição teórica e sua aplicação técnica e funcional.`;
   }
 
   // Pergunta final oferecendo simplificação com exemplos da vida real

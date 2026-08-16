@@ -375,7 +375,6 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
       } else {
         // Build a 100% unique question tailored to the exact discipline
         const normDisc = disciplineName.toLowerCase();
-        const seenCombined = seenTexts.join(' ').toLowerCase();
 
         let qText = `Acerca do tópico "${subtopicName}" (${topicName}), assinale a alternativa inteiramente CORRETA do ponto de vista conceitual e científico:`;
         let rawOpts = [
@@ -389,73 +388,43 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
           qText = `No que se refere aos recursos de regência, sintaxe e coesão referentes ao tema de "${subtopicName}", assinale a alternativa que atende à norma-padrão da Língua Portuguesa:`;
           rawOpts = [
             { isCorrect: true, text: `A articulação sintática dos enunciados exige observância às regras de concordância e à seleção adequada dos conectivos para a garantia da coesão e da clareza.` },
-            { isCorrect: false, text: `O emprego de conectivos subordinativos condicionais estabelece uma relação de causa concluída entre as orações do período.` },
-            { isCorrect: false, text: `A pontuação em orações subordinadas adjetivas restritivas exige obrigatoriamente o emprego de vírgulas para delimitar o sentido geral.` },
-            { isCorrect: false, text: `A regência do verbo regente admite a omissão de preposição antes de pronomes relativos quando o termo regido for um substantivo abstrato.` }
+            { isCorrect: false, text: `O emprego dos conectivos subordinativos prescinde de concordância entre verbo e sujeito no registro culto.` },
+            { isCorrect: false, text: `A pontuação em orações subordinadas adjetivas restritivas deve incluir obrigatoriamente vírgulas isolando o termo.` },
+            { isCorrect: false, text: `As relações de regência verbal admitem a omissão de preposição antes de pronomes relativos mesmo quando exigida pelo termo regente.` }
           ];
         } else if (normDisc.includes('biologia') || normDisc.includes('ciência')) {
-          const bioVars = [
-            {
-              key: 'simporte',
-              q: `Em relação aos mecanismos de transporte através da membrana celular e à bioenergética em "${subtopicName}", considere as seguintes afirmações:\n\nI. O transporte ativo secundário, como o simporte de sódio e glicose (Na+/Glicose), não consome ATP de forma direta na proteína carreadora, utilizando a energia potencial do gradiente eletroquímico de Na+ previamente estabelecido pela bomba de Na+/K+.\nII. A difusão simples do oxigênio e do gás carbônico ocorre a favor do gradiente de concentração sem necessidade de proteínas transportadoras nem consumo energético.\nIII. A difusão facilitada de íons por canais proteicos ocorre contra o gradiente eletroquímico celular mediante gasto direto de ATP.\n\nEstá correto o que se afirma em:`,
-              opts: [
-                { isCorrect: true, text: `I e II apenas.` },
-                { isCorrect: false, text: `I e III apenas.` },
-                { isCorrect: false, text: `II e III apenas.` },
-                { isCorrect: false, text: `I, II e III.` }
-              ]
-            },
-            {
-              key: 'osmose',
-              q: `No que tange às propriedades osmóticas, ao comportamento celular em soluções de diferentes tonicidades e ao tema de "${subtopicName}", assinale a alternativa CORRETA:`,
-              opts: [
-                { isCorrect: true, text: `Quando colocada em meio hipotônico, a célula vegetal absorve água por osmose até atingir a pressão de turgor, sem sofrer lise devido à resistência mecânica da parede celular celulósica.` },
-                { isCorrect: false, text: `Células animais colocadas em solução hipotônica perdem água rapidamente para o meio externo, assumindo aspecto murcho ou crenado.` },
-                { isCorrect: false, text: `As aquaporinas são proteínas carreadoras simportadoras que realizam o transporte ativo primário da água dependente da hidrólise de GTP.` },
-                { isCorrect: false, text: `A plasmólise na célula vegetal caracteriza-se pela expansão do vacuólo e do protoplasto quando o tecido é imerso em solução hipotônica.` }
-              ]
-            },
-            {
-              key: 'colesterol',
-              q: `A respeito da organização biofísica da bicamada lipídica, do papel do colesterol e da estrutura de proteínas de membrana associadas a "${subtopicName}", assinale a alternativa CORRETA:`,
-              opts: [
-                { isCorrect: true, text: `O colesterol atua como modulador da fluidez da membrana em células animais: em temperaturas elevadas, limita a movimentação dos fosfolipídeos; em temperaturas baixas, previne o empacotamento das cadeias de ácidos graxos e a cristalização da bicamada.` },
-                { isCorrect: false, text: `Proteínas periféricas da membrana caracterizam-se por se ancorarem firmemente ao centro hidrofóbico através de domínios em alfa-hélice apolares transmembrana.` },
-                { isCorrect: false, text: `O glicocálix é uma camada de fosfolipídeos e esteroides exposta na face citoplasmática interna da membrana celular responsável pela síntese de ATP.` },
-                { isCorrect: false, text: `A assimetria lipídica da membrana plasmática é mantida por difusão lateral espontânea dos fosfolipídeos entre as monocamadas sem auxílio enzimático.` }
-              ]
-            },
-            {
-              key: 'enzima',
-              q: `Acerca da bioquímica celular, da cinético-química enzimática e da regulação do metabolismo energético em "${subtopicName}", assinale a alternativa CORRETA:`,
-              opts: [
-                { isCorrect: true, text: `Inibidores competitivos ligam-se reversivelmente ao sítio ativo da enzima, aumentando o valor da constante de Michaelis-Menten (Km) aparente, mantendo inalterada a velocidade máxima (Vmáx).` },
-                { isCorrect: false, text: `Inibidores não-competitivos ligam-se ao sítio ativo da enzima, alterando a afinidade pelo substrato e reduzindo o valor de Km sem afetar a Vmáx.` },
-                { isCorrect: false, text: `A glicólise ocorre na matriz mitocôndrial e consiste na oxidação completa da glicose em CO2 e H2O com elevada produção de ATP por fosforilação oxidativa.` },
-                { isCorrect: false, text: `A enzima RuBisCO na fotossíntese C3 realiza a fixação do CO2 durante a fase fotoquímica dependente de luz no interior dos tilacoides.` }
-              ]
-            }
-          ];
-
-          const selectedBio = bioVars.find(v => !seenCombined.includes(v.key)) || bioVars[i % bioVars.length];
-          qText = selectedBio.q;
-          rawOpts = selectedBio.opts;
-
+          if (subtopicName.toLowerCase().includes('célula') || subtopicName.toLowerCase().includes('membrana') || subtopicName.toLowerCase().includes('estrutur') || subtopicName.toLowerCase().includes('físic')) {
+            qText = `A membrana plasmática é uma estrutura dinâmica e seletiva, essencial para a manutenção da homeostase e para a regulação do tráfego de substâncias entre os meios intra e extracelular. A respeito da composição físico-química e da organização estrutural da membrana celular, assinale a afirmativa CORRETA:`;
+            rawOpts = [
+              { isCorrect: true, text: `O colesterol atua como modulador da fluidez da membrana em células animais: em temperaturas elevadas, limita a movimentação excessiva dos fosfolipídeos; em temperaturas baixas, previne o empacotamento das cadeias de ácidos graxos e a cristalização da bicamada.` },
+              { isCorrect: false, text: `O transporte ativo secundário, como o simporte de glicose e sódio (Na+), consome diretamente moléculas de ATP no sítio catalítico da proteína carreadora para mover a glicose a favor do seu gradiente.` },
+              { isCorrect: false, text: `Proteínas periféricas da membrana caracterizam-se por apresentarem extensos domínios transmembrana ricos em aminoácidos apolares dispostos em alfa-hélice ancorados no centro hidrofóbico.` },
+              { isCorrect: false, text: `A osmose é caracterizada como um transporte ativo especializado, no qual moléculas de água são bombeadas contra o gradiente de concentração com gasto direto de ATP pela célula.` }
+            ];
+          } else {
+            qText = `Acerca da bioquímica celular, da cinético-química enzimática e da regulação do metabolismo energético, assinale a alternativa CORRETA:`;
+            rawOpts = [
+              { isCorrect: true, text: `Inibidores competitivos ligam-se reversivelmente ao sítio ativo da enzima, aumentando o valor da constante de Michaelis-Menten (Km) aparente, mantendo inalterada a velocidade máxima (Vmáx) atingível em altas concentrações de substrato.` },
+              { isCorrect: false, text: `A glicólise ocorre no interior da matriz mitocôndrial e necessita obrigatoriamente de oxigênio molecular (O2) como aceptor final de elétrons para ocorrer.` },
+              { isCorrect: false, text: `A fotossíntese nas plantas C3 realiza a fixação inicial do CO2 pela enzima RuBisCO no interior dos peroxissomos, gerando malato de quatro carbonos.` },
+              { isCorrect: false, text: `O ATP atua na célula como reservatório térmico devido às suas ligações fosfodiéster estáveis que impedem a liberação de energia livre.` }
+            ];
+          }
         } else if (normDisc.includes('legislaç') || normDisc.includes('direito')) {
-          qText = `De acordo com os preceitos da legislação educacional brasileira referentes ao tema "${subtopicName}", assinale a afirmativa correta:`;
+          qText = `De acordo com a legislação educacional brasileira referente ao tema "${subtopicName}", assinale a afirmativa correta:`;
           rawOpts = [
             { isCorrect: true, text: `A garantia do direito à educação, a igualdade de condições para acesso e permanência e a gestão democrática do ensino público constituem princípios do ensino nacional.` },
-            { isCorrect: false, text: `A elaboração do Projeto Político-Pedagógico pela unidade escolar deve seguir estritamente a matriz estadual sem adaptações à comunidade local.` },
-            { isCorrect: false, text: `A obrigatoriedade e gratuidade da educação básica abrange exclusivamente a faixa etária dos 6 aos 18 anos de idade.` },
-            { isCorrect: false, text: `A gestão democrática do ensino público restringe a participação em conselhos escolares aos profissionais da educação com cargo efetivo.` }
+            { isCorrect: false, text: `A aplicação das diretrizes curriculares nacionais anula a autonomia pedagógica das unidades escolares na elaboração do Projeto Político-Pedagógico.` },
+            { isCorrect: false, text: `O ensino público pode restringir a liberdade de aprender, ensinar e pesquisar em função de orientações doutrinárias específicas.` },
+            { isCorrect: false, text: `A gestão democrática do ensino público veda a participação dos profissionais da educação e da comunidade local em conselhos escolares.` }
           ];
         } else if (normDisc.includes('pedagogi') || normDisc.includes('didátic') || normDisc.includes('educaç')) {
           qText = `Na Didática Geral e no estudo das Tendências Pedagógicas, no que se refere ao tema "${subtopicName}", assinale a opção correta:`;
           rawOpts = [
             { isCorrect: true, text: `A articulação entre os saberes científicos e a realidade social dos estudantes visa à democratização do conhecimento e à emancipação crítica do educando.` },
-            { isCorrect: false, text: `A Tendência Liberal Tecnicista organiza o processo pedagógico a partir do diálogo sobre temas geradores e da conscientização política do estudante.` },
-            { isCorrect: false, text: `A Tendência Liberal Renovada Progressivista fundamenta-se na transmissão expositiva de conteúdos acumulados com foco no treino de exames.` },
-            { isCorrect: false, text: `A avaliação formativa e processual tem como finalidade primordial a classificação e ordenação dos estudantes para concessão de certificados.` }
+            { isCorrect: false, text: `A Tendência Liberal Tecnicista prioriza o diálogo sobre temas geradores e a conscientização política em detrimento do treinamento operacional.` },
+            { isCorrect: false, text: `A Tendência Liberal Renovada Progressivista fundamenta-se na transmissão expositiva de conteúdos acumulados, sendo o aluno um receptor passivo.` },
+            { isCorrect: false, text: `A avaliação formativa e contínua busca unicamente a classificação numérica final dos discentes para fins de seleção e exclusão.` }
           ];
         }
 
