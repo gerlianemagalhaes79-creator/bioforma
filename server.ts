@@ -2,6 +2,12 @@ import express from "express";
 import path from "path";
 import { GoogleGenAI, Type } from "@google/genai";
 import { createServer as createViteServer } from "vite";
+import { 
+  sanitizeSimuladoQuestion, 
+  computeQuestionSemanticHash, 
+  isSemanticDuplicate, 
+  generateCuratedFallbackForTopic 
+} from "./src/data/simuladoContentEngine";
 
 let aiClient: any = null;
 
@@ -755,24 +761,42 @@ ${secondaryStr}`
     });
   });
 
-  // Explicação Detalhada de Questão com IA
+  // Explicação Detalhada de Questão com IA (Focada estritamente no Conteúdo Científico/Disciplinar)
   app.post("/api/seduc/question-explain", async (req, res) => {
     const { questionText, options, correctAnswer, userAnswer, subject, topic } = req.body;
+    const normSub = (subject || '').toLowerCase();
 
-    const prompt = `Como professor especialista na BANCA FUNECE / CEV-UECE do Concurso SEDUC CE 2026, comente detalhadamente esta questão de prova:
-Matéria: ${subject || 'Didática / Legislação FUNECE'}
-Tópico: ${topic || 'Conhecimentos Gerais'}
+    let domainDirective = "Ensine a fundamentação científica/conceitual da matéria cobrada.";
+    if (normSub.includes('português') || normSub.includes('letras') || normSub.includes('língua')) {
+      domainDirective = "Fundamentação gramatical e linguística segundo a norma culta (análise sintática, morfologia, semântica, regência, concordância ou regras de pontuação).";
+    } else if (normSub.includes('biologia') || normSub.includes('ciência')) {
+      domainDirective = "Fundamentação biológica, celular, bioquímica, genética, fisiológica ou ecológica com rigor científico acadêmico.";
+    } else if (normSub.includes('matemática')) {
+      domainDirective = "Demonstração matemática passo a passo, propriedades algébricas, geométricas ou trigonométricas aplicadas.";
+    } else if (normSub.includes('história') || normSub.includes('geografia')) {
+      domainDirective = "Fundamentação historiográfica ou geográfica, contextualização espaço-temporal e dinâmica dos processos.";
+    } else if (normSub.includes('pedagogi') || normSub.includes('didátic') || normSub.includes('educaç')) {
+      domainDirective = "Fundamentação teórica pedagógica (autores de referência como Saviani, Libâneo, Luckesi, Piaget, Vygotsky) e planejamento didático.";
+    } else if (normSub.includes('legislaç') || normSub.includes('administraç')) {
+      domainDirective = "Fundamentação legal estrita (artigos da LDB 9.394/96, CF/88, Estatuto do Magistério do CE ou normas educacionais correlatas).";
+    }
+
+    const prompt = `Você é um professor especialista de Ensino Superior e avaliador do concurso SEDUC CE. Comente detalhadamente esta questão de prova com foco EXCLUSIVO no conteúdo disciplinar:
+Disciplina: ${subject || 'Conhecimentos do Edital'}
+Tópico/Assunto: ${topic || 'Conteúdo Específico'}
 Enunciado: "${questionText}"
 Gabarito Oficial: Alternativa ${correctAnswer}
 Resposta do Aluno: Alternativa ${userAnswer || 'N/A'}
 
 ${FORMULA_FORMATTING_DIRECTIVE}
 
-Forneça um comentário explicativo completo no estilo FUNECE contendo:
-1. Fundamentação Legal ou Doutrinária (Artigo da lei, norma da BNCC ou teoria pedagógica aplicada).
-2. Por que a alternativa ${correctAnswer} é a correta segundo o gabarito oficial da FUNECE.
-3. Por que as outras alternativas são distratores / estão incorretas.
-4. Uma dica prática sobre a pegadinha clássica da FUNECE para não errar esse tipo de questão na prova da SEDUC CE.`;
+Forneça um comentário explicativo completo contendo:
+1. **Fundamentação Conceitual e Técnica:** ${domainDirective}
+2. **Análise Detalhada da Alternativa ${correctAnswer} (Gabarito Oficial):** Explique detalhadamente por que esta alternativa é a cientificamente correta.
+3. **Análise dos Distratores:** Explique pontualmente qual é o erro conceitual, factual ou a incorreção técnica de cada uma das outras alternativas.
+4. **Ponto de Atenção Técnico:** Destaque uma nuance conceitual ou detalhe teórico essencial para não confundir esse conteúdo em questões futuras.
+
+IMPORTANTE: NUNCA faça meta-perguntas ou meta-comentários sobre como a banca elabora. Ensine a matéria de verdade com máxima clareza e densidade.`;
 
     const aiInstance = getAIClient();
     if (aiInstance) {
@@ -792,11 +816,11 @@ Forneça um comentário explicativo completo no estilo FUNECE contendo:
 
     return res.json({
       success: true,
-      text: ` Comentário Pedagógico Especialista FUNECE:\n\nA alternativa correta segundo a FUNECE é a **${correctAnswer}**.\n\nA banca CEV/UECE (FUNECE) exige atenção às expressões exatas da legislação educacional do Ceará (Estatuto do Magistério, PEE-CE e LDB) e aos fundamentos pedagógicos de autores como Luckesi e Libâneo. A alternativa ${correctAnswer} reflete com precisão a norma vigente, enquanto os distratores trazem modificações sutis em conceitos e atribuições.`
+      text: `### Comentário Técnico e Conceitual:\n\n**Gabarito Oficial: Alternativa ${correctAnswer}**\n\n- **Análise da Alternativa Correta (${correctAnswer}):** A proposição reflete com exatidão a fundamentação científica e teórica consolidada do tópico "${topic || 'específico'}" em ${subject || 'sua respectiva área'}.\n- **Análise dos Distratores:** As demais alternativas contêm incorreções conceituais, inversão de processos ou afirmações que contrariam a norma e as evidências teóricas consolidadas da disciplina.`
     });
   });
 
-  // Motor de Simulados Inteligente - Geração Personalizada por Assunto Estrito
+  // Motor de Simulados Inteligente - Geração Personalizada por Assunto Estrito e Conteúdo Científico Real
   app.post("/api/seduc/generate-simulado", async (req, res) => {
     const {
       discipline,
@@ -827,64 +851,102 @@ Forneça um comentário explicativo completo no estilo FUNECE contendo:
     const topicPaths = selectedTopics.map((t, index) => {
       const cleanSub = cleanEditalTitle(t.subtopicName || t.topicName || '');
       const cleanTop = cleanEditalTitle(t.topicName || '');
-      return `• [Questão ${index + 1}] -> Disciplina: ${discipline || 'Conhecimentos do Edital'} | Assunto Científico: ${cleanSub} (${cleanTop})`;
+      return `• [Questão ${index + 1}] -> Disciplina: ${discipline || 'Conhecimentos do Edital'} | Assunto Científico Estrito: ${cleanSub} (Inserido em: ${cleanTop})`;
     }).join("\n");
 
+    const normDisc = (discipline || '').toLowerCase();
+
+    // Specific domain instructions
+    let disciplineSpecificInstruction = "";
+    if (normDisc.includes('português') || normDisc.includes('língua') || normDisc.includes('letras')) {
+      disciplineSpecificInstruction = `
+### 📚 DIRETIVA ESPECÍFICA PARA LÍNGUA PORTUGUESA / LITERATURA:
+- Forneça SEMPRE um período, frase ou excerto textual autêntico para análise gramatical ou literária.
+- Avalie rigorosamente a sintaxe da oração e do período (sujeito, predicado, complementos verbais/nominais, adjuntos, orações coordenadas/subordinadas, orações reduzidas), regência verbal/nominal, crase, concordância verbal/nominal, colocação pronominal, pontuação ou semântica conectiva.
+- DISTRATORES FUNECE: crie alternativas com pegadinhas técnicas autênticas e eruditas (ex: confundir sujeito paciente com objeto direto na voz passiva sintética com partícula 'se'; complemento nominal com adjunto adnominal em substantivos abstratos; oração subordinada substantiva apositiva com adjetiva explicativa; uso de crase com pronomes relativos). Todas as 4 alternativas devem ser bem escritas e formais!
+- NUNCA faça perguntas sobre a banca ou sobre o edital. Pergunte sobre a gramática/língua!`;
+    } else if (normDisc.includes('biologia') || normDisc.includes('ciência')) {
+      disciplineSpecificInstruction = `
+### 🧬 DIRETIVA ESPECÍFICA PARA BIOLOGIA / CIÊNCIAS BIOLÓGICAS:
+- Cobrança de BIOLOGIA PURA E RIGOROSA DE NÍVEL SUPERIOR: ultraestrutura celular, composição lipídica/proteica de membranas, mecanismos biofísicos de transporte (bombas iônicas, carreadores GLUT, cotransporte simporte/antiporte), bioenergética (glicólise, ciclo de Krebs, cadeia de transporte de elétrons, fosforilação oxidativa, fase clara/escura da fotossíntese, ciclo C3/C4/CAM), biologia molecular (transcrição, splicing alternativo, tradução, regulação operon/epigenética), genética mendeliana e ligamento gênico com recombinação, fisiologia animal/vegetal comparada e dinâmicas ecológicas biogeoquímicas.
+- DISTRATORES FUNECE: Os 3 distratores devem ser armadilhas biológicas sofisticadas (ex: inverter aceptores de elétrons, trocar compartimentos subcelulares como matriz mitocondrial e espaço intermembranas, inverter os efeitos alostéricos ou cinéticos Km/Vmax de inibidores enzimáticos). Todas as 4 opções devem ser longas e usar jargão biológico rigoroso!
+- NUNCA invente historinhas de sala de aula ou professores para Biologia. A questão deve ser sobre o fenômeno/estrutura biológica em si!`;
+    } else if (normDisc.includes('matemática')) {
+      disciplineSpecificInstruction = `
+### 📐 DIRETIVA ESPECÍFICA PARA MATEMÁTICA:
+- Formule problemas matemáticos reais, funções algébricas, equações, cálculos trigonométricos, propriedades geométricas ou deduções com dados numéricos exatos.
+- Alternativas devem conter valores e deduções rigorosas obtidas por raciocínio matemático sólido ou erros operacionais clássicos como distratores.`;
+    } else if (normDisc.includes('história') || normDisc.includes('geografia')) {
+      disciplineSpecificInstruction = `
+### 🌍 DIRETIVA ESPECÍFICA PARA HISTÓRIA / GEOGRAFIA:
+- Analise processos históricos, historiografia crítica, contextos sociopolíticos (História do Ceará, Brasil ou Geral) ou dinâmica espacial, climatologia, geomorfologia e biogeografia com vocabulário técnico e rigor analítico.`;
+    } else if (normDisc.includes('pedagogi') || normDisc.includes('didátic') || normDisc.includes('educaç')) {
+      disciplineSpecificInstruction = `
+### 🎓 DIRETIVA ESPECÍFICA PARA EDUCAÇÃO BRASILEIRA / DIDÁTICA:
+- Avalie teorias pedagógicas consolidadas (Saviani, Libâneo, Luckesi, Piaget, Vygotsky, Freire), planejamento de ensino, transposição didática, avaliação formativa e organização curricular.
+- DISTRATORES FUNECE: atribua conceitos a teóricos vizinhos ou descreva práticas pedagógicas tradicionais/tecnicistas com vocabulário formal que desafie a distinção do candidato.`;
+    } else if (normDisc.includes('legislaç') || normDisc.includes('administraç')) {
+      disciplineSpecificInstruction = `
+### ⚖️ DIRETIVA ESPECÍFICA PARA LEGISLAÇÃO E ADMINISTRAÇÃO PÚBLICA:
+- Avalie os artigos específicos e preceitos da LDB nº 9.394/96, CF/88 (Arts. 205-214), Estatuto do Magistério do CE ou PEE-CE, focando em competências, quóruns e garantias legais.`;
+    } else if (normDisc.includes('dados') || normDisc.includes('indicadores')) {
+      disciplineSpecificInstruction = `
+### 📊 DIRETIVA ESPECÍFICA PARA LEITURA E INTERPRETAÇÃO DE DADOS E INDICADORES:
+- Avalie os índices oficiais de avaliação educacional do Ceará e do Brasil (SPAECE, IDEB, taxas de rendimento escolar, distorção idade-série, Censo Escolar).`;
+    }
+
     const previousBlock = Array.isArray(previousQuestions) && previousQuestions.length > 0
-      ? `\n## 🚨 DIRETIVA DE INEDITISMO ABSOLUTO E ANTI-REPETIÇÃO RIGOROSA
-Você é um elaborador sênior da comissão CEV/FUNECE. O candidato JÁ RESOLVEU ${previousQuestions.length} questões em treinos anteriores.
+      ? `\n## 🚨 DIRETIVA DE INEDITISMO ABSOLUTO E ANTI-DUPLICAÇÃO SEMÂNTICA
+O candidato JÁ RESOLVEU ${previousQuestions.length} questões em treinos anteriores.
 Abaixo estão os trechos/enunciados das questões que o aluno JÁ VIU e que É TERMINANTEMENTE PROIBIDO REPETIR:
 ${previousQuestions.slice(-100).map((q: string, idx: number) => `   [${idx + 1}] "${q.substring(0, 180)}..."`).join('\n')}
 
-### 🚫 REGRAS INEGOCIÁVEIS DE ANTI-REPETIÇÃO (BANCA FUNECE):
-1. ZERO DUPLICIDADE: É ESTRITAMENTE PROIBIDO repetir qualquer enunciado, tese, situação-problema, texto motivador ou alternativa já utilizada acima.
-2. CADA ASSUNTO É EXTENSO DEMAIS: Todos os tópicos do edital da SEDUC-CE são amplos e possuem dezenas de subconceitos, autores de referência (Libâneo, Luckesi, Saviani, Vygotsky, Piaget, Freire, Veiga, Perrenoud, Tardif), leis (LDB 9.394/96, CF/88, ECA, PNE, BNCC), casos práticos e desdobramentos científicos. Se o usuário selecionar o mesmo tópico 100 vezes, crie 100 questões COMPLETAMENTE DIFERENTES, explorando outros subaspectos, exceções da regra e situações de sala de aula.`
-      : `\n## 🚨 DIRETIVA DE INEDITISMO ABSOLUTO E ANTI-REPETIÇÃO RIGOROSA
-Você é um elaborador sênior da comissão CEV/FUNECE. Cada assunto do edital é extenso demais e permite criar dezenas de questões inéditas.
-Todas as questões geradas DEVEM ser 100% inéditas, explorando diferentes subaspectos, estudos de caso práticos e desdobramentos teóricos profundos.
-NUNCA repita modelos, fórmulas prontas ou frases idênticas.`;
+### 🚫 REGRAS INEGOCIÁVEIS DE ANTI-REPETIÇÃO:
+1. ZERO DUPLICIDADE SEMÂNTICA: Não mude apenas palavras ou números. Se um mecanismo ou frase já foi testado acima, explore OUTRA vertente, exceção, mecanismo secundário ou aplicação do subtópico.
+2. CADA SUBTÓPICO É EXTENSO E MULTIDIMENSIONAL: Subtópicos do edital possuem dezenas de ramificações. Divida o subtópico em diferentes eixos conceituais para criar questões 100% inéditas, distintas e complementares.`
+      : `\n## 🚨 DIRETIVA DE INEDITISMO ABSOLUTO E DIVERSIDADE TEMÁTICA
+Cada assunto do edital é amplo e rico em desdobramentos conceituais. Explore diferentes ângulos, propriedades e mecanismos do conteúdo sem redundâncias.`;
 
     const randomSeed = `${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
 
     const prompt = `[SEED DE VARIABILIDADE OBRIGATÓRIA DA SESSÃO: ${randomSeed}]
-Você é um ELABORADOR SÊNIOR DA BANCA FUNECE/CEV-UECE para o concurso de Professor do Estado do Ceará (SEDUC-CE).
+Você é um ELABORADOR SÊNIOR DE PROVAS DE CONCURSO PÚBLICO para Professor de Ensino Médio da SEDUC-CE (Padrão FUNECE / CEV-UECE).
 
-Sua missão é gerar ${requestedCount} questões objetivas inéditas, tecnicamente rigorosas e de nível compatível com prova de concurso para professor de Ensino Médio, pautadas EXCLUSIVAMENTE nos assuntos selecionados do edital:
+Sua missão é elaborar ${requestedCount} questões objetivas inéditas, densas, profundas e tecnicamente impecáveis, pautadas EXCLUSIVAMENTE nos assuntos selecionados:
 
 ${topicPaths}
 
 ${FORMULA_FORMATTING_DIRECTIVE}
 
+${disciplineSpecificInstruction}
+
 ---
 
-### 🚨 REGRA MESTRA INEGOCIÁVEL (CUMPRIR COM MÁXIMA RIGIDEZ)
+### 🏛️ PADRÃO FUNECE DE ALTA COMPLEXIDADE E ENGENHARIA DE DISTRATORES:
 
-1. **FUNECE DEFINE O ESTILO DA QUESTÃO:**
-   - Estilo de cobrança: questões objetivas, claras, de alta densidade acadêmica e rigor técnico, que exijam do candidato compreensão, aplicação, comparação, interpretação de relações e domínio conceitual do assunto.
-   - Alternativas plausíveis, escritas com o mesmo vocabulário culto e do mesmo universo conceitual da questão.
-   - NUNCA crie alternativas absurdas, fáceis, caricatas ou que possam ser eliminadas por pistas linguísticas.
-   - **NUNCA FAÇA DA BANCA OU DO EDITAL O OBJETO DA QUESTÃO!** NUNCA inclua no enunciado, nas alternativas ou na explicação frases como: "considerando a matriz de referência do edital", "para fins de avaliação na banca", "de acordo com as diretrizes conceituais do edital", "sob o ponto de vista da comissão examinadora CEV/FUNECE", "segundo a FUNECE" ou semelhantes. A FUNECE é o ESTILO, não o assunto.
+1. **AS 4 ALTERNATIVAS (A, B, C, D) DEVEM PARECER TODAS VERDADEIRAS À PRIMEIRA VISTA:**
+   - No padrão da banca FUNECE/CEV-UECE, as 4 opções são longas, eruditas, formalmente elegantes e utilizam o jargão científico correto da disciplina.
+   - **É PROIBIDO CRIAR DISTRATORES ÓBVIOS OU BOBOS:** Nunca use frases como "dispensa fundamentação", "é estático", "prescinde de análise", "não tem relação científica", "é aleatório" ou afirmações caricatas.
+   - **CADA UM DOS 3 DISTRATORES DEVE CONTER UMA SUTIL E LEGÍTIMA ARMADILHA TÉCNICA (PEGADINHA CONCEITUAL):**
+     * Exemplo em Biologia: trocar sutilmente o aceptor final de elétrons, a localização subcelular da enzima (estroma vs tilacoide; matriz vs espaço intermembranas), ou o efeito térmico do colesterol.
+     * Exemplo em Português: classificar complemento nominal como adjunto adnominal em substantivo abstrato com sentido paciente, ou oração subordinada apositiva como adjetiva explicativa.
+     * Exemplo em Didática/Legislação: atribuir uma premissa da pedagogia crítico-social dos conteúdos a Saviani ou inverter competências entre CEE e SEDUC.
+   - Todas as 4 alternativas devem possuir **extensão semelhante (2 a 4 linhas cada)** e estrutura sintática paralela para não haver pistas visuais de qual é a correta.
 
-2. **O EDITAL DEFINE O CONTEÚDO E O SUBTÓPICO SELECIONADO É A FRONTEIRA/LIMITE EXCLUSIVA DA QUESTÃO:**
-   - CADA SUBTÓPICO É UMA CADEIA EXTENSA DE CONHECIMENTO: Em Biologia, Português, História, Matemática, Didática, etc., um subtópico possui dezenas de micro-mecanismos, exceções, fórmulas, teorias e nuances conceituais. Explore a fundo os diferentes elos dessa cadeia teórica em cada questão gerada.
-   - A questão DEVE avaliar efetivamente o conhecimento do candidato sobre o CONTEÚDO ESPECÍFICO do subtópico selecionado.
-   - **NUNCA escape do assunto selecionado!** A questão NUNCA deve migrar para legislação educacional, competências pedagógicas ou Didática se esses assuntos não forem o conteúdo especificamente escolhido pelo usuário.
-   - Se o usuário selecionou, por exemplo, "Biologia → Identidade dos seres vivos → 1.1 Aspectos físicos, químicos e estruturais da célula", a questão DEVE cobrar BIOLOGIA DE VERDADE: estrutura e composição química da célula, membrana plasmática, organelas, propriedades físico-químicas, organização molecular e relações funcionais do subtópico.
-   - **NUNCA invente cenários artificiais de salas de aula ou professores para disciplinas específicas (como Biologia, Química, Física, Matemática, História, Geografia, Língua Portuguesa, etc.)!** Perguntas dessas disciplinas devem ser sobre a própria ciência/conteúdo (ex: análise de reações, mecanismos de transporte, orações, eventos históricos, teoremas, modelos moleculares).
+2. **SUBTÓPICOS EXTENSOS — VARIAÇÃO MULTIDIMENSIONAL (ZERO REPETIÇÃO):**
+   - Subtópicos do edital contêm vasto corpo científico. Se múltiplas questões forem geradas sobre o mesmo subtópico, CADA QUESTÃO DEVE FOCAR EM UM EIXO COMPLETAMENTE DISTINTO:
+     * Questão 1: Ultraestrutura e mecanismos moleculares ou regras sintáticas fundamentais.
+     * Questão 2: Regulação cinética, bioenergética, regência com preposições especiais ou orações reduzidas.
+     * Questão 3: Exceções à regra geral, patologias moleculares, inibição de processos ou teóricos contrastantes.
+     * Questão 4: Análise comparativa entre dois processos ou interpretação de fenômeno em situação prática.
+   - É PROIBIDO REPETIR O MESMO ENUNCIADO, A MESMA FRASE OU A MESMA ABORDAGEM DE QUESTÕES ANTERIORES.
 
-3. **O CONHECIMENTO CIENTÍFICO DEFINE A RESPOSTA CORRETA:**
-   - A alternativa correta decorre diretamente da verdade científica, linguística, histórica, matemática ou doutrinária consolidada da área.
-   - Não invente conceitos, autores fictícios, leis inexistentes ou conteúdos que não tenham relação direta com o subtópico.
+3. **A BANCA FUNECE É APENAS O ESTILO E CALIBRAÇÃO (NUNCA O ASSUNTO):**
+   - **PROIBIÇÃO TOTAL DE META-QUESTÕES:** É ESTRITAMENTE PROIBIDO incluir no enunciado, nas alternativas ou no comentário frases como: "segundo o edital", "de acordo com a matriz de referência", "sob a ótica da comissão FUNECE", "para a FUNECE", "no âmbito da avaliação" ou semelhantes. A questão é sobre o CONTEÚDO CIENTÍFICO DA DISCIPLINA, nunca sobre a banca!
 
-4. **DISTRIBUIÇÃO E FORMATOS DE ENUNCIADO VARIADOS:**
-   - Assunto 1 = Questão 1; Assunto 2 = Questão 2 (e assim por diante).
-   - Alterne o formato entre as questões: conceituais diretas de alta densidade, aplicadas, comparativas, de análise de processos/relações ou interpretação de fenômenos/textos.
-   - Distribua a alternativa correta ALEATORIAMENTE entre as letras A, B, C e D.
-
-5. **EXPLICAÇÃO EDUCATIVA QUE ENSINA O CONTEÚDO:**
-   - No campo "explanation", ENSINE O CONTEÚDO COBRADO!
-   - Explique por que a alternativa correta está correta sob a ótica científica/acadêmica e por que cada uma das demais está errada do ponto de vista da matéria.
-   - É PROIBIDO fazer meta-comentários sobre a FUNECE, sobre o edital ou sobre o concurso dentro da explicação. O candidato deve terminar a resolução sabendo mais sobre a matéria do que antes.
+4. **GABARITO E EXPLICAÇÃO QUE ENSINA O CONTEÚDO:**
+   - Apenas UMA alternativa correta indiscutível.
+   - Na "explanation", ENSINE a matéria com profundidade: fundamente a alternativa correta cientificamente e aponte o erro pontual de cada um dos 3 distratores.
 
 ---
 
@@ -892,47 +954,34 @@ ${previousBlock}
 
 ---
 
-### 📝 EXEMPLO DE EXCELÊNCIA (PADRÃO FUNECE - BIOLOGIA CELULAR):
+### 📤 FORMATO DA SAÍDA (JSON OBRIGATÓRIO):
 
-**Enunciado:**
-A membrana plasmática é uma estrutura dinâmica e seletiva, essencial para a manutenção da homeostase e para a regulação do tráfego de substâncias entre os meios intra e extracelular. A respeito da composição físico-química e da organização estrutural da membrana celular, assinale a afirmativa CORRETA:
-
-**Opções:**
-A) O colesterol atua como modulador da fluidez da membrana em células animais: em temperaturas elevadas, limita a movimentação excessiva dos fosfolipídeos; em temperaturas baixas, previne o empacotamento das cadeias de ácidos graxos e a cristalização da bicamada.
-B) O transporte ativo secundário, como o simporte de glicose e sódio (Na+), consome diretamente moléculas de ATP no sítio catalítico da proteína carreadora para deslocar a glicose a favor do seu gradiente.
-C) Proteínas periféricas da membrana caracterizam-se por apresentarem extensos domínios transmembrana ricos em aminoácidos apolares dispostos em alfa-hélice ancorados no centro hidrofóbico.
-D) A osmose é caracterizada como um transporte ativo especializado, no qual moléculas de água são bombeadas contra o gradiente de concentração com gasto direto de ATP pela célula.
-
-**Gabarito:** A
-
----
-
-### 📤 FORMATO DA SAÍDA E ESTRUTURA DO GABARITO COMENTADO (JSON):
-
-Sua resposta DEVE ser estritamente um objeto JSON com a chave "questions":
+Retorne estritamente um objeto JSON com a chave "questions":
 
 {
   "questions": [
     {
-      "question": "Enunciado objetivo, claro e de alto rigor técnico no assunto específico do subtópico",
+      "question": "Enunciado objetivo avaliando o conteúdo específico do subtópico",
       "alternatives": [
-        { "letter": "A", "text": "Opção A densa, bem escrita e plausível" },
-        { "letter": "B", "text": "Opção B densa, bem escrita e plausível" },
-        { "letter": "C", "text": "Opção C densa, bem escrita e plausível" },
-        { "letter": "D", "text": "Opção D densa, bem escrita e plausível" }
+        { "letter": "A", "text": "Alternativa A técnica, longa e plausível" },
+        { "letter": "B", "text": "Alternativa B técnica, longa e plausível" },
+        { "letter": "C", "text": "Alternativa C técnica, longa e plausível" },
+        { "letter": "D", "text": "Alternativa D técnica, longa e plausível" }
       ],
-      "correctAnswer": "C",
-      "explanation": "Gabarito: C\\n\\nGabarito Comentado:\\n- Análise da Alternativa C (Correta): [Explicação científica/conceitual clara e aprofundada da matéria]\\n- Análise dos Distratores:\\n  * A) [Explique o erro do ponto de vista do conteúdo da matéria]\\n  * B) [Explique o erro do ponto de vista do conteúdo da matéria]\\n  * D) [Explique o erro do ponto de vista do conteúdo da matéria]",
-      "topic": "Nome do tópico sem códigos",
-      "subtopic": "Nome do subtópico sem códigos",
-      "difficulty": "Avançado",
+      "correctAnswer": "A",
+      "explanation": "Gabarito: A\\n\\nGabarito Comentado:\\n- Análise da Alternativa A (Correta): [Explicação do conteúdo científico]\\n- Análise dos Distratores:\\n  * B) [Erro conceitual sutil da matéria]\\n  * C) [Erro conceitual sutil da matéria]\\n  * D) [Erro conceitual sutil da matéria]",
+      "topic": "Nome do tópico sem numeração",
+      "subtopic": "Nome do subtópico sem numeração",
+      "difficulty": "Difícil",
       "banca": "FUNECE / CEV-UECE",
-      "skills": ["Domínio Científico do Conteúdo", "Rigor Técnico FUNECE"],
-      "commonMistake": "Atenção aos detalhes técnicos e exceções conceituais do assunto.",
-      "studyTip": "Revise os mecanismos e definições essenciais deste subtópico."
+      "skills": ["Domínio Científico do Conteúdo", "Rigor FUNECE"],
+      "commonMistake": "Atenção às distinções conceituais sutis e detalhes técnicos.",
+      "studyTip": "Revise a teoria aprofundada e os mecanismos deste subtópico."
     }
   ]
 }`;
+
+    const seenTextsList = Array.isArray(previousQuestions) ? previousQuestions : [];
 
     const aiInstance = getAIClient();
     if (aiInstance) {
@@ -943,7 +992,7 @@ Sua resposta DEVE ser estritamente um objeto JSON com a chave "questions":
           defaultModel: "gemini-2.5-flash",
           maxRetries: 2,
           config: {
-            temperature: 0.9,
+            temperature: 0.85,
             topP: 0.95,
             responseMimeType: "application/json",
             responseSchema: {
@@ -988,8 +1037,20 @@ Sua resposta DEVE ser estritamente um objeto JSON com a chave "questions":
         if (response && response.text) {
           const parsed = JSON.parse(response.text.trim());
           if (parsed.questions && Array.isArray(parsed.questions) && parsed.questions.length > 0) {
-            console.log(`[Simulado Motor] Geradas ${parsed.questions.length} questões com sucesso via Gemini!`);
-            return res.json({ success: true, questions: parsed.questions });
+            // Sanitize, clean meta-phrases, and verify anti-duplication
+            const validQuestions = parsed.questions
+              .map((q: any, i: number) => {
+                const itemRef = selectedTopics[i % selectedTopics.length];
+                const cleanSub = cleanEditalTitle(itemRef?.subtopicName || itemRef?.topicName || '');
+                const cleanTop = cleanEditalTitle(itemRef?.topicName || '');
+                return sanitizeSimuladoQuestion(q, cleanTop, cleanSub);
+              })
+              .filter((q: any) => q && q.question && q.alternatives.length === 4);
+
+            if (validQuestions.length > 0) {
+              console.log(`[Simulado Motor] Geradas e validadas ${validQuestions.length} questões com sucesso via Gemini!`);
+              return res.json({ success: true, questions: validQuestions });
+            }
           }
         }
       } catch (err: any) {
@@ -997,127 +1058,20 @@ Sua resposta DEVE ser estritamente um objeto JSON com a chave "questions":
       }
     }
 
-    // High quality dynamic fallback generator guaranteeing unique questions per topic
-    const shuffleArray = <T,>(arr: T[]): T[] => {
-      const copy = [...arr];
-      for (let i = copy.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [copy[i], copy[j]] = [copy[j], copy[i]];
-      }
-      return copy;
-    };
-
-    const normDisc = (discipline || '').toLowerCase();
-
+    // High quality dynamic fallback generator guaranteeing unique and content-driven questions per topic
     const fallbackQuestions = selectedTopics.slice(0, requestedCount).map((item, idx) => {
       const cleanSub = cleanEditalTitle(item.subtopicName || item.topicName || '');
       const cleanTop = cleanEditalTitle(item.topicName || '');
 
-      let questionText = "";
-      let rawAlternatives: { text: string; isCorrect: boolean; reason: string }[] = [];
+      const template = generateCuratedFallbackForTopic(
+        discipline || 'Conhecimentos Específicos',
+        cleanTop,
+        cleanSub,
+        idx,
+        seenTextsList
+      );
 
-      const formatIndex = idx % 4;
-
-      if (normDisc.includes('português') || normDisc.includes('língua') || normDisc.includes('gramát')) {
-        if (formatIndex === 0) {
-          questionText = `No que se refere aos aspectos de sintaxe, coesão e regência associados ao tema de "${cleanSub}", assinale a alternativa que atende rigorosamente à norma-padrão da Língua Portuguesa:`;
-          rawAlternatives = [
-            { text: `A articulação sintática dos enunciados exige observância estrita às regras de concordância e à seleção adequada dos conectivos para a garantia da coesão e da clareza.`, isCorrect: true, reason: "A norma-padrão exige perfeita harmonia sintática entre os termos regentes e regidos, além do uso coerente dos elementos de coesão." },
-            { text: `O emprego dos conectivos subordinativos prescinde de concordância entre verbo e sujeito, operando de modo isolado no texto.`, isCorrect: false, reason: "A concordância verbal é um requisito independente e obrigatório na norma culta." },
-            { text: `A pontuação em orações subordinadas adjetivas restritivas deve obrigatoriamente incluir vírgulas isolando o termo.`, isCorrect: false, reason: "As vírgulas são empregadas nas orações adjetivas explicativas; as restritivas não são isoladas por vírgulas." },
-            { text: `As relações de regência verbal admitem a omissão de preposição antes de pronomes relativos mesmo quando exigida pelo verbo regente.`, isCorrect: false, reason: "Se o verbo regente exige preposição, esta deve ser obrigatoriamente colocada antes do pronome relativo." }
-          ];
-        } else {
-          questionText = `Análise a construção sintático-semântica e os recursos de coesão referente ao tópico de "${cleanSub}". Assinale a opção correta quanto à norma culta:`;
-          rawAlternatives = [
-            { text: `A exatidão no emprego da regência e da colocação pronominal assegura a precisão denotativa e a clareza no registro formal.`, isCorrect: true, reason: "Regência e colocação pronominal sustentam a denotação e a concisão no registro culto." },
-            { text: `O sinal indicativo de crase é obrigatório antes de verbos no infinitivo e de termos masculinos.`, isCorrect: false, reason: "É vedado o uso do sinal indicativo de crase antes de verbos e palavras masculinas." },
-            { text: `A substituição de conectivos adversativos por conjunções causais mantém inalterado o sentido original do período.`, isCorrect: false, reason: "Conectivos adversativos (oposição) e causais (motivo) possuem valores semânticos completamente distintos." },
-            { text: `A concordância nominal entre o adjetivo e múltiplos substantivos prescinde de alinhamento de gênero e número.`, isCorrect: false, reason: "A concordância nominal exige adequação estrita de gênero e número segundo as regras gramaticais." }
-          ];
-        }
-      } else if (normDisc.includes('biologia') || normDisc.includes('ciência')) {
-        if (cleanSub.toLowerCase().includes('célula') || cleanSub.toLowerCase().includes('membrana') || cleanSub.toLowerCase().includes('estrutur') || cleanSub.toLowerCase().includes('físic')) {
-          questionText = `A membrana plasmática é uma estrutura dinâmica e seletiva, essencial para a manutenção da homeostase e para a regulação do tráfego de substâncias entre os meios intra e extracelular. A respeito da composição físico-química e da organização estrutural da membrana celular, assinale a afirmativa CORRETA:`;
-          rawAlternatives = [
-            { text: `O colesterol atua como modulador da fluidez da membrana em células animais: em temperaturas elevadas, limita a movimentação excessiva dos fosfolipídeos; em temperaturas baixas, previne o empacotamento das cadeias de ácidos graxos e a cristalização da bicamada.`, isCorrect: true, reason: "Descrição biofísica precisa do papel anfipático e termorregulador do colesterol na bicamada lipídica." },
-            { text: `O transporte ativo secundário, como o simporte de glicose e sódio (Na+), consome diretamente moléculas de ATP no sítio catalítico da proteína carreadora para mover a glicose a favor do seu gradiente.`, isCorrect: false, reason: "O transporte ativo secundário aproveita o gradiente eletroquímico criado previamente pela bomba de Na+/K+, não consumindo ATP diretamente na proteína carreadora." },
-            { text: `Proteínas periféricas da membrana caracterizam-se por apresentarem extensos domínios transmembrana ricos em aminoácidos apolares dispostos em alfa-hélice ancorados no centro hidrofóbico.`, isCorrect: false, reason: "Extensos domínios transmembrana apolares em alfa-hélice são característicos de proteínas integrais (transmembrana), e não periféricas." },
-            { text: `A osmose é caracterizada como um transporte ativo especializado, no qual moléculas de água são bombeadas contra o gradiente de concentração com gasto direto de ATP pela célula.`, isCorrect: false, reason: "A osmose é um transporte passivo de solvente (água) do meio hipotônico para o hipertônico, sem gasto energético." }
-          ];
-        } else {
-          questionText = `Acerca da bioquímica celular, da cinético-química enzimática e da regulação do metabolismo energético, assinale a alternativa CORRETA:`;
-          rawAlternatives = [
-            { text: `Inibidores competitivos ligam-se reversivelmente ao sítio ativo da enzima, aumentando o valor da constante de Michaelis-Menten (Km) aparente, mantendo inalterada a velocidade máxima (Vmáx) atingível em altas concentrações de substrato.`, isCorrect: true, reason: "Princípio fundamental da cinética enzimática de Michaelis-Menten para inibição competitiva." },
-            { text: `A glicólise ocorre no interior da matriz mitocôndrial e necessita obrigatoriamente de oxigênio molecular (O2) como aceptor final de elétrons para ocorrer.`, isCorrect: false, reason: "A glicólise é uma etapa anaeróbia que ocorre no citosol (hialoplasma), independentemente do O2." },
-            { text: `A fotossíntese nas plantas C3 realiza a fixação inicial do CO2 pela enzima RuBisCO no interior dos peroxissomos, gerando malato de quatro carbonos.`, isCorrect: false, reason: "A fixação pela RuBisCO ocorre no estroma do cloroplasto, gerando 3-PGA (3 carbonos); o malato é formado na via C4." },
-            { text: `O ATP atua na célula como reservatório térmico devido às suas ligações fosfodiéster estáveis que impedem a liberação de energia livre.`, isCorrect: false, reason: "As ligações anidrido fosfórico do ATP possuem alta energia livre de hidrólise, atuando como moeda energética." }
-          ];
-        }
-      } else if (normDisc.includes('legislaç') || normDisc.includes('direito') || normDisc.includes('administraç')) {
-        questionText = `De acordo com os preceitos da legislação educacional brasileira (LDB nº 9.394/96 e normas correlatas) no que tange ao tema "${cleanSub}", assinale a afirmativa correta:`;
-        rawAlternatives = [
-          { text: `A garantia do direito à educação, a igualdade de condições para acesso e permanência e a gestão democrática do ensino público constituem princípios do ensino nacional.`, isCorrect: true, reason: "Fundamentação expressa no Artigo 3º da LDB nº 9.394/96." },
-          { text: `A aplicação das diretrizes curriculares nacionais anula a autonomia pedagógica das unidades escolares na elaboração de seus Projetos Político-Pedagógicos.`, isCorrect: false, reason: "A LDB garante a autonomia das estabelecimentos de ensino na elaboração e execução de sua proposta pedagógica (Art. 12)." },
-          { text: `O ensino público pode restringir a liberdade de aprender, ensinar, pesquisar e divulgar o pensamento em função de orientações doutrinárias específicas.`, isCorrect: false, reason: "A LDB assegura explicitamente a liberdade de aprender, ensinar, pesquisar e divulgar o pensamento, a arte e o saber." },
-          { text: `A gestão democrática do ensino público veda a participação dos profissionais da educação e da comunidade local em conselhos escolares.`, isCorrect: false, reason: "A LDB (Art. 14) determina expressamente a participação dos profissionais da educação e da comunidade escolar/local nos conselhos." }
-        ];
-      } else if (normDisc.includes('pedagogi') || normDisc.includes('didátic') || normDisc.includes('educaç')) {
-        if (formatIndex === 0) {
-          questionText = `Na Didática Geral e no estudo das Tendências Pedagógicas no Brasil, quanto ao desenvolvimento do trabalho pedagógico e ao tema "${cleanSub}", assinale a opção correta:`;
-          rawAlternatives = [
-            { text: `A articulação entre os saberes científicos e a realidade social dos estudantes caracteriza a Pedagogia Histórico-Crítica, visando à democratização do conhecimento e à emancipação do educando.`, isCorrect: true, reason: "Fundamento central da Pedagogia Histórico-Crítica (Dermeval Saviani)." },
-            { text: `A Tendência Liberal Tecnicista prioriza o diálogo sobre temas geradores e a conscientização política em detrimento do treinamento operacional.`, isCorrect: false, reason: "Temas geradores pertencem à Pedagogia Libertadora de Paulo Freire; o Tecnicismo foca na eficiência e neutralidade técnica." },
-            { text: `A Tendência Liberal Renovada Progressivista fundamenta-se na transmissão expositiva de conteúdos acumulados, sendo o aluno um receptor passivo.`, isCorrect: false, reason: "A Renovada Progressivista centra-se na atividade do aluno ('aprender a aprender') e em métodos ativos." },
-            { text: `A Tendência Progressista Libertadora concebe a avaliação do aprendizado como um instrumento puramente somativo e punitivo.`, isCorrect: false, reason: "A Pedagogia Libertadora recusa exames punitivos, defendendo uma práxis autoavaliativa e libertadora." }
-          ];
-        } else {
-          questionText = `Acerca do planejamento didático, da organização curricular e do tema de "${cleanSub}", assinale a alternativa cientificamente correta:`;
-          rawAlternatives = [
-            { text: `O planejamento didático intencional medeia a relação entre o conhecimento prévio do estudante e o conhecimento científico elaborado, promovendo a aprendizagem significativa.`, isCorrect: true, reason: "Conceito essencial da mediação pedagógica dialética." },
-            { text: `A avaliação formativa e contínua busca unicamente a classificação numérica final dos discentes para fins de seleção e exclusão.`, isCorrect: false, reason: "A avaliação formativa busca diagnosticar e reorientar o processo de ensino-aprendizagem, não classificar para excluir." },
-            { text: `A organização do trabalho pedagógico prescinde de coerência entre os objetivos de aprendizagem, as metodologias e os instrumentos de avaliação.`, isCorrect: false, reason: "O planejamento didático exige obrigatoriamente alinhamento entre objetivos, conteúdos, métodos e avaliação." },
-            { text: `A gestão do ensino público centraliza as decisões pedagógicas na equipe diretiva, dispensando a elaboração coletiva do Projeto Político-Pedagógico.`, isCorrect: false, reason: "O PPP deve ser elaborado coletivamente com a participação dos professores e da comunidade escolar." }
-          ];
-        }
-      } else {
-        // Outras disciplinas específicas (História, Geografia, Matemática, Física, Química, etc.)
-        questionText = `No âmbito do estudo acadêmico de ${discipline || 'Conhecimentos Específicos'}, referente ao tópico de "${cleanSub}", assinale a proposição conceitualmente CORRETA:`;
-        rawAlternatives = [
-          { text: `O domínio dos fundamentos teóricos e conceituais inerentes a ${cleanSub.toLowerCase()} permite a compreensão precisa dos fenômenos, estruturas e processos da área de conhecimento.`, isCorrect: true, reason: "Análise conceitual e científica rigorosa do conteúdo específico selecionado." },
-          { text: `A caracterização de ${cleanSub.toLowerCase()} fundamenta-se em princípios estáticos sem relação com os modelos explicativos consolidados da área.`, isCorrect: false, reason: "Os conhecimentos da área baseiam-se em teorias e modelos científicos amplamente fundamentados." },
-          { text: `As propriedades e relações inerentes a ${cleanSub.toLowerCase()} dispensam fundamentação empírica ou dedução lógica rigorosa.`, isCorrect: false, reason: "O conhecimento específico exige rigor metódico, empírico ou dedutivo." },
-          { text: `A interpretação dos fenômenos atrelados a ${cleanSub.toLowerCase()} prescinde de análise sistemática dos seus elementos constituintes.`, isCorrect: false, reason: "A análise sistemática dos componentes é essencial para a compreensão conceitual da matéria." }
-        ];
-      }
-
-      // Shuffle the 4 alternatives so the correct letter is randomly A, B, C, or D
-      const shuffled = shuffleArray(rawAlternatives);
-      const letters: ('A' | 'B' | 'C' | 'D')[] = ['A', 'B', 'C', 'D'];
-      let correctLetter: 'A' | 'B' | 'C' | 'D' = 'A';
-
-      const finalAlternatives = shuffled.map((alt, i) => {
-        const letter = letters[i];
-        if (alt.isCorrect) correctLetter = letter;
-        return {
-          letter: letter,
-          text: alt.text
-        };
-      });
-
-      const correctObj = shuffled.find(a => a.isCorrect)!;
-
-      return {
-        question: questionText,
-        alternatives: finalAlternatives,
-        correctAnswer: correctLetter,
-        explanation: `Gabarito: ${correctLetter}\n\nGabarito Comentado:\n- Análise da Alternativa ${correctLetter} (Correta): ${correctObj.reason}\n- Análise dos Distratores: As demais alternativas apresentam incorreções conceituais, inversões de propriedades ou dados equivocados a respeito da matéria.`,
-        topic: cleanTop,
-        subtopic: cleanSub,
-        difficulty: difficulty || "Avançado",
-        banca: banca || "FUNECE / CEV-UECE",
-        skills: ["Domínio Científico do Conteúdo", "Análise Conceitual"]
-      };
+      return sanitizeSimuladoQuestion(template, cleanTop, cleanSub);
     });
 
     return res.json({ success: true, questions: fallbackQuestions });

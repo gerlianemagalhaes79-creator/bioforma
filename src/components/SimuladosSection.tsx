@@ -3,6 +3,11 @@ import { User, db, doc, setDoc, collection, addDoc } from '../firebase';
 import { UserProfile, Question, QuestionAnswerLog } from '../types';
 import { recordUserActivity } from '../utils/streak';
 import { SEDUC_QUESTIONS, OFFICIAL_EDITAL_TREE, getEspecificoTree, FUNECE_DEGREE_OPTIONS } from '../data/seducData';
+import { 
+  sanitizeSimuladoQuestion, 
+  generateCuratedFallbackForTopic, 
+  isSemanticDuplicate 
+} from '../data/simuladoContentEngine';
 import { FormattedText } from './FormattedText';
 import { 
   FileText, CheckCircle2, XCircle, Sparkles, Filter, ChevronRight, ChevronDown, 
@@ -310,35 +315,6 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
     const selectedQuestions: Question[] = [];
     const seenTexts = getPreviouslySeenQuestionTexts();
 
-    // Filter bank questions that belong to this discipline or category AND have not been seen
-    const categoryMatch = SEDUC_QUESTIONS.filter(q => {
-      const qSub = q.subject.toLowerCase();
-      const qCat = q.category.toLowerCase();
-      const disc = disciplineName.toLowerCase();
-      const cat = category.toLowerCase();
-
-      if (category === 'especifico') {
-        return qCat.includes('específic') || qSub.includes(disc) || disc.includes(qSub);
-      }
-      return qCat.includes(cat) || qSub.includes(cat) || cat.includes(qCat);
-    });
-
-    // STRICTLY UNSEEN questions only
-    const unseenPool = categoryMatch.filter(q => !seenTexts.includes(q.questionText.trim()));
-
-    const cearaCities = ["Fortaleza", "Sobral", "Juazeiro do Norte", "Crateús", "Quixadá", "Iguatu", "Maracanaú", "Baturité", "Itapipoca", "Caucaia", "Russas", "Tianguá", "Camocim", "Tauá", "Limoeiro do Norte"];
-    const schoolTypes = ["em uma Escola de Ensino Médio em Tempo Integral (EEMTI)", "em uma Escola Estadual de Educação Profissional (EEEP)", "em uma turma de Educação de Jovens e Adultos (EJA)", "no Laboratório Multidisciplinar de Aprendizagem", "durante a reunião do Conselho de Classe"];
-    const teacherNames = ["Prof. Raimundo", "Profa. Francisca", "Prof. Carlos", "Profa. Camila", "Prof. Gilberto", "Profa. Claudiana", "Prof. Henrique", "Profa. Socorro", "Prof. Eudoro", "Profa. Rebeca", "Prof. Valdemar", "Profa. Elisângela", "Prof. Marcondes", "Profa. Tereza", "Prof. Vicente"];
-
-    const shuffle = <T,>(arr: T[]): T[] => {
-      const copy = [...arr];
-      for (let i = copy.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [copy[i], copy[j]] = [copy[j], copy[i]];
-      }
-      return copy;
-    };
-
     for (let i = 0; i < count; i++) {
       const topObj = topicPayload[i % topicPayload.length] || { topicName: 'Tópico de Estudo', subtopicName: '' };
       const rawTopicName = topObj.topicName;
@@ -346,117 +322,32 @@ export default function SimuladosSection({ user, profile }: SimuladosSectionProp
       const topicName = cleanEditalTitle(rawTopicName);
       const subtopicName = cleanEditalTitle(rawSubtopicName);
 
-      // Check if we have an exact matching UNSEEN question from SEDUC_QUESTIONS
-      const exactMatchIdx = unseenPool.findIndex(q => 
-        (q.topic.toLowerCase().includes(topicName.toLowerCase()) || 
-        (subtopicName && q.subtopic.toLowerCase().includes(subtopicName.toLowerCase()))) &&
-        !selectedQuestions.some(sq => sq.questionText === q.questionText)
+      const template = generateCuratedFallbackForTopic(
+        disciplineName,
+        topicName,
+        subtopicName,
+        i,
+        seenTexts
       );
 
-      if (exactMatchIdx !== -1) {
-        const matched = unseenPool.splice(exactMatchIdx, 1)[0];
-        selectedQuestions.push({
-          ...matched,
-          id: `fallback-smart-${Date.now()}-${i}-${Math.random().toString(36).substring(2, 6)}`,
-          subject: disciplineName,
-          options: matched.options.slice(0, 4)
-        });
-      } else if (unseenPool.length > 0) {
-        const randomIdx = Math.floor(Math.random() * unseenPool.length);
-        const baseQ = unseenPool.splice(randomIdx, 1)[0];
-        if (!selectedQuestions.some(sq => sq.questionText === baseQ.questionText)) {
-          selectedQuestions.push({
-            ...baseQ,
-            id: `fallback-cat-${Date.now()}-${i}-${Math.random().toString(36).substring(2, 6)}`,
-            subject: disciplineName,
-            options: baseQ.options.slice(0, 4)
-          });
-        }
-      } else {
-        // Build a 100% unique question tailored to the exact discipline
-        const normDisc = disciplineName.toLowerCase();
+      const sanitized = sanitizeSimuladoQuestion(template, topicName, subtopicName);
 
-        let qText = `Acerca do tópico "${subtopicName}" (${topicName}), assinale a alternativa inteiramente CORRETA do ponto de vista conceitual e científico:`;
-        let rawOpts = [
-          { isCorrect: true, text: `O domínio dos fundamentos teóricos e práticos inerentes a ${subtopicName.toLowerCase()} permite a compreensão precisa dos fenômenos, estruturas e processos da área.` },
-          { isCorrect: false, text: `A caracterização de ${subtopicName.toLowerCase()} fundamenta-se em definições estáticas sem relação com os princípios consolidados da disciplina.` },
-          { isCorrect: false, text: `As relações e propriedades associadas a ${subtopicName.toLowerCase()} dispensam sustentação empírica ou dedução lógica rigorosa.` },
-          { isCorrect: false, text: `A análise dos elementos constituintes de ${subtopicName.toLowerCase()} prescinde de embasamento sistemático.` }
-        ];
-
-        if (normDisc.includes('português') || normDisc.includes('lingua') || normDisc.includes('gramát')) {
-          qText = `No que se refere aos recursos de regência, sintaxe e coesão referentes ao tema de "${subtopicName}", assinale a alternativa que atende à norma-padrão da Língua Portuguesa:`;
-          rawOpts = [
-            { isCorrect: true, text: `A articulação sintática dos enunciados exige observância às regras de concordância e à seleção adequada dos conectivos para a garantia da coesão e da clareza.` },
-            { isCorrect: false, text: `O emprego dos conectivos subordinativos prescinde de concordância entre verbo e sujeito no registro culto.` },
-            { isCorrect: false, text: `A pontuação em orações subordinadas adjetivas restritivas deve incluir obrigatoriamente vírgulas isolando o termo.` },
-            { isCorrect: false, text: `As relações de regência verbal admitem a omissão de preposição antes de pronomes relativos mesmo quando exigida pelo termo regente.` }
-          ];
-        } else if (normDisc.includes('biologia') || normDisc.includes('ciência')) {
-          if (subtopicName.toLowerCase().includes('célula') || subtopicName.toLowerCase().includes('membrana') || subtopicName.toLowerCase().includes('estrutur') || subtopicName.toLowerCase().includes('físic')) {
-            qText = `A membrana plasmática é uma estrutura dinâmica e seletiva, essencial para a manutenção da homeostase e para a regulação do tráfego de substâncias entre os meios intra e extracelular. A respeito da composição físico-química e da organização estrutural da membrana celular, assinale a afirmativa CORRETA:`;
-            rawOpts = [
-              { isCorrect: true, text: `O colesterol atua como modulador da fluidez da membrana em células animais: em temperaturas elevadas, limita a movimentação excessiva dos fosfolipídeos; em temperaturas baixas, previne o empacotamento das cadeias de ácidos graxos e a cristalização da bicamada.` },
-              { isCorrect: false, text: `O transporte ativo secundário, como o simporte de glicose e sódio (Na+), consome diretamente moléculas de ATP no sítio catalítico da proteína carreadora para mover a glicose a favor do seu gradiente.` },
-              { isCorrect: false, text: `Proteínas periféricas da membrana caracterizam-se por apresentarem extensos domínios transmembrana ricos em aminoácidos apolares dispostos em alfa-hélice ancorados no centro hidrofóbico.` },
-              { isCorrect: false, text: `A osmose é caracterizada como um transporte ativo especializado, no qual moléculas de água são bombeadas contra o gradiente de concentração com gasto direto de ATP pela célula.` }
-            ];
-          } else {
-            qText = `Acerca da bioquímica celular, da cinético-química enzimática e da regulação do metabolismo energético, assinale a alternativa CORRETA:`;
-            rawOpts = [
-              { isCorrect: true, text: `Inibidores competitivos ligam-se reversivelmente ao sítio ativo da enzima, aumentando o valor da constante de Michaelis-Menten (Km) aparente, mantendo inalterada a velocidade máxima (Vmáx) atingível em altas concentrações de substrato.` },
-              { isCorrect: false, text: `A glicólise ocorre no interior da matriz mitocôndrial e necessita obrigatoriamente de oxigênio molecular (O2) como aceptor final de elétrons para ocorrer.` },
-              { isCorrect: false, text: `A fotossíntese nas plantas C3 realiza a fixação inicial do CO2 pela enzima RuBisCO no interior dos peroxissomos, gerando malato de quatro carbonos.` },
-              { isCorrect: false, text: `O ATP atua na célula como reservatório térmico devido às suas ligações fosfodiéster estáveis que impedem a liberação de energia livre.` }
-            ];
-          }
-        } else if (normDisc.includes('legislaç') || normDisc.includes('direito')) {
-          qText = `De acordo com a legislação educacional brasileira referente ao tema "${subtopicName}", assinale a afirmativa correta:`;
-          rawOpts = [
-            { isCorrect: true, text: `A garantia do direito à educação, a igualdade de condições para acesso e permanência e a gestão democrática do ensino público constituem princípios do ensino nacional.` },
-            { isCorrect: false, text: `A aplicação das diretrizes curriculares nacionais anula a autonomia pedagógica das unidades escolares na elaboração do Projeto Político-Pedagógico.` },
-            { isCorrect: false, text: `O ensino público pode restringir a liberdade de aprender, ensinar e pesquisar em função de orientações doutrinárias específicas.` },
-            { isCorrect: false, text: `A gestão democrática do ensino público veda a participação dos profissionais da educação e da comunidade local em conselhos escolares.` }
-          ];
-        } else if (normDisc.includes('pedagogi') || normDisc.includes('didátic') || normDisc.includes('educaç')) {
-          qText = `Na Didática Geral e no estudo das Tendências Pedagógicas, no que se refere ao tema "${subtopicName}", assinale a opção correta:`;
-          rawOpts = [
-            { isCorrect: true, text: `A articulação entre os saberes científicos e a realidade social dos estudantes visa à democratização do conhecimento e à emancipação crítica do educando.` },
-            { isCorrect: false, text: `A Tendência Liberal Tecnicista prioriza o diálogo sobre temas geradores e a conscientização política em detrimento do treinamento operacional.` },
-            { isCorrect: false, text: `A Tendência Liberal Renovada Progressivista fundamenta-se na transmissão expositiva de conteúdos acumulados, sendo o aluno um receptor passivo.` },
-            { isCorrect: false, text: `A avaliação formativa e contínua busca unicamente a classificação numérica final dos discentes para fins de seleção e exclusão.` }
-          ];
-        }
-
-        const shuffled = shuffle(rawOpts);
-        const letters: ('A' | 'B' | 'C' | 'D')[] = ['A', 'B', 'C', 'D'];
-        let correctLetter: 'A' | 'B' | 'C' | 'D' = 'A';
-
-        const finalOpts = shuffled.map((opt, idx) => {
-          const l = letters[idx];
-          if (opt.isCorrect) correctLetter = l;
-          return { letter: l, text: opt.text };
-        });
-
-        const correctObj = shuffled.find(o => o.isCorrect)!;
-
-        selectedQuestions.push({
-          id: `funece-high-${Date.now()}-${i}-${Math.random().toString(36).substring(2, 6)}`,
-          category: category === 'especifico' ? 'Conhecimentos Específicos' : (category as any),
-          subject: disciplineName,
-          topic: topicName,
-          subtopic: subtopicName,
-          banca: 'FUNECE / CEV-UECE',
-          questionText: qText,
-          options: finalOpts,
-          correctAnswer: correctLetter,
-          explanation: `Gabarito Comentado:\n- Alternativa ${correctLetter} (Correta): ${correctObj.text}\n- Análise das demais alternativas: As demais opções contêm imprecisões conceituais ou contradições com o conhecimento consolidado da matéria.`,
-          difficulty: 'difícil',
-          skills: ['Domínio Científico do Conteúdo', 'Análise Conceitual'],
-          commonMistake: `Atenção à precisão dos conceitos científicos e aos detalhes das opções.`,
-          studyTip: `Revise a fundamentação teórica e as definições essenciais deste subtópico.`
-        });
-      }
+      selectedQuestions.push({
+        id: `simulado-q-${Date.now()}-${i}-${Math.random().toString(36).substring(2, 6)}`,
+        category: category === 'especifico' ? 'Conhecimentos Específicos' : (category as any),
+        subject: disciplineName,
+        topic: sanitized.topic,
+        subtopic: sanitized.subtopic,
+        banca: 'FUNECE / CEV-UECE',
+        questionText: sanitized.question,
+        options: sanitized.alternatives,
+        correctAnswer: sanitized.correctAnswer,
+        explanation: sanitized.explanation,
+        difficulty: (sanitized.difficulty || 'difícil').toLowerCase() as any,
+        skills: sanitized.skills,
+        commonMistake: sanitized.commonMistake,
+        studyTip: sanitized.studyTip
+      });
     }
 
     return selectedQuestions;
