@@ -1,8 +1,0 @@
-{
-	"appId": "com.bioforma.app",
-	"appName": "BioForma",
-	"webDir": "dist",
-	"server": {
-		"androidScheme": "https"
-	}
-}

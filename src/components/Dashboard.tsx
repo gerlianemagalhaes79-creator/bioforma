@@ -1,860 +1,672 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { User, db } from '../firebase';
-import { collection, query, onSnapshot } from 'firebase/firestore';
-import { UserProfile, QuestionAnswerLog } from '../types';
-import OnboardingModal from './OnboardingModal';
-import { generateStudySchedule, INITIAL_EDITAL_TOPICS } from '../data/seducData';
-import { 
-  Play, 
-  CheckCircle2, 
-  Clock, 
-  Flame, 
-  Zap, 
-  Target, 
-  BrainCircuit, 
-  Sparkles, 
-  Award, 
-  TrendingUp, 
-  TrendingDown, 
-  BookOpen, 
-  ShieldCheck, 
-  Calendar, 
-  ChevronRight, 
-  ArrowUpRight, 
-  Lock, 
-  Star, 
-  Crown, 
-  BarChart3, 
-  Layers, 
-  AlertTriangle, 
-  Check, 
-  RotateCcw, 
-  Activity, 
-  Compass, 
-  Trophy, 
-  GraduationCap,
-  CheckSquare,
-  ArrowRight,
-  RefreshCw,
-  Plus
-} from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { db, collection, query, where, onSnapshot, User, orderBy, limit, addDoc, updateDoc, doc, getDocs, deleteDoc, handleFirestoreError, OperationType } from '../firebase';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { motion, AnimatePresence } from 'motion/react';
+import { Activity, Apple, Droplets, Flame, TrendingUp, Plus, ChevronLeft, ChevronRight, Calendar, Dumbbell, Award, Sparkles, Trash2, X, BookOpen } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, BarChart, Bar, Cell } from 'recharts';
 
 interface DashboardProps {
   user: User;
-  profile: UserProfile | null;
-  setActiveTab: (tab: string) => void;
-  onOpenProfile?: (tab?: 'profile' | 'admin_users' | 'add_user') => void;
+  profile: any;
 }
 
-export default function Dashboard({ user, profile, setActiveTab, onOpenProfile }: DashboardProps) {
-  const [showOnboardingModal, setShowOnboardingModal] = useState(false);
-  const [selectedDisciplineModal, setSelectedDisciplineModal] = useState<string | null>(null);
-
-  // Check onboarding completion
-  useEffect(() => {
-    if (profile && profile.onboardingCompleted === false) {
-      setShowOnboardingModal(true);
-    }
-  }, [profile]);
-
-  // Dynamic user details
-  const rawName = profile?.name || user.displayName || 'Gerliane';
-  const userName = rawName.toLowerCase().startsWith('prof') ? rawName : `Prof. ${rawName}`;
-  const targetSubject = profile?.targetSubject || 'Biologia';
-  const streakDays = profile?.streakDays ?? 0;
-  const completedTopicsCount = profile?.completedTopicsCount ?? 0;
-  const totalQuestionsDone = profile?.totalQuestionsDone ?? 0;
-  const correctAnswersCount = profile?.correctAnswersCount ?? 0;
-  const accuracyPct = totalQuestionsDone > 0 ? Math.round((correctAnswersCount / totalQuestionsDone) * 100) : 0;
-  const totalEditalBlocks = 35;
-  const editalPct = Math.min(100, Math.round((completedTopicsCount / totalEditalBlocks) * 100));
-
-  // Exam Date Countdown
-  const examDateStr = profile?.examDate || '2026-10-18';
-  const [daysRemaining, setDaysRemaining] = useState(110);
+export default function Dashboard({ user, profile }: DashboardProps) {
+  const [checkins, setCheckins] = useState<any[]>([]);
+  const [metrics, setMetrics] = useState<any[]>([]);
+  const [workouts, setWorkouts] = useState<any[]>([]);
+  const [diets, setDiets] = useState<any[]>([]);
+  const [aerobics, setAerobics] = useState<any[]>([]);
+  const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
 
   useEffect(() => {
-    try {
-      const examDate = new Date(`${examDateStr}T08:00:00`);
-      const now = new Date();
-      const diff = Math.max(0, Math.ceil((examDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
-      setDaysRemaining(diff > 0 ? diff : 110);
-    } catch (_) {
-      setDaysRemaining(110);
-    }
-  }, [examDateStr]);
+    const checkinsQuery = query(
+      collection(db, 'checkins'),
+      where('uid', '==', user.uid),
+      orderBy('date', 'desc'),
+      limit(30)
+    );
+    const unsubscribeCheckins = onSnapshot(checkinsQuery, (snapshot) => {
+      setCheckins(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'checkins');
+    });
 
-  // Greeting time of day
-  const greeting = useMemo(() => {
-    const hour = new Date().getHours();
-    if (hour >= 5 && hour < 12) return 'Bom dia';
-    if (hour >= 12 && hour < 18) return 'Boa tarde';
-    return 'Boa noite';
-  }, []);
+    const metricsQuery = query(
+      collection(db, 'metrics'),
+      where('uid', '==', user.uid),
+      orderBy('date', 'asc'),
+      limit(10)
+    );
+    const unsubscribeMetrics = onSnapshot(metricsQuery, (snapshot) => {
+      setMetrics(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'metrics');
+    });
 
-  // Cronograma Completion Tracking
-  const [completedTopicIds, setCompletedTopicIds] = useState<Record<string, boolean>>(() => {
-    const activeUid = user?.uid || profile?.uid || 'guest';
-    try {
-      const saved = localStorage.getItem(`cronogramaProgress_${activeUid}`) || 
-                    localStorage.getItem('cronogramaProgress_guest') || 
-                    localStorage.getItem('cronogramaProgress_default');
-      return saved ? JSON.parse(saved) : {};
-    } catch {
-      return {};
-    }
+    const workoutsAllQuery = query(
+      collection(db, 'workouts'),
+      where('uid', '==', user.uid)
+    );
+    const unsubscribeWorkoutsAll = onSnapshot(workoutsAllQuery, (snapshot) => {
+      setWorkouts(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'workouts');
+    });
+
+    // Real-time subscription to user diets to compute home charts
+    const dietsQuery = query(
+      collection(db, 'diets'),
+      where('uid', '==', user.uid)
+    );
+    const unsubscribeDiets = onSnapshot(dietsQuery, (snapshot) => {
+      const loaded = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+        .sort((a: any, b: any) => b.date.localeCompare(a.date));
+      setDiets(loaded);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'diets');
+    });
+
+    const aerobicsQuery = query(
+      collection(db, 'aerobics'),
+      where('uid', '==', user.uid)
+    );
+    const unsubscribeAerobics = onSnapshot(aerobicsQuery, (snapshot) => {
+      setAerobics(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'aerobics');
+    });
+
+    return () => {
+      unsubscribeCheckins();
+      unsubscribeMetrics();
+      unsubscribeWorkoutsAll();
+      unsubscribeDiets();
+      unsubscribeAerobics();
+    };
+  }, [user.uid]);
+
+  const daysInMonth = eachDayOfInterval({
+    start: startOfMonth(new Date()),
+    end: endOfMonth(new Date())
   });
 
-  useEffect(() => {
-    const handleProgressUpdate = () => {
-      const activeUid = user?.uid || profile?.uid || 'guest';
-      try {
-        const saved = localStorage.getItem(`cronogramaProgress_${activeUid}`) || 
-                      localStorage.getItem('cronogramaProgress_guest') || 
-                      localStorage.getItem('cronogramaProgress_default');
-        if (saved) setCompletedTopicIds(JSON.parse(saved));
-      } catch (_) {}
-    };
-
-    window.addEventListener('studyProgressUpdated', handleProgressUpdate);
-    window.addEventListener('cronogramaProgressUpdated', handleProgressUpdate);
-    window.addEventListener('storage', handleProgressUpdate);
-    return () => {
-      window.removeEventListener('studyProgressUpdated', handleProgressUpdate);
-      window.removeEventListener('cronogramaProgressUpdated', handleProgressUpdate);
-      window.removeEventListener('storage', handleProgressUpdate);
-    };
-  }, [user?.uid, profile?.uid]);
-
-  // Full cronograma schedule
-  const fullSchedule = useMemo(() => {
-    return generateStudySchedule(profile || {}, INITIAL_EDITAL_TOPICS);
-  }, [profile]);
-
-  // Determine today's schedule day dynamically from the official cronograma
-  const todayScheduleDay = useMemo(() => {
-    if (!fullSchedule || fullSchedule.length === 0) return null;
-    const todayStr = new Date().toISOString().split('T')[0];
-
-    // 1. Match exact today's date if within schedule timeline
-    const exactMatch = fullSchedule.find(d => d.dateStr === todayStr);
-
-    // 2. Otherwise find the first day with incomplete subtopics
-    const firstIncompleteDay = fullSchedule.find(day => {
-      return day.topics.some(t => {
-        return t.subtopicNames.some((_, idx) => !completedTopicIds[`${t.id}_sub_${idx}`]);
-      });
-    });
-
-    return exactMatch || firstIncompleteDay || fullSchedule[0];
-  }, [fullSchedule, completedTopicIds]);
-
-  // Daily Tasks State
-  const [dailyTasks, setDailyTasks] = useState([
-    { id: 1, title: `Estudar tópico de ${targetSubject}`, done: completedTopicsCount > 0, tag: 'Edital' },
-    { id: 2, title: 'Resolver questões do Banco FUNECE', done: totalQuestionsDone > 0, tag: 'Simulados' },
-    { id: 3, title: 'Revisar Legislação e Temas Educacionais', done: false, tag: 'Revisão' },
-    { id: 4, title: 'Consultar Tutor IA para tópicos com dúvidas', done: false, tag: 'Mentoria' },
-  ]);
-
-  const completedTasksCount = dailyTasks.filter(t => t.done).length;
-  const missionProgressPct = Math.round((completedTasksCount / dailyTasks.length) * 100);
-
-  const toggleTask = (id: number) => {
-    setDailyTasks(prev => prev.map(t => t.id === id ? { ...t, done: !t.done } : t));
+  const getCheckinForDay = (day: Date) => {
+    return checkins.find(c => isSameDay(new Date(c.date + 'T00:00:00'), day));
   };
 
-  // Real Question Logs State for 100% Real Disciplines Radar
-  const [questionLogs, setQuestionLogs] = useState<QuestionAnswerLog[]>([]);
 
-  useEffect(() => {
-    let unsubFirestore: (() => void) | null = null;
-    const activeUid = user?.uid || profile?.uid;
 
-    const readLocalLogs = (): QuestionAnswerLog[] => {
-      try {
-        const keys = activeUid 
-          ? [`questionLogs_${activeUid}`, 'questionLogs_guest'] 
-          : ['questionLogs_guest'];
+  // Find all unique dates in diets log
+  const uniqueDates = Array.from(new Set(diets.map(d => d.date)))
+    .sort()
+    .reverse();
 
-        const map = new Map<string, QuestionAnswerLog>();
-        keys.forEach(k => {
-          const raw = localStorage.getItem(k);
-          if (raw) {
-            try {
-              const arr: QuestionAnswerLog[] = JSON.parse(raw);
-              arr.forEach(item => {
-                if (item.id?.startsWith('synth_log_')) return;
-                const itemKey = item.id || `${item.questionId || item.topicName || item.topic || 'q'}_${item.timestamp}`;
-                map.set(itemKey, item);
-              });
-            } catch (_) {}
-          }
-        });
-        return Array.from(map.values());
-      } catch {
-        return [];
-      }
-    };
+  // If today is missing from history, append it to visual selector so they can track current day
+  const todayStr = format(new Date(), 'yyyy-MM-dd');
+  if (!uniqueDates.includes(todayStr)) {
+    uniqueDates.unshift(todayStr);
+  }
 
-    const syncLogs = () => {
-      const local = readLocalLogs();
-      setQuestionLogs(local);
+  const getSelectedDateLabel = () => {
+    const today = new Date();
+    const todayFormatted = format(today, 'yyyy-MM-dd');
+    
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayFormatted = format(yesterday, 'yyyy-MM-dd');
 
-      if (activeUid) {
-        try {
-          const logsRef = collection(db, 'users', activeUid, 'questionLogs');
-          const q = query(logsRef);
-          if (unsubFirestore) unsubFirestore();
-          unsubFirestore = onSnapshot(q, (snapshot) => {
-            const dbLogs: QuestionAnswerLog[] = [];
-            snapshot.forEach((doc) => {
-              dbLogs.push({ id: doc.id, ...doc.data() } as QuestionAnswerLog);
-            });
-            const combined = new Map<string, QuestionAnswerLog>();
-            local.forEach(l => combined.set(l.id || `${l.questionId || l.topicName || l.topic || 'q'}_${l.timestamp}`, l));
-            dbLogs.forEach(l => combined.set(l.id || `${l.questionId || l.topicName || l.topic || 'q'}_${l.timestamp}`, l));
-            setQuestionLogs(Array.from(combined.values()));
-          }, (err) => {
-            console.warn("Firestore question logs listener error:", err);
-          });
-        } catch (_) {}
-      }
-    };
+    const selDate = new Date(selectedDate + 'T00:00:00');
 
-    syncLogs();
-
-    const handleUpdate = () => syncLogs();
-    window.addEventListener('questionLogUpdated', handleUpdate);
-    window.addEventListener('storage', handleUpdate);
-
-    return () => {
-      if (unsubFirestore) unsubFirestore();
-      window.removeEventListener('questionLogUpdated', handleUpdate);
-      window.removeEventListener('storage', handleUpdate);
-    };
-  }, [user?.uid, profile?.uid]);
-
-  // Helper to get dynamic icon based on specific subject name
-  const getSubjectIcon = (subjectName: string) => {
-    const norm = (subjectName || '').toLowerCase();
-    if (norm.includes('biologia') || norm.includes('ciencias')) return '🧬';
-    if (norm.includes('matematica')) return '📐';
-    if (norm.includes('portugues') || norm.includes('letras')) return '📖';
-    if (norm.includes('historia')) return '📜';
-    if (norm.includes('geografia')) return '🌍';
-    if (norm.includes('quimica')) return '🧪';
-    if (norm.includes('fisica')) return '⚛️';
-    if (norm.includes('educacao fisica')) return '⚽';
-    if (norm.includes('pedagog') || norm.includes('educa')) return '🎓';
-    if (norm.includes('ingles') || norm.includes('espanhol')) return '🗣️';
-    if (norm.includes('filosofia') || norm.includes('sociologia')) return '🧠';
-    return '🎓';
-  };
-
-  // 100% Real Radar Stats Matcher
-  const matchLogDiscipline = (log: QuestionAnswerLog, targetSub: string): 'specific' | 'portugues' | 'pedagogia' | 'admin' | 'other' => {
-    const rawSub = log.discipline || log.subject || log.blockName || '';
-    const rawTopic = log.topicName || log.topic || '';
-    const normSub = rawSub.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    const normTopic = rawTopic.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    const normTarget = (targetSub || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    const combined = `${normSub} ${normTopic}`;
-
-    const isTargetLP = normTarget.includes('portugues');
-
-    if (!isTargetLP) {
-      if (combined.includes(normTarget) || normSub.includes('especific')) {
-        return 'specific';
-      }
+    if (selectedDate === todayFormatted) {
+      return `Hoje, ${format(selDate, "dd 'de' MMMM", { locale: ptBR })}`;
+    } else if (selectedDate === yesterdayFormatted) {
+      return `Ontem, ${format(selDate, "dd 'de' MMMM", { locale: ptBR })}`;
     } else {
-      if (normSub.includes('especific') || normTopic.includes('redacao') || normTopic.includes('literatura')) {
-        return 'specific';
-      }
+      return format(selDate, "EEEE, dd 'de' MMMM", { locale: ptBR });
     }
-
-    if (combined.includes('portugues') || combined.includes('lingua portuguesa') || combined.includes('gramatica')) {
-      return isTargetLP ? 'specific' : 'portugues';
-    }
-
-    if (
-      combined.includes('educa') || 
-      combined.includes('pedagog') || 
-      combined.includes('didatica') || 
-      combined.includes('temas educacionais') || 
-      combined.includes('ensino') || 
-      combined.includes('bncc') ||
-      combined.includes('avaliaca')
-    ) {
-      return 'pedagogia';
-    }
-
-    if (
-      combined.includes('administracao') || 
-      combined.includes('legislaca') || 
-      combined.includes('ldb') || 
-      combined.includes('estatuto') || 
-      combined.includes('direito') || 
-      combined.includes('indicadores') ||
-      combined.includes('gestao')
-    ) {
-      return 'admin';
-    }
-
-    if (combined.includes(normTarget)) {
-      return 'specific';
-    }
-
-    return 'other';
   };
 
-  const getRadarStats = (disciplineKey: 'specific' | 'portugues' | 'pedagogia' | 'admin') => {
-    const matching = questionLogs.filter(log => {
-      const key = matchLogDiscipline(log, targetSubject);
-      if (key === disciplineKey) return true;
-      if (disciplineKey === 'specific' && key === 'other') return true;
-      return false;
-    });
+  const handlePrevDay = () => {
+    const current = new Date(selectedDate + 'T00:00:00');
+    current.setDate(current.getDate() - 1);
+    setSelectedDate(format(current, 'yyyy-MM-dd'));
+  };
 
-    const totalQuestions = matching.length;
-    const correct = matching.filter(l => l.isCorrect).length;
-    const accuracy = totalQuestions > 0 ? Math.round((correct / totalQuestions) * 100) : 0;
+  const handleNextDay = () => {
+    const current = new Date(selectedDate + 'T00:00:00');
+    current.setDate(current.getDate() + 1);
+    setSelectedDate(format(current, 'yyyy-MM-dd'));
+  };
 
-    let status = 'A iniciar';
-    let textColor = 'text-zinc-500';
 
-    if (totalQuestions > 0) {
-      if (accuracy >= 80) {
-        status = 'Excelente';
-        textColor = 'text-emerald-700';
-      } else if (accuracy >= 60) {
-        status = 'Bom Desempenho';
-        textColor = 'text-blue-700';
+
+  // Filter diets by selected date and sum macros
+  const selectedDateDiets = diets.filter(d => d.date === selectedDate);
+  const selectedTotalWater = selectedDateDiets.reduce((acc, d) => acc + (d.waterIntake || 0), 0);
+  const todayDiets = diets.filter(d => d.date === todayStr);
+  const todayWater = todayDiets.reduce((acc, d) => acc + (d.waterIntake || 0), 0);
+
+  const handleQuickAddWaterStart = async () => {
+    try {
+      const targetWater = profile?.dailyWaterGoal || 2500;
+      const currentTotalWater = selectedDateDiets.reduce((acc, d) => acc + (d.waterIntake || 0), 0);
+      const newWaterTotal = currentTotalWater + 150;
+
+      const firstSelectedDiet = selectedDateDiets[0];
+
+      if (firstSelectedDiet) {
+        await updateDoc(doc(db, 'diets', firstSelectedDiet.id), {
+          waterIntake: (firstSelectedDiet.waterIntake || 0) + 150
+        });
       } else {
-        status = 'Precisa de atenção';
-        textColor = 'text-amber-700';
+        await addDoc(collection(db, 'diets'), {
+          uid: user.uid,
+          date: selectedDate,
+          meals: [],
+          waterIntake: 150,
+          notes: 'Registrado pela via rápida do início'
+        });
       }
-    }
 
-    return { totalQuestions, correct, accuracy, status, textColor };
+      // Sync with checkins Collection
+      const checkinQuery = query(
+        collection(db, 'checkins'),
+        where('uid', '==', user.uid),
+        where('date', '==', selectedDate)
+      );
+      const checkinSnap = await getDocs(checkinQuery);
+      if (!checkinSnap.empty) {
+        await updateDoc(doc(db, 'checkins', checkinSnap.docs[0].id), {
+          waterGoalMet: newWaterTotal >= targetWater
+        });
+      } else {
+        await addDoc(collection(db, 'checkins'), {
+          uid: user.uid,
+          date: selectedDate,
+          waterGoalMet: newWaterTotal >= targetWater,
+          workoutDone: false,
+          dietOnTrack: true
+        });
+      }
+    } catch (e) {
+      console.error("Erro ao registrar água no início:", e);
+    }
   };
 
-  const specificStats = getRadarStats('specific');
-  const portuguesStats = getRadarStats('portugues');
-  const pedagogiaStats = getRadarStats('pedagogia');
-  const adminStats = getRadarStats('admin');
-
-  const isTargetLP = targetSubject.toLowerCase().includes('portugues');
-
-  // Radar de Disciplinas Data (100% Real User Stats)
-  const disciplinesRadar = [
-    {
-      key: 'specific',
-      name: isTargetLP ? 'Língua Portuguesa (Específica)' : targetSubject,
-      icon: getSubjectIcon(targetSubject),
-      accuracy: specificStats.accuracy,
-      totalQuestions: specificStats.totalQuestions,
-      correctCount: specificStats.correct,
-      color: 'bg-emerald-500',
-      textColor: specificStats.textColor,
-      bgColor: 'bg-emerald-50 border-emerald-200',
-      gradient: 'from-emerald-500 to-teal-600',
-      status: specificStats.status
-    },
-    {
-      key: 'portugues',
-      name: isTargetLP ? 'Língua Portuguesa (Geral)' : 'Língua Portuguesa',
-      icon: '📖',
-      accuracy: portuguesStats.accuracy,
-      totalQuestions: portuguesStats.totalQuestions,
-      correctCount: portuguesStats.correct,
-      color: 'bg-blue-500',
-      textColor: portuguesStats.textColor,
-      bgColor: 'bg-blue-50 border-blue-200',
-      gradient: 'from-blue-500 to-indigo-600',
-      status: portuguesStats.status
-    },
-    {
-      key: 'pedagogia',
-      name: 'Temas Educacionais & Didática',
-      icon: '📚',
-      accuracy: pedagogiaStats.accuracy,
-      totalQuestions: pedagogiaStats.totalQuestions,
-      correctCount: pedagogiaStats.correct,
-      color: 'bg-purple-500',
-      textColor: pedagogiaStats.textColor,
-      bgColor: 'bg-purple-50 border-purple-200',
-      gradient: 'from-purple-500 to-pink-600',
-      status: pedagogiaStats.status
-    },
-    {
-      key: 'admin',
-      name: 'Administração Pública',
-      icon: '🏛',
-      accuracy: adminStats.accuracy,
-      totalQuestions: adminStats.totalQuestions,
-      correctCount: adminStats.correct,
-      color: 'bg-amber-500',
-      textColor: adminStats.textColor,
-      bgColor: 'bg-amber-50 border-amber-200',
-      gradient: 'from-amber-500 to-orange-600',
-      status: adminStats.status
+  const handleUpdateStudyQuestions = async (newVal: number) => {
+    try {
+      const checkinQuery = query(
+        collection(db, 'checkins'),
+        where('uid', '==', user.uid),
+        where('date', '==', selectedDate)
+      );
+      const checkinSnap = await getDocs(checkinQuery);
+      if (!checkinSnap.empty) {
+        await updateDoc(doc(db, 'checkins', checkinSnap.docs[0].id), {
+          studyQuestions: newVal
+        });
+      } else {
+        await addDoc(collection(db, 'checkins'), {
+          uid: user.uid,
+          date: selectedDate,
+          studyQuestions: newVal,
+          workoutDone: false,
+          dietOnTrack: false,
+          waterGoalMet: false
+        });
+      }
+    } catch (e) {
+      console.error("Erro ao atualizar questões estudadas:", e);
     }
-  ];
+  };
 
-  // Gamified Badges Data
-  const conquistasBadges = [
-    {
-      id: 'streak_7',
-      title: 'Foco Inabalável',
-      rarity: 'Épico',
-      rarityColor: 'bg-purple-100 text-purple-800 border-purple-300',
-      icon: Flame,
-      iconColor: 'text-amber-500',
-      bgGradient: 'from-amber-500/10 to-orange-500/10 border-amber-200',
-      progress: 7,
-      total: 7,
-      unlocked: true,
-      description: 'Manteve a sequência ativa por 7 dias seguidos de estudo intenso.'
-    },
-    {
-      id: 'questions_100',
-      title: 'Centurião FUNECE',
-      rarity: 'Lendário',
-      rarityColor: 'bg-amber-100 text-amber-900 border-amber-300',
-      icon: Trophy,
-      iconColor: 'text-emerald-500',
-      bgGradient: 'from-emerald-500/10 to-teal-500/10 border-emerald-200',
-      progress: 148,
-      total: 100,
-      unlocked: true,
-      description: 'Superou a marca de 100 questões resolvidas no banco da FUNECE.'
-    },
-    {
-      id: 'accuracy_80',
-      title: 'Precisão Cirúrgica',
-      rarity: 'Raro',
-      rarityColor: 'bg-blue-100 text-blue-800 border-blue-300',
-      icon: Target,
-      iconColor: 'text-blue-500',
-      bgGradient: 'from-blue-500/10 to-indigo-500/10 border-blue-200',
-      progress: 78,
-      total: 80,
-      unlocked: false,
-      description: 'Alcance 80% de aproveitamento geral em simulados com mais de 50 questões.'
-    },
-    {
-      id: 'edital_master',
-      title: 'Mestre do Edital',
-      rarity: 'Mítico',
-      rarityColor: 'bg-emerald-100 text-emerald-900 border-emerald-300',
-      icon: Crown,
-      iconColor: 'text-purple-500',
-      bgGradient: 'from-purple-500/10 to-pink-500/10 border-purple-200',
-      progress: 6,
-      total: 25,
-      unlocked: false,
-      description: 'Conclua todos os tópicos das 5 disciplinas do edital verticalizado.'
-    }
+  // Compute actual ingested macros by summing all meals from all diet entries of the selected date
+  const consumedCalories = selectedDateDiets.reduce((acc, d) => 
+    acc + (d.meals?.reduce((mAcc: number, m: any) => mAcc + (m.calories || 0), 0) || 0), 0
+  );
+  const consumedProtein = selectedDateDiets.reduce((acc, d) => 
+    acc + (d.meals?.reduce((mAcc: number, m: any) => mAcc + (m.protein || 0), 0) || 0), 0
+  );
+  const consumedFat = selectedDateDiets.reduce((acc, d) => 
+    acc + (d.meals?.reduce((mAcc: number, m: any) => mAcc + (m.fat || 0), 0) || 0), 0
+  );
+  const consumedFiber = selectedDateDiets.reduce((acc, d) => 
+    acc + (d.meals?.reduce((mAcc: number, m: any) => mAcc + (m.fiber || 0), 0) || 0), 0
+  );
+
+  // Subtract aerobic activity calories burned
+  const activeDateAerobics = aerobics.filter(a => a.date === selectedDate);
+  const caloriesBurned = activeDateAerobics.reduce((acc: number, a: any) => acc + (a.caloriesBurned || 0), 0);
+  const netCalories = Math.max(0, consumedCalories - caloriesBurned);
+
+  const goalCalories = profile?.dailyCalorieGoal || 2000;
+  const goalProtein = profile?.proteinGoal || 130;
+  const goalFat = profile?.fatGoal || 60;
+  const goalFiber = profile?.fiberGoal || 25; // Default safe fiber intake target
+
+  const caloriePercent = Math.min((netCalories / goalCalories) * 105, 100) || 0;
+  const calorieExceeded = netCalories > goalCalories;
+
+  const macroData = [
+    { name: 'Proteína', Consumido: Number(consumedProtein.toFixed(1)), Meta: goalProtein, color: '#d4af37' },
+    { name: 'Gordura', Consumido: Number(consumedFat.toFixed(1)), Meta: goalFat, color: '#ec4899' },
+    { name: 'Fibras', Consumido: Number(consumedFiber.toFixed(1)), Meta: goalFiber, color: '#10b981' },
   ];
 
   return (
-    <div className="space-y-8 pb-12 font-sans selection:bg-emerald-500 selection:text-white">
-      {/* Onboarding Registration Modal if needed */}
-      {(showOnboardingModal || (profile && profile.onboardingCompleted === false)) && (
-        <OnboardingModal
-          user={user}
-          profile={profile}
-          onComplete={() => setShowOnboardingModal(false)}
-        />
-      )}
+    <div className="space-y-8 animate-fade-in">
+      {/* Welcome Section */}
+      <section className="flex justify-between items-start">
+        <div>
+          <h2 className="text-xs font-bold uppercase tracking-widest text-[#d4af37] mb-1">Bem-vinda de volta</h2>
+          <p className="text-4xl font-extrabold tracking-tight uppercase italic leading-none text-zinc-800">
+            {profile?.name?.split(' ')[0]} <span className="text-pink-500">Pronta?</span>
+          </p>
+        </div>
 
-      {/* ========================================================================= */}
-      {/* 1. FIRST FOLD: CENTRO DE COMANDO HERO CARD (BOAS-VINDAS COMPACTAS E ELEGANTES) */}
-      {/* ========================================================================= */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: 'easeOut' }}
-        className="relative rounded-2xl bg-gradient-to-br from-emerald-50 via-teal-50/60 to-emerald-100/80 text-emerald-950 p-4 sm:p-5 shadow-sm border border-emerald-200/90 overflow-hidden"
-      >
-        {/* Subtle Glows and Mesh Highlights */}
-        <div className="absolute -right-20 -top-20 w-80 h-80 bg-emerald-200/40 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -left-20 -bottom-20 w-64 h-64 bg-teal-200/30 rounded-full blur-3xl pointer-events-none" />
+        {/* Discreet Water Droplet Button */}
+        <button
+          onClick={handleQuickAddWaterStart}
+          className="p-2.5 bg-sky-50/80 hover:bg-sky-100 border border-sky-200/50 rounded-2xl transition-all cursor-pointer flex flex-col items-center justify-center shadow-sm hover:shadow active:scale-95 relative group"
+          title={`Adicionar +150ml (Nesta data: ${selectedTotalWater}ml)`}
+        >
+          <span className="text-xl leading-none">💧</span>
+          <span className="text-[8px] font-black uppercase text-sky-600 mt-0.5 tracking-tighter">
+            {selectedTotalWater} ml
+          </span>
+          <span className="absolute right-0 top-full mt-2.5 bg-zinc-800 text-white text-[9px] font-extrabold uppercase px-2.5 py-1.5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-md">
+            +150ml ({selectedDate === todayStr ? 'Hoje' : format(new Date(selectedDate + 'T00:00:00'), 'dd/MM')})
+          </span>
+        </button>
+      </section>
 
-        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-white border border-emerald-200 p-0.5 shadow-2xs shrink-0 flex items-center justify-center text-emerald-800 font-extrabold text-lg">
-              <div className="w-full h-full bg-emerald-100/80 rounded-[10px] flex items-center justify-center text-emerald-900 font-black">
-                {userName.replace('Prof. ', '').charAt(0).toUpperCase()}
-              </div>
+      {/* Date Navigation and Selection Bar */}
+      <section className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-3xl border border-pink-100/50 shadow-sm shadow-pink-100/5">
+        <div className="flex items-center gap-1.5">
+          <Calendar size={15} className="text-pink-500" />
+          <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Visualizar ou Registrar Retroativo</span>
+        </div>
+
+        <div className="flex items-center gap-3 w-full sm:w-auto justify-center">
+          <div className="relative flex items-center bg-pink-50/10 hover:bg-pink-50/30 border border-pink-100 rounded-2xl px-3 py-2 shadow-sm gap-3 max-w-sm transition-all">
+            <button 
+              type="button"
+              onClick={handlePrevDay}
+              className="p-1 hover:bg-white rounded-lg text-pink-500 cursor-pointer transition-colors border-0 flex items-center justify-center"
+              title="Dia Anterior"
+            >
+              <ChevronLeft size={16} strokeWidth={3} />
+            </button>
+            
+            <div className="text-center relative cursor-pointer px-1 flex-1">
+              <span className="text-xs font-black uppercase text-zinc-700 block whitespace-nowrap tracking-tight">
+                {getSelectedDateLabel()}
+              </span>
+              <input 
+                type="date"
+                className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                value={selectedDate}
+                onChange={(e) => {
+                  if (e.target.value) {
+                    setSelectedDate(e.target.value);
+                  }
+                }}
+              />
             </div>
-            <div className="space-y-0.5 min-w-0">
-              <p className="text-[11px] font-bold text-emerald-800/80 uppercase tracking-wider flex items-center gap-1.5">
-                <span>{greeting}</span>
-                <Sparkles size={12} className="text-amber-500 shrink-0" />
-              </p>
-              <h1 className="text-lg sm:text-xl font-black tracking-tight text-emerald-950 truncate">
-                {userName}
-              </h1>
-              <p className="text-xs text-emerald-800/80 font-medium line-clamp-1 sm:line-clamp-none">
-                Seja bem-vindo(a) ao seu portal de estudos e preparação para o concurso SEDUC CE 2026.
-              </p>
-            </div>
+
+            <button 
+              type="button"
+              onClick={handleNextDay}
+              className="p-1 hover:bg-white rounded-lg text-pink-500 cursor-pointer transition-colors border-0 flex items-center justify-center"
+              title="Próximo Dia"
+            >
+              <ChevronRight size={16} strokeWidth={3} />
+            </button>
           </div>
 
-          {((user?.email || profile?.email || '').toLowerCase().trim() === 'gerlianemagalhaes79@gmail.com') && (
+          {selectedDate !== todayStr && (
             <button
-              onClick={() => onOpenProfile && onOpenProfile('add_user')}
-              className="px-3 py-1.5 bg-emerald-900 hover:bg-emerald-950 text-white rounded-lg text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer shadow-2xs shrink-0 self-start sm:self-center"
+              type="button"
+              onClick={() => setSelectedDate(todayStr)}
+              className="px-3 py-2 bg-pink-50 hover:bg-pink-100 active:scale-95 text-pink-600 font-extrabold uppercase text-[9px] rounded-2xl tracking-wider transition-all cursor-pointer border border-pink-100/60"
             >
-              <Plus size={14} />
-              <span>Cadastrar Professor</span>
+              Hoje ↩
             </button>
           )}
         </div>
-      </motion.div>
+      </section>
 
-      {/* ========================================================================= */}
-      {/* 2. PAINEL DA APROVAÇÃO (5 CARDS LADO A LADO NO CELULAR E DESKTOP)        */}
-      {/* ========================================================================= */}
-      <section className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+      {/* Painel de Nutrição Diária com Gráficos */}
+      <section className="bg-gradient-to-br from-white to-[#fffafc] p-6 rounded-[2rem] border border-pink-100 shadow-sm shadow-pink-100/15 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h2 className="text-xl font-black text-zinc-900 tracking-tight flex items-center gap-2">
-              <BarChart3 className="text-emerald-600" size={22} />
-              <span>Painel da Aprovação</span>
-            </h2>
+            <h3 className="text-xs font-black uppercase tracking-widest text-[#d4af37] flex items-center gap-1.5 leading-none">
+              <Apple size={14} className="text-pink-500" /> Painel Nutricional Diário
+            </h3>
+            <p className="text-2xl font-black text-zinc-800 tracking-tight uppercase italic mt-1 leading-none">
+              Resumo de <span className="text-pink-500">Consumo</span>
+            </p>
           </div>
         </div>
 
-        {/* Responsive Grid: 2 columns on mobile, 4 on sm/lg */}
-        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
-          {/* Card 1: Dias para a Prova (Contagem Regressiva FUNECE) */}
-          <motion.div
-            whileHover={{ y: -3 }}
-            className="bg-white border border-zinc-200/90 rounded-2xl p-3.5 sm:p-5 shadow-sm hover:shadow-md transition-all duration-300 space-y-2 sm:space-y-3 relative overflow-hidden group"
-          >
-            <div className="flex items-center justify-between">
-              <div className="p-2.5 sm:p-3 bg-emerald-50 text-emerald-700 rounded-xl border border-emerald-100 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
-                <Calendar size={20} className="sm:w-5 sm:h-5" />
-              </div>
-              <span className="text-[10px] sm:text-xs font-bold text-emerald-800 bg-emerald-50 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full border border-emerald-200">
-                FUNECE
-              </span>
-            </div>
-
-            <div>
-              <p className="text-[10px] sm:text-xs font-bold text-zinc-500 uppercase tracking-wider">Dias p/ Prova</p>
-              <div className="flex items-baseline gap-1.5 mt-0.5 sm:mt-1">
-                <h3 className="text-2xl sm:text-3xl font-black text-zinc-900 tracking-tight">{daysRemaining}</h3>
-                <span className="text-[10px] sm:text-xs text-zinc-500 font-medium">dias</span>
-              </div>
-            </div>
-
-            <p className="text-[10px] sm:text-[11px] font-bold text-emerald-700 truncate">
-              Contagem FUNECE 2026
-            </p>
-          </motion.div>
-
-          {/* Card 2: Aproveitamento Geral */}
-          <motion.div
-            whileHover={{ y: -3 }}
-            className="bg-white border border-zinc-200/90 rounded-2xl p-3.5 sm:p-5 shadow-sm hover:shadow-md transition-all duration-300 space-y-2 sm:space-y-3 relative overflow-hidden group"
-          >
-            <div className="flex items-center justify-between">
-              <div className="p-2.5 sm:p-3 bg-emerald-50 text-emerald-700 rounded-xl border border-emerald-100 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
-                <Target size={20} className="sm:w-5 sm:h-5" />
-              </div>
-              <span className="flex items-center gap-1 text-[10px] sm:text-xs font-bold text-emerald-700 bg-emerald-50 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full border border-emerald-200">
-                <TrendingUp size={12} />
-                {accuracyPct}%
-              </span>
-            </div>
-
-            <div>
-              <p className="text-[10px] sm:text-xs font-bold text-zinc-500 uppercase tracking-wider">Aproveitamento</p>
-              <div className="flex items-baseline gap-1.5 mt-0.5 sm:mt-1">
-                <h3 className="text-2xl sm:text-3xl font-black text-zinc-900 tracking-tight">{accuracyPct}%</h3>
-                <span className="text-[10px] sm:text-xs text-zinc-500">taxa</span>
-              </div>
-            </div>
-
-            {/* Micro Sparkline Chart */}
-            <div className="h-5 sm:h-6 w-full flex items-end gap-1 pt-1">
-              {[0, 0, 0, 0, 0, 0, accuracyPct].map((val, idx) => (
-                <div key={idx} className="flex-1 bg-zinc-100 rounded-t-sm h-full flex items-end overflow-hidden">
-                  <motion.div
-                    initial={{ height: 0 }}
-                    animate={{ height: `${val}%` }}
-                    transition={{ duration: 0.6, delay: idx * 0.08 }}
-                    className={`w-full rounded-t-sm ${idx === 6 ? 'bg-emerald-600' : 'bg-emerald-300'}`}
-                  />
-                </div>
-              ))}
-            </div>
-          </motion.div>
-
-          {/* Card 3: Questões Resolvidas */}
-          <motion.div
-            whileHover={{ y: -3 }}
-            className="bg-white border border-zinc-200/90 rounded-2xl p-3.5 sm:p-5 shadow-sm hover:shadow-md transition-all duration-300 space-y-2 sm:space-y-3 relative overflow-hidden group"
-          >
-            <div className="flex items-center justify-between">
-              <div className="p-2.5 sm:p-3 bg-blue-50 text-blue-700 rounded-xl border border-blue-100 group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                <BookOpen size={20} className="sm:w-5 sm:h-5" />
-              </div>
-              <span className="flex items-center gap-1 text-[10px] sm:text-xs font-bold text-blue-700 bg-blue-50 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full border border-blue-200">
-                <Zap size={12} />
-                {totalQuestionsDone}
-              </span>
-            </div>
-
-            <div>
-              <p className="text-[10px] sm:text-xs font-bold text-zinc-500 uppercase tracking-wider">Questões Feitas</p>
-              <div className="flex items-baseline gap-1.5 mt-0.5 sm:mt-1">
-                <h3 className="text-2xl sm:text-3xl font-black text-zinc-900 tracking-tight">{totalQuestionsDone}</h3>
-                <span className="text-[10px] sm:text-xs text-zinc-500">feitas</span>
-              </div>
-            </div>
-
-            <p className="text-[10px] sm:text-[11px] font-bold text-zinc-500 truncate">
-              {correctAnswersCount} corretas
-            </p>
-          </motion.div>
-
-          {/* Card 4: Edital Concluído */}
-          <motion.div
-            whileHover={{ y: -3 }}
-            className="bg-white border border-zinc-200/90 rounded-2xl p-3.5 sm:p-5 shadow-sm hover:shadow-md transition-all duration-300 space-y-2 sm:space-y-3 relative overflow-hidden group"
-          >
-            <div className="flex items-center justify-between">
-              <div className="p-2.5 sm:p-3 bg-purple-50 text-purple-700 rounded-xl border border-purple-100 group-hover:bg-purple-600 group-hover:text-white transition-colors">
-                <Layers size={20} className="sm:w-5 sm:h-5" />
-              </div>
-              <span className="flex items-center gap-1 text-[10px] sm:text-xs font-bold text-purple-700 bg-purple-50 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full border border-purple-200">
-                <CheckCircle2 size={12} />
-                {completedTopicsCount} blocos
-              </span>
-            </div>
-
-            <div>
-              <p className="text-[10px] sm:text-xs font-bold text-zinc-500 uppercase tracking-wider">Edital Coberto</p>
-              <div className="flex items-baseline gap-1.5 mt-0.5 sm:mt-1">
-                <h3 className="text-2xl sm:text-3xl font-black text-zinc-900 tracking-tight">{editalPct}%</h3>
-                <span className="text-[10px] sm:text-xs text-zinc-500">concluído</span>
-              </div>
-            </div>
-
-            <div className="pt-1">
-              <div className="w-full bg-zinc-100 h-2 rounded-full overflow-hidden">
-                <div className="bg-purple-600 h-full rounded-full" style={{ width: `${editalPct}%` }} />
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ========================================================================= */}
-      {/* 3. RADAR DE DISCIPLINAS (LAYOUT COMPACTO EM GRID)                         */}
-      {/* ========================================================================= */}
-      <section className="bg-white border border-zinc-200/90 rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-sm space-y-3">
-        <div className="flex items-center justify-between border-b border-zinc-100 pb-2.5">
-          <h2 className="text-base sm:text-lg font-black text-zinc-900 tracking-tight flex items-center gap-2">
-            <Compass className="text-teal-600" size={20} />
-            <span>Radar de Disciplinas</span>
-          </h2>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
-          {disciplinesRadar.map((disc, idx) => (
-            <motion.div
-              key={idx}
-              whileHover={{ y: -2 }}
-              onClick={() => setSelectedDisciplineModal(disc.name)}
-              className="p-3 rounded-xl border border-zinc-100 hover:border-zinc-300 hover:shadow-sm transition-all cursor-pointer bg-zinc-50/50 hover:bg-white space-y-2 group"
-            >
-              <div className="flex items-center justify-between gap-1.5">
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="text-lg p-1.5 bg-white rounded-lg shadow-2xs border border-zinc-100 group-hover:scale-105 transition-transform shrink-0">
-                    {disc.icon}
-                  </span>
-                  <div className="min-w-0">
-                    <h4 className="font-extrabold text-zinc-900 text-xs sm:text-sm group-hover:text-emerald-700 transition-colors truncate">
-                      {disc.name}
-                    </h4>
-                    <p className="text-[10px] sm:text-[11px] text-zinc-500 truncate">
-                      {disc.totalQuestions} questões • <span className={disc.textColor}>{disc.status}</span>
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-1 shrink-0">
-                  <span className={`text-sm font-black ${disc.textColor}`}>
-                    {disc.accuracy}%
-                  </span>
-                  <ChevronRight size={14} className="text-zinc-400 group-hover:translate-x-0.5 transition-transform" />
-                </div>
-              </div>
-
-              {/* Horizontal Progress Bar */}
-              <div className="w-full h-2 bg-zinc-200/80 rounded-full overflow-hidden p-0.5">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${disc.accuracy}%` }}
-                  transition={{ duration: 0.8, delay: idx * 0.08 }}
-                  className={`h-full rounded-full bg-gradient-to-r ${disc.gradient} shadow-2xs`}
+        {/* Nutritional Interactive Graphs */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+          
+          {/* Circular Progress Ring for Calories (4 columns) */}
+          <div className="md:col-span-5 flex flex-col items-center justify-center p-5 bg-white rounded-3xl border border-pink-50/60 shadow-sm shadow-pink-100/5">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-4">Metabolização</span>
+            
+            <div className="relative w-40 h-40 flex items-center justify-center">
+              {/* SVG circular frame */}
+              <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="40"
+                  className="stroke-pink-50/70"
+                  strokeWidth="8"
+                  fill="transparent"
                 />
+                <motion.circle
+                  cx="50"
+                  cy="50"
+                  r="40"
+                  className="stroke-pink-500"
+                  strokeWidth="8"
+                  fill="transparent"
+                  strokeDasharray="251.2"
+                  initial={{ strokeDashoffset: 251.2 }}
+                  animate={{ strokeDashoffset: 251.2 - (251.2 * Math.min(caloriePercent, 100)) / 100 }}
+                  transition={{ duration: 1.2, ease: "easeOut" }}
+                  strokeLinecap="round"
+                />
+              </svg>
+
+              <div className="absolute text-center">
+                <div className="text-3xl font-black italic tracking-tighter text-zinc-900 leading-none">
+                  {netCalories}
+                </div>
+                <div className="text-[8px] text-[#d4af37] font-black uppercase tracking-wider mt-1">
+                  de {goalCalories} kcal
+                </div>
+                <div className="text-[9px] text-pink-500 font-extrabold mt-1">
+                  {Math.round((netCalories / goalCalories) * 100)}% líquido
+                </div>
               </div>
-            </motion.div>
-          ))}
+            </div>
+
+            {/* Indicator of limits */}
+            <div className="mt-4 text-center space-y-2">
+              <div>
+                {calorieExceeded ? (
+                  <span className="text-[9px] font-black uppercase text-rose-600 bg-rose-50 border border-rose-100 px-3 py-1.5 rounded-full inline-block">
+                    Cota Excedida em {netCalories - goalCalories} kcal ⚠️
+                  </span>
+                ) : (
+                  <span className="text-[9px] font-black uppercase text-emerald-600 bg-emerald-50 border border-emerald-100 px-3 py-1.5 rounded-full inline-block">
+                    Mais {goalCalories - netCalories} kcal para a meta 🎯
+                  </span>
+                )}
+              </div>
+              <div className="text-[9px] font-bold text-zinc-400 bg-zinc-50 py-1.5 px-3 rounded-2xl border border-zinc-100/50 inline-block">
+                Comida: <span className="text-zinc-650">{consumedCalories} kcal</span>
+                {caloriesBurned > 0 && (
+                  <>
+                    {' '}• Gasto Aeróbico: <span className="text-pink-500">-{caloriesBurned} kcal</span>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Recharts Bar Chart & Progress (7 columns) */}
+          <div className="md:col-span-7 space-y-4">
+            <div className="bg-white p-4 rounded-3xl border border-pink-50/60 shadow-sm">
+              <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 block mb-3">
+                Gráfico de Consumo vs Metas (g)
+              </span>
+
+              <div className="h-44 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={macroData} barGap={6}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#fdf4f8" vertical={false} />
+                    <XAxis 
+                      dataKey="name" 
+                      tickLine={false} 
+                      axisLine={false}
+                      tick={{ fill: '#4b5563', fontSize: 10, fontWeight: '700' }}
+                    />
+                    <YAxis 
+                      tickLine={false} 
+                      axisLine={false}
+                      tick={{ fill: '#9ca3af', fontSize: 9 }}
+                    />
+                    <Tooltip 
+                      cursor={{ fill: 'rgba(236,72,153,0.02)' }}
+                      contentStyle={{ backgroundColor: '#fff', border: '1px solid #fbcfe8', borderRadius: '16px', fontSize: '11px', color: '#1f2937' }}
+                      formatter={(value: any, name: any) => [`${value}g`, name]}
+                    />
+                    <Bar 
+                      dataKey="Consumido" 
+                      radius={[4, 4, 0, 0]}
+                    >
+                      {macroData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Bar>
+                    <Bar 
+                      dataKey="Meta" 
+                      fill="#e4e4e7" 
+                      radius={[4, 4, 0, 0]} 
+                      opacity={0.65}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Quick Summary Cards Row */}
+            <div className="grid grid-cols-3 gap-2">
+              <div className="bg-amber-50/20 p-3 rounded-2xl border border-amber-100/50 flex flex-col justify-between">
+                <div>
+                  <span className="text-[8px] font-black uppercase tracking-wider text-[#9b7e1c] block">Proteína</span>
+                  <span className="text-base font-black italic text-zinc-800">{consumedProtein.toFixed(1)}g</span>
+                </div>
+                <span className="text-[8px] text-zinc-400 font-bold mt-1 block">Meta: {goalProtein}g</span>
+              </div>
+              <div className="bg-pink-50/20 p-3 rounded-2xl border border-pink-100/50 flex flex-col justify-between">
+                <div>
+                  <span className="text-[8px] font-black uppercase tracking-wider text-pink-500 block">Gordura</span>
+                  <span className="text-base font-black italic text-zinc-800">{consumedFat.toFixed(1)}g</span>
+                </div>
+                <span className="text-[8px] text-zinc-400 font-bold mt-1 block">Meta: {goalFat}g</span>
+              </div>
+              <div className="bg-emerald-50/20 p-3 rounded-2xl border border-emerald-100/50 flex flex-col justify-between">
+                <div>
+                  <span className="text-[8px] font-black uppercase tracking-wider text-emerald-600 block flex items-center gap-0.5">Fibras</span>
+                  <span className="text-base font-black italic text-zinc-800">{consumedFiber.toFixed(1)}g</span>
+                </div>
+                <span className="text-[8px] text-zinc-400 font-bold mt-1 block">Meta: {goalFiber}g</span>
+              </div>
+            </div>
+            
+            {selectedDateDiets.length === 0 && (
+              <div className="text-[10px] bg-pink-50/30 p-2 text-pink-650 rounded-xl border border-pink-100/60 text-center font-bold">
+                Nenhum log para este dia. Adicione refeições na aba "Dieta"!
+              </div>
+            )}
+          </div>
         </div>
       </section>
 
-      {/* ========================================================================= */}
-      {/* 7. CONQUISTAS & BADGES (GAMIFICAÇÃO DUOLINGO / GAMING TIER)               */}
-      {/* ========================================================================= */}
-      <section className="bg-white border border-zinc-200/90 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
-        <div className="flex items-center justify-between border-b border-zinc-100 pb-4">
+      {/* Stats Grid */}
+      <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-white p-5 rounded-[2rem] border border-pink-100 shadow-sm shadow-pink-100/10 flex flex-col justify-between">
           <div>
-            <h2 className="text-xl font-black text-zinc-900 tracking-tight flex items-center gap-2">
-              <Trophy className="text-amber-500" size={22} />
-              <span>Conquistas & Selos de Progresso</span>
-            </h2>
-            <p className="text-xs text-zinc-500 font-medium">
-              Desbloqueie conquistas exclusivas mantendo a rotina de estudos ativa.
-            </p>
+            <div className="flex items-center gap-2 text-pink-500 mb-2">
+              <Flame size={18} />
+              <span className="text-[10px] font-bold uppercase tracking-wider">Meta Calórica</span>
+            </div>
+            <div className="text-2xl font-black italic text-zinc-800">{profile?.dailyCalorieGoal || 2000} <span className="text-xs font-normal not-italic text-zinc-400">kcal</span></div>
           </div>
-          <span className="text-xs font-bold text-amber-800 bg-amber-50 px-3 py-1 rounded-full border border-amber-200">
-            2 / 4 Desbloqueadas
-          </span>
+        </div>
+        <div className="bg-white p-5 rounded-[2rem] border border-pink-100 shadow-sm shadow-pink-100/10 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center gap-2 text-pink-400 mb-2">
+              <Droplets size={18} className="text-[#d4af37]" />
+              <span className="text-[10px] font-bold uppercase tracking-wider text-pink-500">Meta de Água</span>
+            </div>
+            <div className="text-2xl font-black italic text-zinc-800">{profile?.dailyWaterGoal || 2500} <span className="text-xs font-normal not-italic text-zinc-400">ml</span></div>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {conquistasBadges.map((badge) => {
-            const Icon = badge.icon;
+        {/* Interactive Daily Study Card */}
+        <div className="bg-white p-5 rounded-[2rem] border border-pink-100 shadow-sm shadow-pink-100/10 flex flex-col justify-between">
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <div className="flex items-center gap-2 text-violet-500">
+              <BookOpen size={18} />
+              <span className="text-[10px] font-bold uppercase tracking-wider">Estudo Diário</span>
+            </div>
+            <span className={`text-[8px] font-extrabold uppercase px-2 py-0.5 rounded transition-colors ${
+              (checkins.find(c => c.date === selectedDate)?.studyQuestions || 0) >= 10
+                ? 'bg-violet-100 text-violet-700'
+                : 'bg-zinc-100 text-zinc-500'
+            }`}>
+              {(checkins.find(c => c.date === selectedDate)?.studyQuestions || 0) >= 10 ? 'Meta Bateu ✓' : 'Faltam Qs'}
+            </span>
+          </div>
+          
+          <div className="flex items-center justify-between mt-1">
+            <div className="flex flex-col">
+              <div className="flex items-center gap-1">
+                <input
+                  type="number"
+                  min="0"
+                  value={checkins.find(c => c.date === selectedDate)?.studyQuestions ?? ''}
+                  placeholder="0"
+                  onChange={(e) => {
+                    const val = Math.max(0, parseInt(e.target.value) || 0);
+                    handleUpdateStudyQuestions(val);
+                  }}
+                  className="w-12 text-center bg-transparent border-b border-dashed border-zinc-300 focus:border-violet-400 focus:outline-none text-2xl font-black italic text-zinc-800 p-0"
+                />
+                <span className="text-xs font-normal not-italic text-zinc-400"> / 10 Qs</span>
+              </div>
+              <span className="text-[8.5px] text-zinc-450 font-bold uppercase tracking-wide mt-1.5 leading-none">
+                Questões Respondidas
+              </span>
+            </div>
+            
+            {/* Direct counter controls */}
+            <div className="flex items-center gap-1 bg-zinc-50 border border-zinc-100 p-1 rounded-xl">
+              <button
+                type="button"
+                onClick={() => {
+                  const currentVal = checkins.find(c => c.date === selectedDate)?.studyQuestions || 0;
+                  handleUpdateStudyQuestions(Math.max(0, currentVal - 1));
+                }}
+                className="w-7 h-7 rounded-lg bg-white border border-zinc-200 hover:bg-zinc-100 text-zinc-650 font-bold active:scale-95 transition-all text-xs flex items-center justify-center cursor-pointer shadow-sm"
+              >
+                -
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const currentVal = checkins.find(c => c.date === selectedDate)?.studyQuestions || 0;
+                  handleUpdateStudyQuestions(currentVal + 1);
+                }}
+                className="w-7 h-7 rounded-lg bg-white border border-zinc-200 hover:bg-zinc-100 text-zinc-650 font-bold active:scale-95 transition-all text-xs flex items-center justify-center cursor-pointer shadow-sm"
+              >
+                +
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Check-in Grid */}
+      <section className="bg-white p-6 rounded-[2rem] border border-pink-100 shadow-sm shadow-pink-100/15">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+          <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-500">Check-in Mensal</h3>
+          <div className="flex flex-wrap gap-2">
+            <div className="flex items-center gap-1 text-[8px] uppercase font-black tracking-wider text-[#d4af37] bg-yellow-50 px-2 py-1 rounded-full">
+              <div className="w-2 h-2 rounded-full bg-[#d4af37]"></div> Treino
+            </div>
+            <div className="flex items-center gap-1 text-[8px] uppercase font-black tracking-wider text-sky-500 bg-sky-50 px-2 py-1 rounded-full">
+              <div className="w-2 h-2 rounded-full bg-sky-400"></div> Água
+            </div>
+            <div className="flex items-center gap-1 text-[8px] uppercase font-black tracking-wider text-pink-500 bg-pink-50 px-2 py-1 rounded-full">
+              <div className="w-2 h-2 rounded-full bg-pink-500"></div> Calorias
+            </div>
+            <div className="flex items-center gap-1 text-[8px] uppercase font-black tracking-wider text-violet-600 bg-violet-50 px-2 py-1 rounded-full">
+              <div className="w-2 h-2 rounded-full bg-violet-500"></div> Estudo (≥10 Qs)
+            </div>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-7 gap-2">
+          {daysInMonth.map((day, i) => {
+            const checkin = getCheckinForDay(day);
+            const isToday = isSameDay(day, new Date());
+            const dayStr = format(day, 'yyyy-MM-dd');
+
+            // 1. Workout met (checked via explicit check-in flag OR presence of logged strength/aerobic activities on this day)
+            const dayWorkoutLogs = workouts.filter((w: any) => w.date === dayStr);
+            const dayAerobicsLogs = aerobics.filter((a: any) => a.date === dayStr);
+            const isWorkoutMet = checkin?.workoutDone || dayWorkoutLogs.length > 0 || dayAerobicsLogs.length > 0;
+
+            // 2. Water met
+            const dayDietsList = diets.filter(d => d.date === dayStr);
+            const dayWater = dayDietsList.reduce((acc, d) => acc + (d.waterIntake || 0), 0);
+            const targetWater = profile?.dailyWaterGoal || 2500;
+            const isWaterMet = dayWater >= targetWater;
+
+            // 3. Calories met: Ingested minus Aerobics Burned is <= Daily Goal (min 1 calorie logged)
+            const dayCalories = dayDietsList.reduce((acc, d) => 
+              acc + (d.meals?.reduce((mAcc: number, m: any) => mAcc + (m.calories || 0), 0) || 0), 0
+            );
+            const dayAerobics = aerobics.filter((a: any) => a.date === dayStr);
+            const dayBurned = dayAerobics.reduce((acc: number, a: any) => acc + (a.caloriesBurned || 0), 0);
+            const dayNetCalories = Math.max(0, dayCalories - dayBurned);
+            const isCalorieMet = dayCalories > 0 && dayNetCalories <= goalCalories;
+            
+            // 4. Study met: 10 or more study questions answered
+            const dayStudyQuestions = checkin?.studyQuestions || 0;
+            const isStudyMet = dayStudyQuestions >= 10;
+            
+            const isSelected = dayStr === selectedDate;
+            
             return (
-              <motion.div
-                key={badge.id}
-                whileHover={{ y: -4, scale: 1.02 }}
-                className={`p-5 rounded-2xl border space-y-3 relative overflow-hidden transition-all shadow-sm ${
-                  badge.unlocked 
-                    ? `bg-gradient-to-br ${badge.bgGradient} shadow-md` 
-                    : 'bg-zinc-50/80 border-zinc-200 opacity-60'
+              <button 
+                key={i} 
+                type="button"
+                onClick={() => setSelectedDate(dayStr)}
+                className={`flex flex-col items-center gap-1 p-1 rounded-2xl transition-all cursor-pointer border-0 w-full hover:bg-pink-50/40 relative active:scale-95 ${
+                  isSelected ? 'bg-pink-50 ring-1 ring-pink-200' : ''
                 }`}
               >
-                <div className="flex items-center justify-between">
-                  <div className={`p-3 rounded-2xl bg-white shadow-md border border-zinc-100 ${badge.iconColor}`}>
-                    <Icon size={24} />
-                  </div>
-                  <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border ${badge.rarityColor}`}>
-                    {badge.rarity}
-                  </span>
+                <span className={`text-[8px] font-bold uppercase ${isToday ? 'text-pink-500' : 'text-zinc-400'}`}>
+                  {format(day, 'EEE', { locale: ptBR })}
+                </span>
+                <div 
+                  className={`w-full aspect-square rounded-xl border flex flex-col p-1 gap-0.5 overflow-hidden transition-all ${
+                    isToday ? 'border-[#ec4899] ring-2 ring-pink-100 bg-[#fffbfc]' : 'border-pink-100/80 bg-[#fffdfd]'
+                  } ${isSelected ? 'border-[#ec4899] ring-1 ring-[#ec4899] shadow-sm' : ''}`}
+                  title={`Treino: ${isWorkoutMet ? 'Ok' : 'Não'}; Água: ${dayWater}/${targetWater}ml; Calorias: ${dayCalories} (gasto ${dayBurned}); Estudo: ${dayStudyQuestions}/10 Qs`}
+                >
+                  <div className={`flex-1 rounded-sm transition-all ${isWorkoutMet ? 'bg-[#d4af37]' : 'bg-zinc-100/40'}`}></div>
+                  <div className={`flex-1 rounded-sm transition-all ${isWaterMet ? 'bg-[#38bdf8]' : 'bg-zinc-100/40'}`}></div>
+                  <div className={`flex-1 rounded-sm transition-all ${isCalorieMet ? 'bg-pink-500' : 'bg-zinc-100/40'}`}></div>
+                  <div className={`flex-1 rounded-sm transition-all ${isStudyMet ? 'bg-violet-500' : 'bg-zinc-100/40'}`}></div>
                 </div>
-
-                <div>
-                  <h4 className="font-black text-zinc-900 text-sm">{badge.title}</h4>
-                  <p className="text-xs text-zinc-600 mt-1 line-clamp-2">{badge.description}</p>
-                </div>
-
-                {/* Progress bar */}
-                <div className="space-y-1 pt-1">
-                  <div className="flex justify-between text-[10px] font-bold text-zinc-500">
-                    <span>Evolução</span>
-                    <span>{badge.progress} / {badge.total}</span>
-                  </div>
-                  <div className="w-full bg-zinc-200 h-2 rounded-full overflow-hidden">
-                    <div 
-                      className={`h-full rounded-full ${badge.unlocked ? 'bg-emerald-600' : 'bg-zinc-400'}`}
-                      style={{ width: `${Math.min(100, (badge.progress / badge.total) * 100)}%` }}
-                    />
-                  </div>
-                </div>
-              </motion.div>
+                <span className="text-[8px] font-bold text-zinc-400">{format(day, 'd')}</span>
+              </button>
             );
           })}
         </div>
       </section>
 
-      {/* ========================================================================= */}
-      {/* MODAL DE DISCIPLINA SELECIONADA                                           */}
-      {/* ========================================================================= */}
-      <AnimatePresence>
-        {selectedDisciplineModal && (
-          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full space-y-6 border border-zinc-200 shadow-2xl"
-            >
-              <div className="flex items-center justify-between border-b border-zinc-100 pb-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-3 bg-emerald-50 text-emerald-800 rounded-2xl border border-emerald-200 font-black text-2xl">
-                    📚
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-black text-zinc-900">{selectedDisciplineModal}</h3>
-                    <p className="text-xs text-zinc-500">Desempenho e plano de estudos detalhado</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setSelectedDisciplineModal(null)}
-                  className="w-8 h-8 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-600 font-bold flex items-center justify-center transition cursor-pointer"
-                >
-                  ✕
-                </button>
-              </div>
-
-              {(() => {
-                const modalDisc = disciplinesRadar.find(d => d.name === selectedDisciplineModal);
-                return (
-                  <div className="space-y-4 text-xs sm:text-sm text-zinc-700">
-                    <div className="p-4 bg-emerald-50/80 border border-emerald-200 rounded-2xl space-y-2">
-                      <p className="font-bold text-emerald-950 flex items-center justify-between">
-                        <span>Desempenho Real em Exercícios:</span>
-                        <span className="text-emerald-700 font-extrabold">{modalDisc?.status || 'A iniciar'}</span>
-                      </p>
-                      {modalDisc && modalDisc.totalQuestions > 0 ? (
-                        <p className="text-emerald-900 leading-relaxed">
-                          Você respondeu <strong>{modalDisc.totalQuestions} questão(ões)</strong> com{' '}
-                          <strong>{modalDisc.correctCount} acerto(s)</strong> ({modalDisc.accuracy}% de aproveitamento).
-                        </p>
-                      ) : (
-                        <p className="text-emerald-900 leading-relaxed">
-                          Nenhuma questão foi resolvida nesta disciplina ainda. Clique em 'Praticar Questões' para iniciar simulados e alimentar suas estatísticas reais.
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <button
-                        onClick={() => {
-                          setSelectedDisciplineModal(null);
-                          setActiveTab('simulados');
-                        }}
-                        className="p-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition text-center cursor-pointer shadow-md"
-                      >
-                        Praticar Questões
-                      </button>
-                      <button
-                        onClick={() => {
-                          setSelectedDisciplineModal(null);
-                          setActiveTab('edital');
-                        }}
-                        className="p-3 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 font-bold rounded-xl transition text-center cursor-pointer"
-                      >
-                        Ver no Edital
-                      </button>
-                    </div>
-                  </div>
-                );
-              })()}
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }
