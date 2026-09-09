@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { db, collection, query, where, onSnapshot, User, orderBy, addDoc, deleteDoc, doc, updateDoc, getDocs, handleFirestoreError, OperationType } from '../firebase';
-import { format } from 'date-fns';
+import { format, subDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Plus, Trash2, Dumbbell, X, Play, Check, TrendingUp, ChevronDown, ChevronUp, Calendar, Award, Edit2, Flame, Heart, Sparkles, Minimize2 } from 'lucide-react';
+import { Plus, Trash2, Dumbbell, X, Play, Check, TrendingUp, ChevronDown, ChevronUp, Calendar, Award, Edit2, Flame, Heart, Sparkles, Minimize2, Clock, History, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import confetti from 'canvas-confetti';
@@ -38,6 +38,7 @@ export default function WorkoutSection({
   const [computedKcal, setComputedKcal] = useState<number | null>(null);
   const [computedExplanation, setComputedExplanation] = useState<string | null>(null);
   const [computedMet, setComputedMet] = useState<number | null>(null);
+  const [aerobicSuccessMsg, setAerobicSuccessMsg] = useState<string | null>(null);
 
   const [newAerobic, setNewAerobic] = useState({
     type: '',
@@ -46,6 +47,20 @@ export default function WorkoutSection({
     date: format(new Date(), 'yyyy-MM-dd'),
     notes: ''
   });
+
+  // Retroactive workout logging states
+  const [showRetroactiveModal, setShowRetroactiveModal] = useState(false);
+  const [retroactiveDate, setRetroactiveDate] = useState(() => format(subDays(new Date(), 1), 'yyyy-MM-dd'));
+  const [retroactiveWorkoutId, setRetroactiveWorkoutId] = useState<string>('');
+  const [retroactiveExercises, setRetroactiveExercises] = useState<any[]>([]);
+  const [retroactiveCustomName, setRetroactiveCustomName] = useState<string>('');
+  const [retroactiveDuration, setRetroactiveDuration] = useState<number>(45);
+  const [retroactiveNotes, setRetroactiveNotes] = useState<string>('');
+  const [savingRetroactive, setSavingRetroactive] = useState(false);
+  const [retroactiveSuccessMsg, setRetroactiveSuccessMsg] = useState<string | null>(null);
+
+  // Session date for active workout (allows marking today or yesterday)
+  const [sessionDate, setSessionDate] = useState(() => format(new Date(), 'yyyy-MM-dd'));
   
   // Real-time workout tracking state
   const [showCelebration, setShowCelebration] = useState(false);
@@ -194,6 +209,59 @@ export default function WorkoutSection({
     }
   };
 
+  // Offline instant calculation helper using standard MET physiology
+  const calculateAerobicBurn = (typeStr: string, durMin: number, intensityStr: string, userWeight: number) => {
+    let met = 5.0;
+    const t = (typeStr || '').toLowerCase().trim();
+    const intensity = (intensityStr || 'moderado').toLowerCase().trim();
+
+    if (t.includes("bike") || t.includes("bicicleta") || t.includes("pedal") || t.includes("ciclo") || t.includes("ciclismo")) {
+      met = intensity === "baixo" ? 4.0 : intensity === "alto" ? 10.0 : 7.0;
+    } else if (t.includes("spinning")) {
+      met = intensity === "baixo" ? 6.0 : intensity === "alto" ? 11.0 : 8.5;
+    } else if (t.includes("corrida") || t.includes("esteira") || t.includes("run") || t.includes("trote")) {
+      met = intensity === "baixo" ? 7.0 : intensity === "alto" ? 12.0 : 9.8;
+    } else if (t.includes("caminha") || t.includes("walk")) {
+      met = intensity === "baixo" ? 2.5 : intensity === "alto" ? 4.5 : 3.3;
+    } else if (t.includes("volei") || t.includes("vôlei")) {
+      met = intensity === "baixo" ? 3.0 : intensity === "alto" ? 6.0 : 4.0;
+    } else if (t.includes("natacao") || t.includes("natação") || t.includes("swim")) {
+      met = intensity === "baixo" ? 4.5 : intensity === "alto" ? 8.0 : 6.0;
+    } else if (t.includes("amament") || t.includes("peito")) {
+      met = intensity === "baixo" ? 2.5 : intensity === "alto" ? 4.5 : 3.5;
+    } else if (t.includes("treino") || t.includes("muscul") || t.includes("academia") || t.includes("crossfit")) {
+      met = intensity === "baixo" ? 3.5 : intensity === "alto" ? 7.5 : 5.0;
+    } else if (t.includes("danca") || t.includes("dança") || t.includes("zumba")) {
+      met = intensity === "baixo" ? 3.5 : intensity === "alto" ? 7.0 : 5.0;
+    } else if (t.includes("futebol") || t.includes("soccer")) {
+      met = intensity === "baixo" ? 5.0 : intensity === "alto" ? 9.0 : 7.0;
+    } else {
+      met = intensity === "baixo" ? 3.5 : intensity === "alto" ? 8.0 : 5.0;
+    }
+
+    const hours = Math.max(0, durMin || 0) / 60;
+    const mass = Number(userWeight) || 68;
+    const calories = Math.round(met * mass * hours);
+    return { calories, met };
+  };
+
+  // Helper to instantly calculate and update state when user chooses/types activity
+  const updateAerobicState = (partial: Partial<typeof newAerobic>) => {
+    const updated = { ...newAerobic, ...partial };
+    setNewAerobic(updated);
+    if (updated.type.trim() && Number(updated.duration) > 0) {
+      const mass = profile?.weight || profile?.bodyWeight || 68;
+      const calc = calculateAerobicBurn(updated.type, Number(updated.duration), updated.intensity, mass);
+      setComputedKcal(calc.calories);
+      setComputedMet(calc.met);
+      setComputedExplanation(`Estimativa: ${updated.type} (${calc.met} MET)`);
+    } else {
+      setComputedKcal(null);
+      setComputedMet(null);
+      setComputedExplanation(null);
+    }
+  };
+
   // Aerobics calculation and save handlers using server endpoint
   const handleCalculateAerobic = async () => {
     if (!newAerobic.type || !newAerobic.duration) return null;
@@ -221,75 +289,79 @@ export default function WorkoutSection({
       console.error("Erro ao calcular calorias do aeróbico com IA:", e);
     }
     
-    // Offline client fallback
-    let fallbackMet = 5.0;
-    const t = newAerobic.type.toLowerCase();
-    const ints = newAerobic.intensity;
-    if (t.includes("corrida") || t.includes("run")) fallbackMet = ints === "baixo" ? 7.0 : ints === "alto" ? 12.0 : 9.8;
-    else if (t.includes("volei") || t.includes("vôlei")) fallbackMet = ints === "baixo" ? 3.0 : ints === "alto" ? 6.0 : 4.0;
-    else if (t.includes("natacao") || t.includes("natação")) fallbackMet = ints === "baixo" ? 4.5 : ints === "alto" ? 8.0 : 6.0;
-    else if (t.includes("amament") || t.includes("peito")) fallbackMet = ints === "baixo" ? 2.5 : ints === "alto" ? 4.5 : 3.5;
-    else if (t.includes("treino") || t.includes("muscul")) fallbackMet = ints === "baixo" ? 3.5 : ints === "alto" ? 7.0 : 5.0;
-
+    // Instant fallback
     const mass = profile?.weight || profile?.bodyWeight || 68;
-    const computedBurn = Math.round(fallbackMet * mass * (newAerobic.duration / 60));
-    setComputedKcal(computedBurn);
-    setComputedMet(fallbackMet);
-    setComputedExplanation(`Cálculo offline: ${newAerobic.type} (${fallbackMet} MET)`);
+    const calc = calculateAerobicBurn(newAerobic.type, Number(newAerobic.duration), newAerobic.intensity, mass);
+    setComputedKcal(calc.calories);
+    setComputedMet(calc.met);
+    setComputedExplanation(`Cálculo imediato: ${newAerobic.type} (${calc.met} MET)`);
     setCalculatingAerobic(false);
-    return { caloriesBurned: computedBurn, metUsed: fallbackMet, explanation: `Cálculo offline: ${newAerobic.type}` };
+    return { caloriesBurned: calc.calories, metUsed: calc.met, explanation: `Cálculo imediato: ${newAerobic.type}` };
   };
 
   const handleSaveAerobic = async () => {
-    if (!newAerobic.type || !newAerobic.duration) return;
+    if (!newAerobic.type.trim() || !newAerobic.duration || Number(newAerobic.duration) <= 0) {
+      alert("Por favor, selecione ou digite o tipo da atividade física e os minutos de duração.");
+      return;
+    }
     
     setCalculatingAerobic(true);
     try {
+      const mass = profile?.weight || profile?.bodyWeight || 68;
       let finalKcal = computedKcal;
       let finalExplanation = computedExplanation;
       let finalMet = computedMet;
 
-      if (finalKcal === null) {
-        const calculated = await handleCalculateAerobic();
-        if (calculated) {
-          finalKcal = calculated.caloriesBurned;
-          finalExplanation = calculated.explanation;
-          finalMet = calculated.metUsed;
-        }
+      if (!finalKcal || finalKcal <= 0) {
+        const local = calculateAerobicBurn(newAerobic.type, Number(newAerobic.duration), newAerobic.intensity, mass);
+        finalKcal = local.calories;
+        finalMet = local.met;
+        finalExplanation = `Cálculo automático: ${newAerobic.type} (${local.met} MET)`;
       }
+
+      const exerciseDate = newAerobic.date || format(new Date(), 'yyyy-MM-dd');
 
       await addDoc(collection(db, 'aerobics'), {
         uid: user.uid,
-        type: newAerobic.type,
+        type: newAerobic.type.trim(),
         duration: Number(newAerobic.duration),
         intensity: newAerobic.intensity,
-        date: newAerobic.date,
-        caloriesBurned: finalKcal || 150,
-        metUsed: finalMet || 5.0,
-        explanation: finalExplanation || 'Registrado com IA',
-        notes: newAerobic.notes || ''
+        date: exerciseDate,
+        caloriesBurned: Number(finalKcal) || 150,
+        metUsed: Number(finalMet) || 5.0,
+        explanation: finalExplanation || 'Registrado no app',
+        notes: newAerobic.notes ? newAerobic.notes.trim() : ''
       });
 
-      // Synchronize with check-in (mark workoutDone as complete for this day, matching existing to avoid duplicates)
-      const checkinQuery = query(
-        collection(db, 'checkins'),
-        where('uid', '==', user.uid),
-        where('date', '==', newAerobic.date)
-      );
-      const checkinSnap = await getDocs(checkinQuery);
-      if (!checkinSnap.empty) {
-        await updateDoc(doc(db, 'checkins', checkinSnap.docs[0].id), {
-          workoutDone: true
-        });
-      } else {
-        await addDoc(collection(db, 'checkins'), {
-          uid: user.uid,
-          date: newAerobic.date,
-          workoutDone: true
-        });
+      // Synchronize with check-in safely (mark workoutDone as complete for this day)
+      try {
+        const checkinQuery = query(
+          collection(db, 'checkins'),
+          where('uid', '==', user.uid),
+          where('date', '==', exerciseDate)
+        );
+        const checkinSnap = await getDocs(checkinQuery);
+        if (!checkinSnap.empty) {
+          await updateDoc(doc(db, 'checkins', checkinSnap.docs[0].id), {
+            workoutDone: true
+          });
+        } else {
+          await addDoc(collection(db, 'checkins'), {
+            uid: user.uid,
+            date: exerciseDate,
+            workoutDone: true
+          });
+        }
+      } catch (checkinErr) {
+        console.warn("Aviso ao sincronizar checkin do aeróbico:", checkinErr);
       }
 
+      // Success feedback & confetti
+      confetti({ particleCount: 45, spread: 70, origin: { y: 0.7 } });
       setShowAddAerobicModal(false);
+      setAerobicSuccessMsg(`Atividade de ${newAerobic.type} salva com sucesso! (${finalKcal} kcal) 🔥`);
+      setTimeout(() => setAerobicSuccessMsg(null), 4000);
+
       setNewAerobic({
         type: '',
         duration: 30,
@@ -300,10 +372,139 @@ export default function WorkoutSection({
       setComputedKcal(null);
       setComputedExplanation(null);
       setComputedMet(null);
-    } catch (e) {
+    } catch (e: any) {
       console.error("Erro ao salvar atividade aeróbica:", e);
+      handleFirestoreError(e, OperationType.CREATE, 'aerobics');
+      alert("Não foi possível salvar a atividade: " + (e?.message || "Tente novamente"));
     } finally {
       setCalculatingAerobic(false);
+    }
+  };
+
+  // Open retroactive workout modal with defaults
+  const handleOpenRetroactiveModal = (preselectedWorkout?: any) => {
+    const yesterday = format(subDays(new Date(), 1), 'yyyy-MM-dd');
+    setRetroactiveDate(yesterday);
+    if (preselectedWorkout) {
+      setRetroactiveWorkoutId(preselectedWorkout.id);
+      setRetroactiveCustomName(preselectedWorkout.type);
+      setRetroactiveExercises(preselectedWorkout.exercises ? JSON.parse(JSON.stringify(preselectedWorkout.exercises)) : []);
+    } else if (workouts.filter(w => !w.isSession).length > 0) {
+      const firstTpl = workouts.filter(w => !w.isSession)[0];
+      setRetroactiveWorkoutId(firstTpl.id);
+      setRetroactiveCustomName(firstTpl.type);
+      setRetroactiveExercises(firstTpl.exercises ? JSON.parse(JSON.stringify(firstTpl.exercises)) : []);
+    } else {
+      setRetroactiveWorkoutId('custom');
+      setRetroactiveCustomName('Treino Geral na Academia');
+      setRetroactiveExercises([]);
+    }
+    setRetroactiveDuration(45);
+    setRetroactiveNotes('');
+    setShowRetroactiveModal(true);
+  };
+
+  const handleSelectRetroactiveTemplate = (tplId: string) => {
+    setRetroactiveWorkoutId(tplId);
+    if (tplId === 'custom') {
+      setRetroactiveCustomName('Musculação Livre / Academia');
+      setRetroactiveExercises([]);
+    } else {
+      const found = workouts.find(w => w.id === tplId);
+      if (found) {
+        setRetroactiveCustomName(found.type);
+        setRetroactiveExercises(found.exercises ? JSON.parse(JSON.stringify(found.exercises)) : []);
+      }
+    }
+  };
+
+  const handleAdjustRetroactiveWeight = (index: number, amt: number) => {
+    const updated = [...retroactiveExercises];
+    updated[index].weight = Math.max(0, (Number(updated[index].weight) || 0) + amt);
+    setRetroactiveExercises(updated);
+  };
+
+  const handleRetroactiveWeightChange = (index: number, val: string) => {
+    const updated = [...retroactiveExercises];
+    updated[index].weight = parseFloat(val) || 0;
+    setRetroactiveExercises(updated);
+  };
+
+  const handleSaveRetroactiveWorkout = async () => {
+    if (savingRetroactive) return;
+    const workoutName = retroactiveCustomName.trim() || 'Treino Realizado';
+    const targetDate = retroactiveDate || format(subDays(new Date(), 1), 'yyyy-MM-dd');
+
+    setSavingRetroactive(true);
+    try {
+      // 1. Add document to workouts collection with isSession: true
+      await addDoc(collection(db, 'workouts'), {
+        uid: user.uid,
+        type: workoutName,
+        date: targetDate,
+        isSession: true,
+        duration: Number(retroactiveDuration) || 45,
+        exercises: retroactiveExercises.map((ex: any) => ({
+          name: ex.name || 'Exercício',
+          sets: Number(ex.sets) || 3,
+          reps: Number(ex.reps) || 12,
+          weight: Number(ex.weight) || 0,
+          conjugated: Boolean(ex.conjugated)
+        })),
+        notes: retroactiveNotes.trim() || `Treino realizado (${targetDate})`
+      });
+
+      // 2. If it was linked to a template, update that template's exercises with any edited loads
+      if (retroactiveWorkoutId && retroactiveWorkoutId !== 'custom') {
+        const originalWorkout = workouts.find(w => w.id === retroactiveWorkoutId);
+        if (originalWorkout && retroactiveExercises.length > 0) {
+          const updatedTemplateExercises = originalWorkout.exercises.map((origEx: any) => {
+            const matchedEx = retroactiveExercises.find((re: any) => re.name === origEx.name);
+            return {
+              ...origEx,
+              weight: matchedEx && matchedEx.weight !== undefined ? Number(matchedEx.weight) : origEx.weight
+            };
+          });
+          await updateDoc(doc(db, 'workouts', retroactiveWorkoutId), {
+            exercises: updatedTemplateExercises
+          });
+        }
+      }
+
+      // 3. Update checkins for that date with workoutDone: true
+      try {
+        const checkinQuery = query(
+          collection(db, 'checkins'),
+          where('uid', '==', user.uid),
+          where('date', '==', targetDate)
+        );
+        const checkinSnap = await getDocs(checkinQuery);
+        if (!checkinSnap.empty) {
+          await updateDoc(doc(db, 'checkins', checkinSnap.docs[0].id), {
+            workoutDone: true
+          });
+        } else {
+          await addDoc(collection(db, 'checkins'), {
+            uid: user.uid,
+            date: targetDate,
+            workoutDone: true
+          });
+        }
+      } catch (checkinErr) {
+        console.warn("Aviso ao atualizar checkin do treino retroativo:", checkinErr);
+      }
+
+      // 4. Confetti and feedback banner
+      confetti({ particleCount: 60, spread: 80, origin: { y: 0.6 } });
+      setShowRetroactiveModal(false);
+      setRetroactiveSuccessMsg(`Treino "${workoutName}" de ${format(new Date(targetDate + 'T00:00:00'), 'dd/MM')} registrado com sucesso! 🔥`);
+      setTimeout(() => setRetroactiveSuccessMsg(null), 4000);
+    } catch (err: any) {
+      console.error("Erro ao salvar treino retroativo:", err);
+      handleFirestoreError(err, OperationType.CREATE, 'workouts');
+      alert("Erro ao salvar treino: " + (err?.message || "Tente novamente"));
+    } finally {
+      setSavingRetroactive(false);
     }
   };
 
@@ -469,6 +670,7 @@ export default function WorkoutSection({
       alert("Você já possui um treino em andamento! Por favor, conclua ou cancele o treino atual antes de iniciar um novo.");
       return;
     }
+    setSessionDate(format(new Date(), 'yyyy-MM-dd'));
     setActiveSession({
       originalWorkoutId: workout.id,
       type: workout.type,
@@ -522,11 +724,11 @@ export default function WorkoutSection({
       }
 
       // 2. Add as a historical Session Log in workouts collection so charts read it chronologically
-      const todayString = format(new Date(), 'yyyy-MM-dd');
+      const targetDate = sessionDate || format(new Date(), 'yyyy-MM-dd');
       await addDoc(collection(db, 'workouts'), {
         uid: user.uid,
         type: activeSession.type,
-        date: todayString,
+        date: targetDate,
         isSession: true, // Mark this to differentiate from basic plan templates
         exercises: activeSession.exercises.map((ex: any) => ({
           name: ex.name,
@@ -535,26 +737,30 @@ export default function WorkoutSection({
           weight: ex.weight,
           conjugated: ex.conjugated || false
         })),
-        notes: "Sessão concluída com sucesso! 🔥"
+        notes: `Sessão concluída com sucesso! (${targetDate}) 🔥`
       });
 
       // 3. Mark daily task check-in (matching existing of the same day to avoid duplicates)
-      const checkinQuery = query(
-        collection(db, 'checkins'),
-        where('uid', '==', user.uid),
-        where('date', '==', todayString)
-      );
-      const checkinSnap = await getDocs(checkinQuery);
-      if (!checkinSnap.empty) {
-        await updateDoc(doc(db, 'checkins', checkinSnap.docs[0].id), {
-          workoutDone: true
-        });
-      } else {
-        await addDoc(collection(db, 'checkins'), {
-          uid: user.uid,
-          date: todayString,
-          workoutDone: true
-        });
+      try {
+        const checkinQuery = query(
+          collection(db, 'checkins'),
+          where('uid', '==', user.uid),
+          where('date', '==', targetDate)
+        );
+        const checkinSnap = await getDocs(checkinQuery);
+        if (!checkinSnap.empty) {
+          await updateDoc(doc(db, 'checkins', checkinSnap.docs[0].id), {
+            workoutDone: true
+          });
+        } else {
+          await addDoc(collection(db, 'checkins'), {
+            uid: user.uid,
+            date: targetDate,
+            workoutDone: true
+          });
+        }
+      } catch (checkinErr) {
+        console.warn("Aviso ao sincronizar checkin:", checkinErr);
       }
 
       // 4. Capture session details for AI Feedback before closing activeSession
@@ -632,17 +838,59 @@ export default function WorkoutSection({
     <div className="space-y-6 animate-fade-in text-zinc-800">
       
       {/* HEADER SECTION */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-4xl font-black tracking-tighter uppercase italic leading-none text-zinc-800">
-          Meus <span className="text-pink-500">Treinos</span>
-        </h2>
-        <button 
-          onClick={() => setShowAddModal(true)}
-          className="w-12 h-12 rounded-2xl bg-gradient-to-r from-pink-500 to-rose-400 flex items-center justify-center text-white shadow-lg shadow-pink-400/25 hover:opacity-90 cursor-pointer"
-        >
-          <Plus size={24} strokeWidth={3} />
-        </button>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h2 className="text-3xl sm:text-4xl font-black tracking-tighter uppercase italic leading-none text-zinc-800">
+            Meus <span className="text-pink-500">Treinos</span>
+          </h2>
+          <p className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest mt-1">
+            Fichas de musculação e histórico de evolução
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={() => handleOpenRetroactiveModal()}
+            className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-2xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 text-xs font-black uppercase tracking-wider transition-all shadow-sm cursor-pointer"
+            title="Marcar treino realizado ontem ou em outra data"
+          >
+            <History size={15} className="text-amber-600" />
+            <span>Marcar Retroativo</span>
+          </button>
+          <button 
+            onClick={() => setShowAddModal(true)}
+            className="w-11 h-11 rounded-2xl bg-gradient-to-r from-pink-500 to-rose-400 flex items-center justify-center text-white shadow-lg shadow-pink-400/25 hover:opacity-90 cursor-pointer"
+            title="Adicionar novo treino"
+          >
+            <Plus size={22} strokeWidth={3} />
+          </button>
+        </div>
       </div>
+
+      {/* SUCCESS NOTIFICATION BANNERS */}
+      <AnimatePresence>
+        {retroactiveSuccessMsg && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="bg-emerald-50 border border-emerald-200 text-emerald-800 p-3.5 rounded-2xl flex items-center gap-2.5 text-xs font-bold shadow-sm"
+          >
+            <CheckCircle2 size={18} className="text-emerald-500 shrink-0" />
+            <span>{retroactiveSuccessMsg}</span>
+          </motion.div>
+        )}
+        {aerobicSuccessMsg && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="bg-pink-50 border border-pink-200 text-pink-800 p-3.5 rounded-2xl flex items-center gap-2.5 text-xs font-bold shadow-sm"
+          >
+            <CheckCircle2 size={18} className="text-pink-500 shrink-0" />
+            <span>{aerobicSuccessMsg}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* TRAINING LIST SECTION */}
       <div className="space-y-4">
@@ -711,20 +959,29 @@ export default function WorkoutSection({
                     transition={{ duration: 0.2 }}
                     className="px-6 pb-6 border-t border-pink-50/60 bg-gradient-to-b from-[#fffafa]/20 to-[#ffffff]"
                   >
-                    {/* Primary Button to start workout session */}
-                    <div className="py-4">
-                      <button
-                        onClick={() => handleStartWorkoutSession(workout)}
-                        className={`w-full py-3.5 text-white font-bold uppercase text-xs tracking-wider rounded-xl shadow-md flex items-center justify-center gap-2 cursor-pointer transition-all ${
-                          activeSession 
-                            ? 'bg-zinc-200 text-zinc-400 shadow-none cursor-not-allowed opacity-70' 
-                            : 'bg-gradient-to-r from-pink-500 to-rose-500 shadow-pink-200/50 hover:opacity-95'
-                        }`}
-                      >
-                        <Play size={14} className="fill-current" /> Iniciar Treino
-                      </button>
+                    {/* Action Buttons to start workout session or log retroactively */}
+                    <div className="py-4 space-y-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <button
+                          onClick={() => handleStartWorkoutSession(workout)}
+                          className={`w-full py-3 text-white font-bold uppercase text-xs tracking-wider rounded-xl shadow-md flex items-center justify-center gap-2 cursor-pointer transition-all ${
+                            activeSession 
+                              ? 'bg-zinc-200 text-zinc-400 shadow-none cursor-not-allowed opacity-70' 
+                              : 'bg-gradient-to-r from-pink-500 to-rose-500 shadow-pink-200/50 hover:opacity-95'
+                          }`}
+                        >
+                          <Play size={14} className="fill-current" /> Iniciar Treino Agora
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenRetroactiveModal(workout)}
+                          className="w-full py-3 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200/80 font-bold uppercase text-xs tracking-wider rounded-xl flex items-center justify-center gap-2 cursor-pointer transition-all shadow-sm"
+                        >
+                          <History size={14} className="text-amber-600" /> Marcar Realizado (Ontem)
+                        </button>
+                      </div>
                       {activeSession && (
-                        <p className="text-[10px] text-rose-500 font-bold text-center mt-2 uppercase tracking-wide">
+                        <p className="text-[10px] text-rose-500 font-bold text-center mt-1 uppercase tracking-wide">
                           ⚠️ Você já possui um treino ativo em andamento!
                         </p>
                       )}
@@ -1048,22 +1305,27 @@ export default function WorkoutSection({
                     Sugestões de Atividade
                   </label>
                   <div className="flex flex-wrap gap-1.5">
-                    {["Corrida", "Vôlei", "Natação", "Amamentação", "Treino de musculação", "Caminhada"].map((suge) => (
+                    {[
+                      { label: "🚴 Bike / Bicicleta", val: "Bicicleta / Bike" },
+                      { label: "🚴 Spinning", val: "Spinning" },
+                      { label: "🏃 Corrida", val: "Corrida" },
+                      { label: "🚶 Caminhada", val: "Caminhada" },
+                      { label: "🏐 Vôlei", val: "Vôlei" },
+                      { label: "🏊 Natação", val: "Natação" },
+                      { label: "🍼 Amamentação", val: "Amamentação" },
+                      { label: "🏋️ Musculação / Cross", val: "Treino de Musculação" }
+                    ].map((suge) => (
                       <button
-                        key={suge}
+                        key={suge.val}
                         type="button"
-                        onClick={() => {
-                          setNewAerobic({ ...newAerobic, type: suge });
-                          setComputedKcal(null);
-                          setComputedExplanation(null);
-                        }}
-                        className={`text-[9px] font-extrabold uppercase py-1 px-2.5 rounded-full border transition-all cursor-pointer ${
-                          newAerobic.type === suge
+                        onClick={() => updateAerobicState({ type: suge.val })}
+                        className={`text-[10px] font-extrabold uppercase py-1.5 px-3 rounded-full border transition-all cursor-pointer ${
+                          newAerobic.type.toLowerCase().includes(suge.val.toLowerCase().slice(0, 4))
                             ? 'bg-gradient-to-r from-pink-500 to-rose-450 text-white border-pink-400 shadow-sm shadow-pink-300/15'
-                            : 'bg-white border-pink-50 text-zinc-500 hover:border-pink-200'
+                            : 'bg-white border-pink-100 text-zinc-600 hover:border-pink-300 hover:bg-pink-50/20'
                         }`}
                       >
-                        {suge === "Amamentação" ? "🍼 Amamentação" : suge}
+                        {suge.label}
                       </button>
                     ))}
                   </div>
@@ -1074,14 +1336,10 @@ export default function WorkoutSection({
                   <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-1.5 block">Nome da Atividade</label>
                   <input
                     type="text"
-                    placeholder="Ex: Corrida na esteira, CrossFit, Futevôlei"
+                    placeholder="Ex: Bike na academia, Bicicleta ao ar livre, Corrida"
                     className="w-full bg-[#fffcfd] border border-pink-100 rounded-2xl px-4 py-3 text-zinc-800 font-bold italic focus:ring-1 focus:ring-pink-300 focus:outline-none"
                     value={newAerobic.type}
-                    onChange={(e) => {
-                      setNewAerobic({ ...newAerobic, type: e.target.value });
-                      setComputedKcal(null);
-                      setComputedExplanation(null);
-                    }}
+                    onChange={(e) => updateAerobicState({ type: e.target.value })}
                   />
                 </div>
 
@@ -1093,13 +1351,10 @@ export default function WorkoutSection({
                       type="number"
                       placeholder="Ex: 30"
                       min={1}
+                      max={600}
                       className="w-full bg-[#fffcfd] border border-pink-100 rounded-xl px-4 py-2.5 text-zinc-800 font-bold text-center focus:ring-1 focus:ring-pink-300 focus:outline-none"
                       value={newAerobic.duration || ''}
-                      onChange={(e) => {
-                        setNewAerobic({ ...newAerobic, duration: Number(e.target.value) || 0 });
-                        setComputedKcal(null);
-                        setComputedExplanation(null);
-                      }}
+                      onChange={(e) => updateAerobicState({ duration: Number(e.target.value) || 0 })}
                     />
                   </div>
                   <div>
@@ -1107,11 +1362,7 @@ export default function WorkoutSection({
                     <select
                       className="w-full bg-[#fffcfd] border border-pink-100 rounded-xl px-2 py-2.5 text-xs font-bold text-zinc-700 cursor-pointer focus:ring-1 focus:ring-pink-300 focus:outline-none"
                       value={newAerobic.intensity}
-                      onChange={(e) => {
-                        setNewAerobic({ ...newAerobic, intensity: e.target.value });
-                        setComputedKcal(null);
-                        setComputedExplanation(null);
-                      }}
+                      onChange={(e) => updateAerobicState({ intensity: e.target.value })}
                     >
                       <option value="baixo">Leve / Baixo</option>
                       <option value="moderado">Moderado</option>
@@ -1120,9 +1371,35 @@ export default function WorkoutSection({
                   </div>
                 </div>
 
-                {/* Date */}
+                {/* Date with quick pills */}
                 <div>
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-1.5 block">Data do Exercício</label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 block">Data da Atividade</label>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setNewAerobic({ ...newAerobic, date: format(new Date(), 'yyyy-MM-dd') })}
+                        className={`text-[9px] font-extrabold px-2 py-0.5 rounded-lg border transition-all cursor-pointer ${
+                          newAerobic.date === format(new Date(), 'yyyy-MM-dd')
+                            ? 'bg-pink-500 text-white border-pink-500'
+                            : 'bg-white text-zinc-600 border-pink-100'
+                        }`}
+                      >
+                        Hoje
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setNewAerobic({ ...newAerobic, date: format(subDays(new Date(), 1), 'yyyy-MM-dd') })}
+                        className={`text-[9px] font-extrabold px-2 py-0.5 rounded-lg border transition-all cursor-pointer ${
+                          newAerobic.date === format(subDays(new Date(), 1), 'yyyy-MM-dd')
+                            ? 'bg-pink-500 text-white border-pink-500'
+                            : 'bg-white text-zinc-600 border-pink-100'
+                        }`}
+                      >
+                        Ontem
+                      </button>
+                    </div>
+                  </div>
                   <input
                     type="date"
                     className="w-full bg-[#fffcfd] border border-pink-100 rounded-xl px-4 py-2.5 text-center text-xs font-bold text-zinc-700 focus:outline-none"
@@ -1136,43 +1413,45 @@ export default function WorkoutSection({
                   <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-1.5 block">Observações (Opcional)</label>
                   <input
                     type="text"
-                    placeholder="Ex: Amamentação ou trote na praia"
+                    placeholder="Ex: Treino na bike ergométrica da academia"
                     className="w-full bg-[#fffcfd] border border-pink-100 rounded-xl px-4 py-2 text-xs text-zinc-500 focus:outline-none"
                     value={newAerobic.notes || ''}
                     onChange={(e) => setNewAerobic({ ...newAerobic, notes: e.target.value })}
                   />
                 </div>
 
-                {/* Gemini preview estimation block */}
-                {(newAerobic.type && newAerobic.duration > 0) && (
-                  <div className="bg-gradient-to-tr from-yellow-50/30 to-pink-50/20 p-4 rounded-2xl border border-pink-100/50 space-y-2">
+                {/* Real-time calories burn estimation card */}
+                {(newAerobic.type.trim() && newAerobic.duration > 0) && (
+                  <div className="bg-gradient-to-tr from-yellow-50/40 via-pink-50/30 to-white p-4 rounded-2xl border border-pink-200/60 space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-black text-pink-500 uppercase tracking-widest leading-none">Previsão Google Gemini AI 🔮</span>
+                      <span className="text-[10px] font-black text-pink-500 uppercase tracking-widest leading-none flex items-center gap-1">
+                        <Flame size={13} className="text-amber-500" /> Calorias Estimadas
+                      </span>
                       <button
                         type="button"
                         onClick={handleCalculateAerobic}
                         disabled={calculatingAerobic}
-                        className="text-[9px] bg-pink-500 text-white font-extrabold uppercase px-2.5 py-1 rounded-lg hover:opacity-90 disabled:opacity-50 transition-all border-0 cursor-pointer"
+                        className="text-[9px] bg-pink-500 text-white font-extrabold uppercase px-2.5 py-1 rounded-lg hover:opacity-90 disabled:opacity-50 transition-all border-0 cursor-pointer flex items-center gap-1"
                       >
+                        <Sparkles size={10} />
                         {calculatingAerobic ? "Estimando..." : "Calcular com IA"}
                       </button>
                     </div>
 
-                    {computedKcal !== null ? (
-                      <div className="space-y-1">
-                        <div className="text-2xl font-black italic text-zinc-900 leading-none mt-1">
-                          {computedKcal} <span className="text-[11px] font-bold not-italic text-zinc-500 uppercase">kcal gastas</span>
-                        </div>
-                        {computedMet && <div className="text-[8px] text-[#d4af37] font-black uppercase">Esporte classe {computedMet} MET</div>}
-                        {computedExplanation && (
-                          <p className="text-[10px] text-zinc-500 italic font-medium leading-relaxed bg-white/60 p-2 rounded-xl border border-pink-50/50 mt-1">
-                            {computedExplanation}
-                          </p>
-                        )}
+                    <div className="space-y-1">
+                      <div className="text-2xl font-black italic text-zinc-900 leading-none mt-1 flex items-baseline gap-1.5">
+                        <span>{computedKcal ?? calculateAerobicBurn(newAerobic.type, newAerobic.duration, newAerobic.intensity, profile?.weight || 68).calories}</span>
+                        <span className="text-[11px] font-bold not-italic text-zinc-500 uppercase">kcal queimadas</span>
                       </div>
-                    ) : (
-                      <p className="text-[9px] text-zinc-400 font-bold">Toque em "Calcular com IA" ou salve direto para estimar automaticamente!</p>
-                    )}
+                      <div className="text-[9px] text-[#d4af37] font-black uppercase">
+                        {computedMet ? `Intensidade ${computedMet} MET` : 'Cálculo com base no seu peso corporal'}
+                      </div>
+                      {computedExplanation && (
+                        <p className="text-[10px] text-zinc-500 italic font-medium leading-relaxed bg-white/70 p-2 rounded-xl border border-pink-50 mt-1">
+                          {computedExplanation}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
@@ -1188,11 +1467,219 @@ export default function WorkoutSection({
                 </button>
                 <button
                   type="button"
-                  disabled={!newAerobic.type || !newAerobic.duration || calculatingAerobic}
+                  disabled={!newAerobic.type.trim() || !newAerobic.duration || calculatingAerobic}
                   onClick={handleSaveAerobic}
-                  className="flex-1 py-3 bg-gradient-to-r from-pink-500 to-rose-455 text-white font-black uppercase text-xs rounded-xl shadow-md cursor-pointer disabled:opacity-50 border-0"
+                  className="flex-1 py-3 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white font-black uppercase text-xs rounded-xl shadow-md cursor-pointer disabled:opacity-50 border-0 flex items-center justify-center gap-1.5"
                 >
-                  {calculatingAerobic ? "Salvando..." : "Salvar Atividade"}
+                  <Check size={16} />
+                  <span>
+                    {calculatingAerobic 
+                      ? "Salvando..." 
+                      : (computedKcal ? `Concluir (${computedKcal} kcal)` : "Concluir e Salvar")}
+                  </span>
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* RETROACTIVE WORKOUT MODAL */}
+      <AnimatePresence>
+        {showRetroactiveModal && (
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-[2rem] p-6 max-w-md w-full border border-pink-100 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto"
+            >
+              <div className="flex justify-between items-center border-b border-pink-50 pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600">
+                    <History size={18} />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-black italic uppercase text-zinc-800 leading-tight">Marcar Treino Retroativo</h3>
+                    <p className="text-[10px] font-bold text-amber-700 uppercase tracking-wider">Ontem ou datas anteriores</p>
+                  </div>
+                </div>
+                <button 
+                  type="button"
+                  onClick={() => setShowRetroactiveModal(false)}
+                  className="text-zinc-400 hover:text-zinc-600 p-1 rounded-lg"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="space-y-4 text-xs">
+                {/* 1. Date selector */}
+                <div>
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 mb-1.5 block">
+                    Data em que treinou
+                  </label>
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <button
+                      type="button"
+                      onClick={() => setRetroactiveDate(format(subDays(new Date(), 1), 'yyyy-MM-dd'))}
+                      className={`flex-1 py-2 text-[11px] font-extrabold uppercase rounded-xl border transition-all cursor-pointer ${
+                        retroactiveDate === format(subDays(new Date(), 1), 'yyyy-MM-dd')
+                          ? 'bg-amber-500 text-white border-amber-500 shadow-sm'
+                          : 'bg-zinc-50 border-zinc-200 text-zinc-600 hover:bg-zinc-100'
+                      }`}
+                    >
+                      Ontem ({format(subDays(new Date(), 1), 'dd/MM')})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setRetroactiveDate(format(new Date(), 'yyyy-MM-dd'))}
+                      className={`flex-1 py-2 text-[11px] font-extrabold uppercase rounded-xl border transition-all cursor-pointer ${
+                        retroactiveDate === format(new Date(), 'yyyy-MM-dd')
+                          ? 'bg-amber-500 text-white border-amber-500 shadow-sm'
+                          : 'bg-zinc-50 border-zinc-200 text-zinc-600 hover:bg-zinc-100'
+                      }`}
+                    >
+                      Hoje ({format(new Date(), 'dd/MM')})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setRetroactiveDate(format(subDays(new Date(), 2), 'yyyy-MM-dd'))}
+                      className={`flex-1 py-2 text-[11px] font-extrabold uppercase rounded-xl border transition-all cursor-pointer ${
+                        retroactiveDate === format(subDays(new Date(), 2), 'yyyy-MM-dd')
+                          ? 'bg-amber-500 text-white border-amber-500 shadow-sm'
+                          : 'bg-zinc-50 border-zinc-200 text-zinc-600 hover:bg-zinc-100'
+                      }`}
+                    >
+                      Anteontem ({format(subDays(new Date(), 2), 'dd/MM')})
+                    </button>
+                  </div>
+                  <input
+                    type="date"
+                    className="w-full bg-[#fffcfd] border border-pink-100 rounded-xl px-4 py-2.5 text-center text-xs font-bold text-zinc-700 focus:outline-none"
+                    value={retroactiveDate}
+                    onChange={(e) => setRetroactiveDate(e.target.value)}
+                  />
+                </div>
+
+                {/* 2. Template choice */}
+                <div>
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 mb-1.5 block">
+                    Qual treino você fez?
+                  </label>
+                  <select
+                    className="w-full bg-[#fffcfd] border border-pink-100 rounded-xl px-3 py-2.5 text-xs font-bold text-zinc-800 focus:outline-none cursor-pointer"
+                    value={retroactiveWorkoutId}
+                    onChange={(e) => handleSelectRetroactiveTemplate(e.target.value)}
+                  >
+                    {workoutTemplates.map(w => (
+                      <option key={w.id} value={w.id}>{w.type} ({w.exercises?.length || 0} exercícios)</option>
+                    ))}
+                    <option value="custom">Outro treino / Musculação Geral</option>
+                  </select>
+                </div>
+
+                {/* Custom Name if selected custom */}
+                {retroactiveWorkoutId === 'custom' && (
+                  <div>
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 mb-1.5 block">
+                      Nome do Treino
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full bg-[#fffcfd] border border-pink-100 rounded-xl px-3 py-2 text-xs font-bold text-zinc-800 focus:outline-none"
+                      value={retroactiveCustomName}
+                      onChange={(e) => setRetroactiveCustomName(e.target.value)}
+                      placeholder="Ex: Treino de Perna / Peito"
+                    />
+                  </div>
+                )}
+
+                {/* 3. Duration */}
+                <div>
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 mb-1.5 block">
+                    Duração Estimada (Minutos)
+                  </label>
+                  <input
+                    type="number"
+                    min={5}
+                    max={240}
+                    className="w-full bg-[#fffcfd] border border-pink-100 rounded-xl px-3 py-2 text-xs font-bold text-zinc-800 text-center focus:outline-none"
+                    value={retroactiveDuration}
+                    onChange={(e) => setRetroactiveDuration(Number(e.target.value) || 0)}
+                  />
+                </div>
+
+                {/* 4. Exercises Loads (if template selected) */}
+                {retroactiveExercises.length > 0 && (
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 block">
+                      Cargas Realizadas (kg) - Opcional ajustar
+                    </label>
+                    <div className="max-h-48 overflow-y-auto space-y-2 pr-1">
+                      {retroactiveExercises.map((ex, idx) => (
+                        <div key={idx} className="flex items-center justify-between p-2 rounded-xl bg-pink-50/20 border border-pink-50 text-[11px]">
+                          <span className="font-semibold text-zinc-700 truncate max-w-[170px]">{ex.name}</span>
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => handleAdjustRetroactiveWeight(idx, -1)}
+                              className="w-6 h-6 rounded bg-zinc-100 text-zinc-700 font-bold flex items-center justify-center hover:bg-zinc-200 cursor-pointer"
+                            >
+                              -
+                            </button>
+                            <input
+                              type="number"
+                              className="w-14 text-center font-bold bg-white border border-pink-100 rounded py-0.5 text-zinc-800 text-[11px]"
+                              value={ex.weight || 0}
+                              onChange={(e) => handleRetroactiveWeightChange(idx, e.target.value)}
+                            />
+                            <span className="text-[9px] text-zinc-400 font-bold">kg</span>
+                            <button
+                              type="button"
+                              onClick={() => handleAdjustRetroactiveWeight(idx, 1)}
+                              className="w-6 h-6 rounded bg-zinc-100 text-zinc-700 font-bold flex items-center justify-center hover:bg-zinc-200 cursor-pointer"
+                            >
+                              +
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 5. Notes */}
+                <div>
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 mb-1.5 block">
+                    Observações (Opcional)
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full bg-[#fffcfd] border border-pink-100 rounded-xl px-3 py-2 text-xs text-zinc-600 focus:outline-none"
+                    placeholder="Ex: Treino realizado ontem à noite, boa intensidade"
+                    value={retroactiveNotes}
+                    onChange={(e) => setRetroactiveNotes(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowRetroactiveModal(false)}
+                  className="flex-1 py-3 bg-zinc-100 hover:bg-zinc-200 text-zinc-600 font-black uppercase text-xs rounded-xl cursor-pointer border-0"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  disabled={savingRetroactive}
+                  onClick={handleSaveRetroactiveWorkout}
+                  className="flex-1 py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-black uppercase text-xs rounded-xl shadow-md cursor-pointer disabled:opacity-50 border-0 flex items-center justify-center gap-1.5"
+                >
+                  <Check size={16} />
+                  <span>{savingRetroactive ? "Salvando..." : "Salvar Treino"}</span>
                 </button>
               </div>
             </motion.div>
@@ -1333,6 +1820,43 @@ export default function WorkoutSection({
                 </div>
               </div>
 
+              {/* Date selection for Active Workout (allows logging for yesterday while tracking) */}
+              <div className="flex items-center justify-between bg-pink-50/40 p-2.5 rounded-2xl border border-pink-100/70">
+                <span className="text-[10px] font-bold text-zinc-600 uppercase flex items-center gap-1.5">
+                  <Calendar size={13} className="text-pink-500" /> Data do Treino:
+                </span>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setSessionDate(format(new Date(), 'yyyy-MM-dd'))}
+                    className={`text-[9px] font-extrabold px-2 py-0.5 rounded-lg border transition-all cursor-pointer ${
+                      sessionDate === format(new Date(), 'yyyy-MM-dd')
+                        ? 'bg-pink-500 text-white border-pink-500 shadow-sm'
+                        : 'bg-white text-zinc-600 border-pink-100 hover:bg-pink-50'
+                    }`}
+                  >
+                    Hoje
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSessionDate(format(subDays(new Date(), 1), 'yyyy-MM-dd'))}
+                    className={`text-[9px] font-extrabold px-2 py-0.5 rounded-lg border transition-all cursor-pointer ${
+                      sessionDate === format(subDays(new Date(), 1), 'yyyy-MM-dd')
+                        ? 'bg-pink-500 text-white border-pink-500 shadow-sm'
+                        : 'bg-white text-zinc-600 border-pink-100 hover:bg-pink-50'
+                    }`}
+                  >
+                    Ontem
+                  </button>
+                  <input
+                    type="date"
+                    value={sessionDate}
+                    onChange={(e) => setSessionDate(e.target.value)}
+                    className="text-[10px] font-bold bg-white border border-pink-100 rounded-lg px-2 py-0.5 text-zinc-700 focus:outline-none"
+                  />
+                </div>
+              </div>
+
               {/* Exercises check-in and weight control list */}
               <div className="space-y-4 flex-1">
                 <div className="text-[10px] uppercase font-bold tracking-widest text-zinc-400 flex justify-between">
@@ -1435,7 +1959,7 @@ export default function WorkoutSection({
                 onClick={handleFinishWorkoutSession}
                 className="w-full py-4 bg-gradient-to-r from-pink-500 to-rose-500 text-white font-extrabold uppercase text-xs tracking-wider rounded-xl shadow-lg shadow-pink-200/50 hover:opacity-95 text-center flex items-center justify-center gap-2 cursor-pointer transition-all"
               >
-                <Award size={15} /> Concluir Treino de Hoje
+                <Award size={15} /> {sessionDate === format(new Date(), 'yyyy-MM-dd') ? 'Concluir Treino de Hoje' : `Concluir Treino (${format(new Date(sessionDate + 'T00:00:00'), 'dd/MM')})`}
               </button>
             </motion.div>
           </motion.div>

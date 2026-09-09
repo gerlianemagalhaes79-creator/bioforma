@@ -416,77 +416,77 @@ export interface NutritionistSpecialty {
 
 export const AVAILABLE_SPECIALTIES: NutritionistSpecialty[] = [
   {
-    id: "hipertrofia_mulher",
-    name: "Hipertrofia na mulher",
-    shortLabel: "Hipertrofia Feminina",
-    category: "Feminino",
-    description: "Especialista em ganho de massa magra feminina, com ênfase em membros inferiores (glúteos, quadríceps e posteriores), periodização dietética sincronizada com o ciclo menstrual e distribuição proteica ótima.",
+    id: "hipertrofia",
+    name: "Hipertrofia",
+    shortLabel: "Hipertrofia",
+    category: "Performance",
+    description: "Especialista em ganho de massa muscular magra, síntese proteica (ativação de mTOR), periodização de carboidratos ao redor dos treinos, leucina e recuperação neuromuscular sem ganho excessivo de gordura.",
     clinicalFocus: [
-      "Distribuição proteica de 1.8 a 2.2g/kg para hipertrofia sem ganho descontrolado de gordura",
-      "Nutrição sincronizada às fases folicular (maior tolerância a carboidratos) e lútea (controle de retenção)",
-      "Timing de carboidratos complexos no pré e pós-treino para força nos membros inferiores",
-      "Suplementação estratégica: Creatina monoidratada, ferro biodisponível e aporte de leucina"
+      "Distribuição proteica de 1.8 a 2.2g/kg para hipertrofia com balanço nitrogenado positivo",
+      "Timing estratégico de carboidratos no pré e pós-treino para força e glicogênio muscular",
+      "Aporte ótimo de leucina (2.5 a 3.0g por refeição principal) para disparar a síntese muscular",
+      "Suplementação baseada em evidência: Creatina monoidratada (3-5g/dia) e micronutrientes para contração"
     ],
     keyStrategies: [
-      "Aporte calórico em leve superávit (+200 a +350 kcal) com densidade de nutrientes",
-      "Garantia de micronutrientes para contração muscular (magnésio, cálcio e vitamina D)"
+      "Superávit calórico controlado (+200 a +350 kcal) com alta densidade nutricional",
+      "Carga glicêmica sincronizada com a intensidade dos treinos de membros inferiores e superiores"
     ],
-    examplePrompt: "Como estruturar minha alimentação pós-treino de pernas para hipertrofia máxima?",
+    examplePrompt: "Como estruturar minha alimentação pós-treino para ganho máximo de massa magra?",
     badgeColor: "bg-pink-500/10 text-pink-600 border-pink-200"
   },
   {
-    id: "emagrecimento_homem",
-    name: "Emagrecimento homem",
-    shortLabel: "Emagrecimento Masculino",
-    category: "Performance",
-    description: "Especialista em déficit calórico agressivo e seguro para homens, com foco em redução de gordura visceral, controle de estrogênios e preservação máxima de massa magra e testosterona livre.",
+    id: "emagrecimento",
+    name: "Emagrecimento",
+    shortLabel: "Emagrecimento",
+    category: "Saúde",
+    description: "Especialista em déficit calórico estratégico, redução acelerada de gordura corporal e visceral com preservação máxima de massa magra, saciedade prolongada e integridade metabólica.",
     clinicalFocus: [
-      "Preservação do eixo hormonal masculino (zinco, boro, vitamina D e gorduras mono/poliinsaturadas)",
-      "Redução acelerada de gordura abdominal/visceral com alta densidade sacietógena",
-      "Ingestão proteica elevada (2.2 a 2.5g/kg de massa magra) para conter catabolismo em déficit",
-      "Gestão de carboidratos em janelas de treino para não afetar o rendimento de força"
+      "Déficit energético moderado e sustentável (-300 a -500 kcal) sem redução da taxa metabólica basal",
+      "Ingestão proteica elevada (2.0 a 2.4g/kg) para blindar a massa magra durante o déficit",
+      "Alimentos de alto índice de saciedade e volume gástrico (fibras solúveis, vegetais crocantes, água)",
+      "Manejo do cortisol e sono para facilitar a lipólise e oxidação de ácidos graxos"
     ],
     keyStrategies: [
-      "Déficit energético moderado a profundo sem quebra metabólica",
-      "Estratégia de jejum intermitente ou refeições de alto volume calórico baixo"
+      "Prato inteligente com 50% de vegetais ricos em fibras para saciedade mecânica",
+      "Estratégia de janelas alimentares e substituições de baixa densidade calórica"
     ],
-    examplePrompt: "Qual a melhor estratégia para secar a gordura abdominal sem perder massa muscular?",
+    examplePrompt: "Qual a melhor estratégia para queimar gordura sem perder massa muscular e sem passar fome?",
     badgeColor: "bg-blue-500/10 text-blue-600 border-blue-200"
   },
   {
-    id: "sop_mulher",
-    name: "SOP na mulher",
-    shortLabel: "SOP & Hormonal Feminino",
+    id: "sop",
+    name: "SOP (Síndrome dos Ovários Policísticos)",
+    shortLabel: "SOP & Hormonal",
     category: "Feminino",
-    description: "Especialista clínica em Síndrome dos Ovários Policísticos (SOP). Foco absoluto no combate à resistência à insulina, redução da inflamação subclínica, equilíbrio dos andrógenos e regularização menstrual.",
+    description: "Especialista clínica no manejo nutricional da SOP. Foco absoluto no combate à resistência à insulina, estabilização da curva glicêmica, redução de inflamação subclínica e regulação menstrual e hormonal.",
     clinicalFocus: [
-      "Dieta de baixa carga glicêmica (baixo índice glicêmico) para estabilizar insulina e LH/FSH",
-      "Protocolo anti-inflamatório rico em ômega-3, curcumina, fitoquímicos e folhas verde-escuras",
-      "Nutracêuticos fundamentais: Mio-inositol + D-quiro-inositol (40:1), magnésio bisglicinato, cromo e berberina natural",
-      "Controle de sintomas: acne hormonal, queda capilar, retenção hídrica e compulsão por doces na fase pré-menstrual"
+      "Dieta de baixa carga glicêmica para eliminar picos de insulina que estimulam produção de andrógenos ovarianos",
+      "Protocolo anti-inflamatório rico em ômega-3, curcumina, polifenóis e fitoquímicos",
+      "Nutracêuticos padrão ouro: Mio-Inositol + D-Quiro-Inositol (proporção 40:1), magnésio bisglicinato, cromo e canela",
+      "Controle clínico de sintomas: acne hormonal, queda capilar, inchaço e compulsão por doces na fase pré-menstrual"
     ],
     keyStrategies: [
-      "Combinação obrigatória de carboidratos com fibras e proteínas em todas as refeições",
-      "Zero picos de insulina que estimulam produção excessiva de testosterona ovariana"
+      "Combinação mandatória de carboidratos com fibras e proteínas em todas as refeições",
+      "Zero carboidratos simples isolados para blindar os receptores celulares de insulina"
     ],
-    examplePrompt: "Tenho SOP e dificuldade de emagrecer. Quais alimentos devo priorizar e evitar para controlar a insulina?",
+    examplePrompt: "Tenho SOP e dificuldade de emagrecer. Como a alimentação pode controlar minha insulina?",
     badgeColor: "bg-purple-500/10 text-purple-600 border-purple-200"
   },
   {
-    id: "emagrecer_ganhar_musculo",
-    name: "Emagrecer e ganhar músculo",
-    shortLabel: "Recomposição Corporal",
+    id: "recomposicao",
+    name: "Recomposição Corporal",
+    shortLabel: "Recomposição",
     category: "Performance",
-    description: "Especialista em Recomposição Corporal simultânea: perda de gordura corporal associada à hipertrofia muscular. Combina balanço calórico em normocalórica ou leve déficit com alta ingestão proteica.",
+    description: "Especialista em Recomposição Corporal simultânea: perda de gordura associada à hipertrofia muscular. Balanço energético em normocalórica ou leve déficit com alta ingestão proteica.",
     clinicalFocus: [
-      "Calorias em manutenção ou déficit sutil (-200 a -300 kcal) para manter energia de treino",
-      "Proteína em 2.0 a 2.4g/kg distribuída a cada 3 a 4 horas para manter síntese proteica (MPS) ativa",
-      "Priorização de sobrecarga progressiva nos treinos aliada a carboidratos de alta qualidade",
-      "Sono de qualidade e manejo de cortisol para que a oxidação lipídica e reparo muscular ocorram à noite"
+      "Calorias em manutenção ou déficit sutil (-200 a -300 kcal) para manter rendimento de força nos treinos",
+      "Proteína em 2.0 a 2.4g/kg fracionada a cada 3 a 4 horas para manter síntese proteica (MPS) ativa",
+      "Priorização de sobrecarga progressiva nos treinos aliada a carboidratos complexos de alta qualidade",
+      "Avaliação por medidas e bioimpedância, ignorando flutuações pontuais de peso na balança"
     ],
     keyStrategies: [
       "Ciclagem de carboidratos (dias de treino pesado vs dias de descanso)",
-      "Timing de nutrientes: 30-40g de proteína de alto valor biológico antes de dormir e pós-treino"
+      "Timing de 30-40g de proteína de alto valor biológico antes de dormir e pós-treino"
     ],
     examplePrompt: "Como consigo queimar gordura e ganhar músculo ao mesmo tempo sem perder peso na balança?",
     badgeColor: "bg-emerald-500/10 text-emerald-600 border-emerald-200"
@@ -528,8 +528,8 @@ export const AVAILABLE_SPECIALTIES: NutritionistSpecialty[] = [
     badgeColor: "bg-teal-500/10 text-teal-600 border-teal-200"
   },
   {
-    id: "antiinflamatoria_longevidade",
-    name: "Nutrição Anti-inflamatória",
+    id: "antiinflamatoria",
+    name: "Nutrição Anti-inflamatória & Longevidade",
     shortLabel: "Anti-inflamatória",
     category: "Saúde",
     description: "Especialista em modulação de marcadores inflamatórios (PCR, citocinas), saúde mitocondrial, antioxidantes naturais e longevidade celular.",
@@ -548,9 +548,9 @@ export const AVAILABLE_SPECIALTIES: NutritionistSpecialty[] = [
   {
     id: "saciedade_compulsao",
     name: "Controle de Saciedade & Compulsão",
-    shortLabel: "Saciedade & Apetite",
+    shortLabel: "Saciedade & Compulsão",
     category: "Geral",
-    description: "Especialista comportamental e bioquímico em saciedade, controle de grelina/leptina, picos de dopamina e redução de episódios de compulsão alimentar noturna.",
+    description: "Especialista comportamental e bioquímico em saciedade, controle de grelina/leptina, regulação de dopamina e controle de compulsão alimentar noturna.",
     clinicalFocus: [
       "Densidade nutricional com volume gástrico (fibras solúveis, água e vegetais crocantes)",
       "Aporte de triptofano e tirosina para produção estável de serotonina e dopamina",
@@ -562,8 +562,39 @@ export const AVAILABLE_SPECIALTIES: NutritionistSpecialty[] = [
     ],
     examplePrompt: "Sinto muita vontade de comer doces e carboidratos à noite. Como a nutrição pode me ajudar a controlar?",
     badgeColor: "bg-rose-500/10 text-rose-600 border-rose-200"
+  },
+  {
+    id: "resistencia_insulina",
+    name: "Resistência à Insulina & Glicemia",
+    shortLabel: "Glicemia & Insulina",
+    category: "Saúde",
+    description: "Especialista em estabilidade glicêmica, sensibilidade insulínica celular, prevenção de esteatose hepática e flexibilidade metabólica.",
+    clinicalFocus: [
+      "Estabilização das curvas pós-prandiais de glicose e insulina",
+      "Prescrição de vinagre de maçã antes das refeições principais e caminhadas pós-prandiais de 10 min",
+      "Aporte de minerais sensibilizadores da insulina: Cromo, Magnésio, Zinco e Ácido Alfa-Lipóico"
+    ],
+    keyStrategies: [
+      "Ordem correta de ingestão: 1º fibras/salada, 2º proteínas/gorduras, 3º carboidratos",
+      "Troca de amidos refinados por amidos resistentes e tubérculos integrais"
+    ],
+    examplePrompt: "Como evitar picos de glicose e melhorar a sensibilidade à insulina com a alimentação?",
+    badgeColor: "bg-cyan-500/10 text-cyan-600 border-cyan-200"
   }
 ];
+
+export function findSpecialtyByName(nameOrId: string): NutritionistSpecialty | undefined {
+  if (!nameOrId) return undefined;
+  const norm = nameOrId.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+  return AVAILABLE_SPECIALTIES.find(s => {
+    const sNorm = s.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+    const shortNorm = s.shortLabel.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+    const idNorm = s.id.toLowerCase().replace(/_/g, " ");
+    return sNorm === norm || sNorm.includes(norm) || norm.includes(sNorm) ||
+           shortNorm === norm || shortNorm.includes(norm) || norm.includes(shortNorm) ||
+           idNorm === norm || idNorm.includes(norm) || norm.includes(idNorm);
+  });
+}
 
 // Helper to generate full vitamins list for any given food name and gram weight
 export function calculateAllVitaminsForFood(foodName: string, grams: number): FoodCompleteNutrition {

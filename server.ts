@@ -2,6 +2,7 @@ import express from "express";
 import path from "path";
 import { GoogleGenAI, Type } from "@google/genai";
 import { createServer as createViteServer } from "vite";
+import { COMPLETE_FOOD_DATABASE, calculateAllVitaminsForFood } from "./src/data/nutritionData";
 
 let aiClient: any = null;
 
@@ -53,7 +54,7 @@ function formatGeminiError(err: any): string {
 }
 
 async function generateContentWithRetry(aiInstance: any, options: {
-  contents: string;
+  contents: any;
   config?: any;
   defaultModel?: string;
   maxRetries?: number;
@@ -75,6 +76,10 @@ async function generateContentWithRetry(aiInstance: any, options: {
       } catch (err: any) {
         const cleanMessage = formatGeminiError(err);
         console.log(`[Gemini SDK] Modelo "${model}" em contingência: ${cleanMessage}`);
+        // If 429 quota or prepayment depleted, fail fast to avoid unnecessary user delay
+        if (err?.message?.includes("429") || err?.message?.includes("RESOURCE_EXHAUSTED") || err?.message?.includes("prepayment")) {
+          throw err;
+        }
         if (attempt < maxRetries) {
           await new Promise(resolve => setTimeout(resolve, 300));
         }
@@ -477,6 +482,69 @@ Retorne em formato JSON:
     });
   });
 
+  // Helper for structured consultation of real nutritional tables (TACO Unicamp 4ª Edição / USDA)
+  function consultarTabelaNutricionalEstruturada(alimentoQuery: string, pesoGramas: number = 100) {
+    const g = Math.max(1, Number(pesoGramas) || 100);
+    const food = calculateAllVitaminsForFood(alimentoQuery, g);
+    
+    return {
+      alimentoPesquisado: alimentoQuery,
+      nomeAlimentoTabela: food.name,
+      pesoGramas: g,
+      energiaKcal: Math.round(food.kcal || 0),
+      proteinasG: parseFloat((food.p || 0).toFixed(1)),
+      carboidratosG: parseFloat((food.c || 0).toFixed(1)),
+      gordurasLipidiosG: parseFloat((food.f || 0).toFixed(1)),
+      fibrasAlimentaresG: parseFloat((food.fiber || 0).toFixed(1)),
+      sodioMg: Math.round(food.sodium || 0),
+      potassioMg: Math.round(food.potassium || 0),
+      calcioMg: Math.round(food.calcium || 0),
+      ferroMg: parseFloat((food.iron || 0).toFixed(1)),
+      vitaminasEmDestaque: (food.allVitamins || []).slice(0, 4).map(v => `${v.name}: ${v.amount}${v.unit} (${v.dailyValuePct}% VD)`),
+      dicaAbsorcao: food.absorptionTip || "Excelente fonte de micronutrientes para o metabolismo.",
+      fonteOficial: `${food.source} (${g}g)`
+    };
+  }
+
+  // Pre-query helper to extract known foods from conversation
+  function extrairAlimentosDaMensagem(texto: string): string[] {
+    const lower = (texto || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const possibleFoods = [
+      "frango", "peito de frango", "ovo", "ovos", "clara", "gema", "arroz", "feijao",
+      "aveia", "banana", "abacate", "salmao", "peixe", "atum", "carne", "patinho",
+      "whey", "leite", "tapioca", "pao", "batata doce", "batata", "espinafre",
+      "brocolis", "laranja", "maca", "iogurte", "queijo", "castanha", "azeite",
+      "creatina", "chia", "linhaca", "morango"
+    ];
+    
+    const matched = new Set<string>();
+    for (const food of possibleFoods) {
+      if (lower.includes(food)) {
+        matched.add(food);
+      }
+    }
+    return Array.from(matched).slice(0, 4);
+  }
+
+  const consultarTabelaNutricionalDeclaration = {
+    name: "consultarTabelaNutricional",
+    description: "Consulta estruturada e oficial à Tabela Brasileira de Composição de Alimentos (TACO / Unicamp 4ª Edição) e USDA para obter dados numéricos reais de macronutrientes (calorias, proteínas, carboidratos, gorduras, fibras), micronutrientes (ferro, cálcio, sódio, potássio) e perfil de vitaminas por porção em gramas.",
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        alimento: {
+          type: Type.STRING,
+          description: "Nome do alimento a ser consultado (ex: 'peito de frango', 'ovo cozido', 'arroz', 'feijao', 'abacate', 'aveia', 'banana', 'salmao', 'whey protein', 'tapioca')"
+        },
+        pesoGramas: {
+          type: Type.NUMBER,
+          description: "Peso da porção em gramas (padrão: 100g)"
+        }
+      },
+      required: ["alimento"]
+    }
+  };
+
   // Dedicated endpoint for the NUTRITIONIST CHAT adopting the 3 chosen specialties!
   app.post("/api/nutritionist/chat", async (req, res) => {
     const { message, conversationHistory = [], specialties = [], userProfile = {}, dietContext = {} } = req.body;
@@ -487,23 +555,39 @@ Retorne em formato JSON:
 
     const safeSpecialties: string[] = Array.isArray(specialties) && specialties.length > 0 
       ? specialties 
-      : ["Hipertrofia na mulher", "SOP na mulher", "Emagrecer e ganhar músculo"];
+      : ["Hipertrofia", "Emagrecimento", "SOP (Síndrome dos Ovários Policísticos)"];
 
     const specialtyNames = safeSpecialties.join(", ");
 
-    // Detailed clinical prompt embodying the selected specialties
-    const systemPrompt = `Você é o(a) Nutricionista Clínico(a) e Esportivo(a) de alta precisão do aplicativo BioForma.
-O usuário escolheu exatamente as seguintes especialidades para você:
+    // Pre-query structured nutritional table for foods mentioned in the prompt
+    const detectedFoods = extrairAlimentosDaMensagem(message);
+    const structuredFoodData = detectedFoods.map(f => consultarTabelaNutricionalEstruturada(f, 100));
+
+    let structuredTableContext = "";
+    if (structuredFoodData.length > 0) {
+      structuredTableContext = `\nDADOS REAIS DE TABELAS NUTRICIONAIS (TACO / Unicamp & USDA) OBTIDOS VIA CONSULTA ESTRUTURADA:\n` +
+        structuredFoodData.map(d => 
+          `• [${d.nomeAlimentoTabela} - ${d.pesoGramas}g]: ${d.energiaKcal} kcal | Proteínas: ${d.proteinasG}g | Carboidratos: ${d.carboidratosG}g | Gorduras: ${d.gordurasLipidiosG}g | Fibras: ${d.fibrasAlimentaresG}g | Ferro: ${d.ferroMg}mg | Fonte: ${d.fonteOficial}\n  Vitaminas: ${d.vitaminasEmDestaque.join(", ")}\n  Dica Fisiológica: ${d.dicaAbsorcao}`
+        ).join("\n\n");
+    }
+
+    // Detailed clinical prompt embodying the 3 selected specialties
+    const systemPrompt = `Você é o(a) Nutricionista Clínico(a) e Esportivo(a) de precisão do aplicativo BioForma.
+O usuário escolheu exatamente 3 especialidades clínicas para você incorporar simultaneamente:
 ${safeSpecialties.map((s: string, i: number) => `${i + 1}. ${s}`).join("\n")}
 
-DIRETRIZ DE INCORPORAÇÃO DA PERSONALIDADE (OBRIGATÓRIO):
-Você DEVE incorporar profundamente em suas respostas a mentalidade, o vocabulário, os protocolos científicos, o raciocínio fisiológico e a postura de um nutricionista com essas especialidades específicas:
+DIRETRIZ DE INCORPORAÇÃO DA PERSONA DOS 3 ESPECIALISTAS (OBRIGATÓRIO):
+Você DEVE integrar e transparecer o raciocínio fisiológico, o vocabulário técnico acessível e os protocolos das 3 especialidades ativas em cada resposta:
+- Se incluir "Hipertrofia" (ou hipertrofia feminina): Enfatize síntese proteica (via mTOR), distribuição de proteínas ao longo do dia (1.8 a 2.2g/kg), aporte de leucina (2.5-3g/refeição), timing de carboidratos ao redor do treino e creatina monoidratada (3-5g/dia).
+- Se incluir "Emagrecimento" (ou emagrecimento homem): Enfatize o déficit calórico inteligente (-300 a -500 kcal), preservação de massa muscular magra com proteína alta, queima de gordura visceral, alimentos de alto volume e saciedade (fibras/água) e controle hormonal da grelina/cortisol.
+- Se incluir "SOP" (ou Síndrome dos Ovários Policísticos): Trate com prioridade máxima o combate à resistência à insulina (raiz da produção de andrógenos nos ovários e da inflamação subclínica). Prescreva dieta de baixa carga glicêmica, nunca oriente carboidrato isolado sem fibras/proteínas, e mencione nutracêuticos padrão ouro (Mio-Inositol + D-Quiro-Inositol 40:1, magnésio bisglicinato, cromo e canela).
+- Se incluir "Recomposição Corporal": Equilibre leve déficit ou normocalórica com alto teor proteico (2.0 a 2.4g/kg) para queima lipídica e síntese muscular simultânea.
+- Se incluir "Nutrição Esportiva": Enfatize ressíntese de glicogênio muscular, timing peri-treino e ergogênicos comprovados (creatina, cafeína, beta-alanina).
+- Se incluir "Saúde Intestinal": Enfatize microbiota, barreira intestinal, fibras prebióticas, digestibilidade e alívio de estufamento/gases.
+- Se incluir "Nutrição Anti-inflamatória": Enfatize ômega-3, polifenóis, redução do estresse oxidativo e alimentos de cores vivas.
 
-- Se incluir "Hipertrofia na mulher": Enfatize hipertrofia de membros inferiores (glúteos, quadríceps, posteriores), distribuição de proteínas ao longo do dia (1.8 a 2.2g/kg), timing de carboidratos ao redor dos treinos de perna, periodização de acordo com o ciclo menstrual (fase folicular vs lútea), retenção hídrica cíclica e suplementos como creatina e ferro.
-- Se incluir "Emagrecimento homem": Enfatize a queima de gordura visceral e abdominal, controle de déficit sem perda de massa magra, suporte endócrino à síntese e preservação de testosterona livre (aporte de zinco, magnésio, gorduras monoinsaturadas e sono), densidade de saciedade para conter fome e proteína elevada (2.2 a 2.5g/kg).
-- Se incluir "SOP na mulher": Trate com prioridade máxima a resistência à insulina, estabilização da carga glicêmica (baixo índice glicêmico), redução de inflamação de baixo grau, modulação de andrógenos ovarianos, equilíbrio hormonal e nutracêuticos fundamentais como Mio-Inositol + D-Quiro-Inositol, magnésio bisglicinato, cromo, ômega-3 e canela. Explique como a insulina elevada atrapalha a ovulação e gera acúmulo de gordura.
-- Se incluir "Emagrecer e ganhar músculo": Trate da recomposição corporal simultânea. Explique a estratégia de déficit calórico leve (-250 a -300 kcal) ou normocalórica com alto aporte de aminoácidos essenciais (2.0 a 2.4g/kg de proteína), sobrecarga progressiva, timing pré e pós-treino e monitoramento por bioimpedância/medidas e não apenas pelo peso na balança.
-- Se incluir outras especialidades (como Nutrição Esportiva, Saúde Intestinal ou Anti-inflamatória): Una esses pilares de forma harmoniosa.
+DIRETRIZ DE USO DE DADOS REAIS DE TABELAS NUTRICIONAIS (OBRIGATÓRIO):
+Você DEVE fundamentar suas orientações nos dados reais e exatos da Tabela Brasileira de Composição de Alimentos (TACO / Unicamp) e USDA (calorias exatas, gramas de proteína, carboidrato, gorduras, fibras e micronutrientes) obtidos pela consulta estruturada. Nunca forneça números inventados ou genéricos; cite os valores reais da tabela oficial para dar máxima credibilidade e precisão clínica à sua orientação.
 
 DADOS DO PACIENTE:
 - Nome: ${userProfile.name || "Paciente"}
@@ -511,74 +595,154 @@ DADOS DO PACIENTE:
 - Meta Calórica Diária: ${userProfile.dailyCalorieGoal || 2000} kcal
 - Meta de Água: ${userProfile.dailyWaterGoal || 2500} ml
 - Consumo Registrado Hoje: ${dietContext.totalCalories || 0} kcal, ${dietContext.totalProtein || 0}g Proteína, ${dietContext.totalCarbs || 0}g Carboidratos, ${dietContext.totalFat || 0}g Gorduras
-- Refeições Hoje: ${dietContext.mealsCount || 0} refeições registradas
-- Vitaminas Consumidas Hoje: ${dietContext.vitaminsSummary || "Em acompanhamento"}
+${structuredTableContext}
 
 ESTILO DE RESPOSTA (RIGOROSO E OBRIGATÓRIO):
-- RESPOSTAS CURTAS, DIRETAS E CONVERSACIONAIS: O usuário odeia "textão". Responda em no máximo 1 a 2 parágrafos curtos (cerca de 3 a 5 linhas no total).
-- RESPONDA APENAS O QUE FOI PERGUNTADO: Vá direto ao ponto da dúvida, sem enrolação.
-- UMA DICA POR VEZ: Forneça apenas uma dicazinha prática e valiosa ("uma dicazinha aqui, outra acolá") conectada às especialidades ativas (${specialtyNames}).
+- RESPOSTAS CURTAS, DIRETAS E CONVERSACIONAIS: O usuário odeia "textão". Responda em no máximo 1 a 2 parágrafos curtos (4 a 6 linhas no total).
+- RESPONDA APENAS O QUE FOI PERGUNTADO: Vá direto ao ponto, sem introduções vazias.
+- CITE OS NÚMEROS REAIS DA TABELA NUTRICIONAL: Exemplo: "100g de peito de frango fornecem 31g de proteína com apenas 3.6g de gordura..."
+- UMA DICA POR VEZ: Forneça apenas uma dicazinha prática e valiosa ("uma dicazinha aqui, outra acolá") alinhada às suas 3 especialidades (${specialtyNames}).
 - GANCHO DE CONVERSA: Termine sempre com uma perguntinha curta ou convite leve para continuar conversando naturalmente.
-- DESTAQUE EM NEGRITO: Destaque de 1 a 3 palavras-chave importantes usando negrito (**assim**).`;
+- DESTAQUE EM NEGRITO: Destaque de 1 a 3 termos essenciais usando negrito (**assim**).`;
 
     const aiInstance = getAIClient();
     if (aiInstance) {
       try {
-        const fullPrompt = `INSTRUÇÃO DE PERSONA:\n${systemPrompt}\n\nHistórico recente:\n${conversationHistory.slice(-4).map((h: any) => `${h.role === 'user' ? 'Paciente' : 'Nutricionista'}: ${h.content}`).join("\n")}\n\nNova pergunta do Paciente: "${message}"\n\nLEMBRE-SE: Seja direto, conciso (máximo 4 a 6 linhas), sem textão.`;
+        const fullPrompt = `INSTRUÇÃO DE PERSONA CLÍNICA:\n${systemPrompt}\n\nHistórico recente:\n${conversationHistory.slice(-4).map((h: any) => `${h.role === 'user' ? 'Paciente' : 'Nutricionista'}: ${h.content}`).join("\n")}\n\nNova pergunta do Paciente: "${message}"\n\nLEMBRE-SE: Seja direto, conciso (máximo 4 a 6 linhas), cite dados reais da tabela nutricional e incorpore as 3 especialidades ativas sem textão.`;
 
+        // Attempt with function calling tool for structured nutritional table + Google Search grounding
         const response = await generateContentWithRetry(aiInstance, {
           contents: fullPrompt,
           defaultModel: "gemini-3.8-flash",
           maxRetries: 1,
           config: {
-            temperature: 0.7
+            temperature: 0.6,
+            tools: [
+              { functionDeclarations: [consultarTabelaNutricionalDeclaration] },
+              { googleSearch: {} }
+            ]
           }
         });
+
+        // Check if Gemini returned a function call to consultarTabelaNutricional
+        if (response && response.functionCalls && response.functionCalls.length > 0) {
+          const call = response.functionCalls[0];
+          if (call.name === "consultarTabelaNutricional") {
+            const args = call.args as any;
+            const tableResult = consultarTabelaNutricionalEstruturada(args.alimento, args.pesoGramas || 100);
+            
+            // Second turn with the structured table data provided
+            const secondTurnResponse = await aiInstance.models.generateContent({
+              model: "gemini-3.8-flash",
+              contents: [
+                { role: "user", parts: [{ text: fullPrompt }] },
+                { role: "model", parts: [{ functionCall: call }] },
+                { 
+                  role: "user", 
+                  parts: [{ 
+                    functionResponse: {
+                      name: "consultarTabelaNutricional",
+                      response: { result: tableResult }
+                    }
+                  }]
+                }
+              ],
+              config: {
+                temperature: 0.5
+              }
+            });
+
+            if (secondTurnResponse && secondTurnResponse.text) {
+              return res.json({
+                success: true,
+                reply: secondTurnResponse.text,
+                activeSpecialties: safeSpecialties,
+                structuredDataUsed: tableResult,
+                source: "gemini-structured-taco"
+              });
+            }
+          }
+        }
 
         if (response && response.text) {
           return res.json({
             success: true,
             reply: response.text,
-            activeSpecialties: safeSpecialties
+            activeSpecialties: safeSpecialties,
+            source: "gemini-web-grounded"
           });
         }
       } catch (chatErr: any) {
+        // If tools failed or 429 occurred, try plain Gemini once if not 429
+        if (!chatErr?.message?.includes("429") && !chatErr?.message?.includes("RESOURCE_EXHAUSTED")) {
+          try {
+            const fallbackResponse = await aiInstance.models.generateContent({
+              model: "gemini-3.8-flash",
+              contents: `INSTRUÇÃO:\n${systemPrompt}\n\nPergunta: "${message}"\n\nResposta curta, acolhedora, máximo 4 a 6 linhas, com números reais da tabela nutricional e persona ativa em ${specialtyNames}.`,
+            });
+            if (fallbackResponse && fallbackResponse.text) {
+              return res.json({
+                success: true,
+                reply: fallbackResponse.text,
+                activeSpecialties: safeSpecialties,
+                source: "gemini-direct"
+              });
+            }
+          } catch (e2) {
+            // continue to clinical engine
+          }
+        }
         console.log(`[Nutritionist Chat] Ativando motor clínico especializado (${formatGeminiError(chatErr)}).`);
       }
     }
 
-    // High-quality, CONCISE offline clinical engine answering strictly what was asked
+    // High-quality, CONCISE clinical expert engine incorporating structured TACO numbers & active specialties
     const lowerMsg = message.toLowerCase();
     let reply = "";
 
     if (lowerMsg.includes("ovo") || lowerMsg.includes("ovos") || lowerMsg.includes("clara") || lowerMsg.includes("gema")) {
-      reply = `O **ovo** é uma excelente escolha! A gema é riquíssima em **colina** e vitaminas lipossolúveis (A, D, E, K), enquanto a clara fornece proteína de altíssimo valor biológico.\n\n` +
-        `💡 **Dicazinha prática:** cozinhe bem a clara para aproveitar 100% da biotina, mas deixe a gema mais cremosa para preservar os antioxidantes. Quantos ovos você costuma comer por dia?`;
-    } else if (lowerMsg.includes("frango") || lowerMsg.includes("carne") || lowerMsg.includes("peixe") || lowerMsg.includes("salmão") || lowerMsg.includes("salmao")) {
-      reply = `Excelente fonte de **proteína limpa**! Carnes magras e peixes fornecem ferro heme de rápida absorção e vitamina B12 para seus músculos.\n\n` +
-        `💡 **Dicazinha prática:** se for peixe como o salmão, o ômega-3 ainda age reduzindo a inflamação e otimizando seus hormônios. Você prefere preparar grelhado ou assado?`;
-    } else if (lowerMsg.includes("creatina") || lowerMsg.includes("whey") || lowerMsg.includes("suplemento")) {
-      reply = `A **creatina** é um dos suplementos mais comprovados: tome de 3g a 5g todo dia, sem pausa nos finais de semana, de preferência junto a uma refeição com carboidrato para acelerar a absorção.\n\n` +
-        `💡 **Dicazinha prática:** o whey entra como um coringa prático pós-treino ou no lanche da tarde. Você já toma creatina diariamente?`;
-    } else if (lowerMsg.includes("sop")) {
-      reply = `Na **SOP**, nosso foco de ouro é estabilizar a insulina. A regra número um é nunca consumir carboidrato isolado; combine sempre com uma boa fonte de proteína ou sementes.\n\n` +
-        `💡 **Dicazinha prática:** incluir canela e sementes de chia ou linhaça nas refeições ajuda a frear a curva glicêmica e reduz a vontade de doces. Qual fruta ou carboidrato você mais consome?`;
-    } else if (lowerMsg.includes("hipertrofia") || lowerMsg.includes("músculo") || lowerMsg.includes("musculo") || lowerMsg.includes("perna") || lowerMsg.includes("glúteo") || lowerMsg.includes("gluteo")) {
-      reply = `Para **hipertrofia**, o segredo é bater em torno de **1.8g a 2.0g de proteína por kg de peso**, dividindo em pelo menos 3 a 4 refeições ao longo do dia.\n\n` +
-        `💡 **Dicazinha prática:** concentre a maior parte dos seus carboidratos antes e depois do treino para abastecer o músculo e acelerar a recuperação. Como foi seu treino hoje?`;
-    } else if (lowerMsg.includes("emagrec") || lowerMsg.includes("perder peso") || lowerMsg.includes("secar") || lowerMsg.includes("gordura")) {
-      reply = `Para secar sem perder tônus muscular, aposte em um **déficit calórico leve** com aporte alto de proteínas e fibras para dar saciedade prolongada.\n\n` +
-        `💡 **Dicazinha prática:** comece sempre suas refeições principais pela salada e pela proteína antes de tocar no carboidrato. Quer ajustar sua meta calórica de hoje?`;
-    } else if (lowerMsg.includes("café") || lowerMsg.includes("cafe") || lowerMsg.includes("cafeína")) {
-      reply = `O **café** é um ótimo estimulante natural para o treino e foco! Apenas cuide para não tomar logo após o almoço ou jantar.\n\n` +
-        `💡 **Dicazinha prática:** dê um intervalo de pelo menos 45 a 60 minutos após refeições com ferro e cálcio, pois a cafeína e os polifenóis inibem a absorção desses minerais. Você toma cafezinho puro?`;
-    } else if (lowerMsg.includes("banana") || lowerMsg.includes("fruta") || lowerMsg.includes("maçã") || lowerMsg.includes("abacate")) {
-      reply = `Frutas são fontes incríveis de **vitaminas e fibras**! Para manter sua insulina bem controlada, consuma acompanhada de aveia, canela, iogurte ou chia.\n\n` +
-        `💡 **Dicazinha prática:** o abacate, por exemplo, tem gorduras boas que aumentam a absorção das vitaminas lipossolúveis (A, D, E, K). Quer encaixar uma fruta no lanche ou pré-treino?`;
+      const ovoData = consultarTabelaNutricionalEstruturada("ovo", 100);
+      reply = `Pela **Tabela TACO oficial**, 100g de ovo inteiro cozido fornecem **${ovoData.energiaKcal} kcal**, **${ovoData.proteinasG}g de proteína** e apenas **${ovoData.carboidratosG}g de carboidratos**, com destaque para **250mg de colina** e vitaminas A, D e B12.\n\n` +
+        `💡 **Dicazinha de ouro:** para quem foca em **${specialtyNames}**, o ovo é ideal pois não gera picos de insulina (perfeito na SOP e no emagrecimento) e entrega leucina pura para síntese muscular. Quantos ovos você costuma comer por refeição?`;
+    } else if (lowerMsg.includes("frango") || lowerMsg.includes("peito de frango")) {
+      const frangoData = consultarTabelaNutricionalEstruturada("frango", 100);
+      reply = `Na **Tabela TACO Unicamp**, 100g de peito de frango grelhado entregam **${frangoData.proteinasG}g de proteína pura** com apenas **${frangoData.gordurasLipidiosG}g de gordura** e **${frangoData.energiaKcal} kcal**, além de 13.7mg de niacina (vitamina B3).\n\n` +
+        `💡 **Dicazinha de ouro:** como seu foco é **${specialtyNames}**, uma porção de 120g a 150g garante o limiar de 3g de leucina necessário para ativar a hipertrofia sem elevar calorias. Você costuma pesar cru ou já grelhado?`;
+    } else if (lowerMsg.includes("abacate")) {
+      const abacateData = consultarTabelaNutricionalEstruturada("abacate", 100);
+      reply = `Segundo a **Tabela TACO**, 100g de abacate têm **${abacateData.energiaKcal} kcal**, **${abacateData.gordurasLipidiosG}g de gorduras boas** (monoinsaturadas) e impressionantes **${abacateData.fibrasAlimentaresG}g de fibras**, com apenas 1.8g de carboidratos líquidos.\n\n` +
+        `💡 **Dicazinha de ouro:** na ótica de **${specialtyNames}**, o abacate é excelente para estabilizar a glicemia e saciar por horas. Uma porção de 50g a 80g com ovos ou cacau 70% é estratégica. Como você costuma consumir?`;
+    } else if (lowerMsg.includes("tapioca") || lowerMsg.includes("pao") || lowerMsg.includes("pão") || lowerMsg.includes("arroz") || lowerMsg.includes("aveia")) {
+      const aveiaData = consultarTabelaNutricionalEstruturada("aveia", 100);
+      reply = `Pela **Tabela TACO**, 100g de aveia em flocos contêm **${aveiaData.carboidratosG}g de carboidratos**, **${aveiaData.proteinasG}g de proteína** e **${aveiaData.fibrasAlimentaresG}g de fibras** solúveis (beta-glucanas), enquanto a tapioca fornece carboidrato de alto índice glicêmico quase sem fibras.\n\n` +
+        `💡 **Dicazinha de ouro:** com suas especialidades ativas (**${specialtyNames}**), se for comer tapioca, sempre adicione sementes de chia ou ovos na massa para evitar o pico de insulina que atrapalha a queima de gordura e a SOP. Qual o seu recheio favorito?`;
+    } else if (lowerMsg.includes("sop") || lowerMsg.includes("ovario") || lowerMsg.includes("policistico") || lowerMsg.includes("policístico")) {
+      reply = `Na **SOP**, nosso protocolo clínico número 1 é blindar a sensibilidade à insulina. Quando a insulina sobe, ela induz os ovários a produzir excesso de testosterona, gerando acne, queda de cabelo e acúmulo de gordura abdominal.\n\n` +
+        `💡 **Dicazinha de ouro:** alie alimentos de baixa carga glicêmica (folhas, sementes, ovos) a **Mio-Inositol (2g a 4g/dia)** e magnésio bisglicinato. Você tem notado irregularidades no seu ciclo ou retenção recentemente?`;
+    } else if (lowerMsg.includes("hipertrofia") || lowerMsg.includes("massa muscular") || lowerMsg.includes("gluteo") || lowerMsg.includes("perna")) {
+      reply = `Para **Hipertrofia**, as tabelas nutricionais mostram que a síntese proteica ótima ocorre quando consumimos **1.8g a 2.2g de proteína/kg** fracionados em 3 a 4 refeições com pelo menos 25g a 30g de proteína de alto valor biológico cada.\n\n` +
+        `💡 **Dicazinha de ouro:** sincronize a maior cota de carboidratos (como arroz e frutas) no pré e pós-treino para encher os estoques de glicogênio muscular. Qual grupo muscular você treinou hoje?`;
+    } else if (lowerMsg.includes("emagrec") || lowerMsg.includes("perder peso") || lowerMsg.includes("secar")) {
+      reply = `No **Emagrecimento**, o segredo clínico é um **déficit calórico estratégico (-350 a -500 kcal)** com alta densidade de saciedade: 2.0g de proteína/kg e pelo menos 25g a 30g de fibras diárias para manter o metabolismo acelerado sem perder massa muscular.\n\n` +
+        `💡 **Dicazinha de ouro:** inicie suas refeições principais comendo um prato generoso de salada e vegetais antes de encostar no carboidrato. Conseguiu registrar suas refeições de hoje no app?`;
+    } else if (lowerMsg.includes("creatina")) {
+      reply = `A **creatina monoidratada** aumenta os estoques de fosfocreatina intramuscular em até 20%, acelerando a recuperação de ATP e o ganho de força tanto na hipertrofia quanto na preservação muscular em déficit.\n\n` +
+        `💡 **Dicazinha de ouro:** tome de **3g a 5g todos os dias**, preferencialmente com uma refeição que contenha carboidrato para potencializar a captação via transportador de insulina. Você já toma todos os dias?`;
+    } else if (lowerMsg.includes("whey")) {
+      reply = `Pelas tabelas nutricionais, uma dose de 30g de **whey protein concentrado** fornece cerca de **23g a 24g de proteína** de rápida absorção com altíssimo teor de **leucina** (aprox. 2.7g), disparando o gatilho da via mTOR de síntese proteica.\n\n` +
+        `💡 **Dicazinha de ouro:** excelente curinga na rotina de **${specialtyNames}** batido com frutas vermelhas ou aveia para um lanche de baixa carga glicêmica e alta saciedade. Você prefere tomar com água ou fruta?`;
     } else {
-      reply = `Perfeito! Olhando para seus objetivos em **${specialtyNames}**, a recomendação mais eficiente para o que você perguntou é priorizar consistência e refeições ricas em densidade de nutrientes.\n\n` +
-        `💡 **Dicazinha de ouro:** beba um bom copo d'água agora e garanta uma porção de proteína limpa na sua próxima refeição. O que você está planejando comer em seguida?`;
+      reply = `Como seu nutricionista clínico especialista em **${specialtyNames}**, analiso sua rotina com base em evidências científicas e dados reais das tabelas nutricionais (TACO/USDA).\n\n` +
+        `💡 **Dicazinha de ouro:** a chave do sucesso é a constância: garantir sua cota diária de proteína pura, hidratação de 35ml/kg e carboidratos de qualidade nos horários certos. O que você gostaria de ajustar na sua próxima refeição?`;
     }
+
+    return res.json({
+      success: true,
+      reply,
+      activeSpecialties: safeSpecialties,
+      source: "clinical-engine-taco"
+    });
+  });
 
     return res.json({
       success: true,
